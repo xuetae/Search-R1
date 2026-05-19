@@ -1,180 +1,347 @@
+# === 中文逐行注释辅助：本文件已按复现学习用途补充中文注释，原始配置/脚本逻辑保持不变。===
+# 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
 data:
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   tokenizer: null
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   train_files: ~/data/rlhf/gsm8k/train.parquet
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   val_files: ~/data/rlhf/gsm8k/test.parquet
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   train_data_num: null
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   val_data_num: null
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   prompt_key: prompt
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   max_prompt_length: 512
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   max_response_length: 512
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   max_start_length: 256
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   max_obs_length: 512
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   train_batch_size: 1024
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   val_batch_size: 1312
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   return_raw_input_ids: False  # This should be set to true when the tokenizer between policy and rm differs
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   return_raw_chat: False
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   shuffle_train_dataloader: True
 
+# 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
 actor_rollout_ref:
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   hybrid_engine: True
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   model:
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     path: ~/models/deepseek-llm-7b-chat
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     external_lib: null
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     override_config: { }
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     enable_gradient_checkpointing: False
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     use_remove_padding: False
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   actor:
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     strategy: fsdp  # This is for backward-compatibility
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     ppo_mini_batch_size: 256
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     ppo_micro_batch_size: 64
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     use_dynamic_bsz: False
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     ppo_max_token_len_per_gpu: 16384 # n * ${data.max_prompt_length} + ${data.max_response_length}
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     grad_clip: 1.0
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     state_masking: False
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     clip_ratio: 0.2
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     entropy_coeff: 0.001
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     use_kl_loss: False # True for GRPO
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     kl_loss_coef: 0.001 # for grpo
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     kl_loss_type: low_var_kl # for grpo
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     ppo_epochs: 1
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     shuffle: False
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     ulysses_sequence_parallel_size: 1 # sp size
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     optim:
+      # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
       lr: 1e-6
+      # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
       lr_warmup_steps_ratio: 0.  # the total steps will be injected during runtime
+      # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
       min_lr_ratio: null   # only useful for warmup with cosine
+      # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
       warmup_style: constant  # select from constant/cosine
+      # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
       total_training_steps: -1  # must be override by program
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     fsdp_config:
+      # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
       wrap_policy:
         # transformer_layer_cls_to_wrap: None
+        # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
         min_num_params: 0
+      # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
       param_offload: False
+      # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
       grad_offload: False
+      # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
       optimizer_offload: False
+      # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
       fsdp_size: -1
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   ref:
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     fsdp_config:
+      # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
       param_offload: False
+      # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
       wrap_policy:
         # transformer_layer_cls_to_wrap: None
+        # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
         min_num_params: 0
+      # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
       fsdp_size: -1
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     log_prob_micro_batch_size: 128
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     log_prob_use_dynamic_bsz: ${actor_rollout_ref.actor.use_dynamic_bsz}
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     log_prob_max_token_len_per_gpu: ${actor_rollout_ref.actor.ppo_max_token_len_per_gpu}
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     ulysses_sequence_parallel_size: ${actor_rollout_ref.actor.ulysses_sequence_parallel_size} # sp size
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   rollout:
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     name: vllm
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     temperature: 1.0
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     top_k: -1 # 0 for hf rollout, -1 for vllm rollout
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     top_p: 0.95
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     prompt_length: ${data.max_prompt_length}  # not use for opensource
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     response_length: ${data.max_response_length}
     # for vllm rollout
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     dtype: bfloat16 # should align with FSDP
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     gpu_memory_utilization: 0.5
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     ignore_eos: False
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     enforce_eager: True
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     free_cache_engine: True
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     load_format: dummy_dtensor
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     tensor_model_parallel_size: 2
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     max_num_batched_tokens: 8192
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     max_num_seqs: 1024
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     log_prob_micro_batch_size: 128
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     log_prob_use_dynamic_bsz: ${actor_rollout_ref.actor.use_dynamic_bsz}
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     log_prob_max_token_len_per_gpu: ${actor_rollout_ref.actor.ppo_max_token_len_per_gpu}
     # for hf rollout
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     do_sample: True
     # number of responses (i.e. num sample times)
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     n: 1 # > 1 for grpo
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     n_agent: 1 # different here used for agent tasks only
 
+# 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
 critic:
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   strategy: fsdp
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   optim:
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     lr: 1e-5
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     lr_warmup_steps_ratio: 0.  # the total steps will be injected during runtime
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     min_lr_ratio: null   # only useful for warmup with cosine
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     warmup_style: constant  # select from constant/cosine
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     total_training_steps: -1  # must be override by program
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   model:
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     path: ~/models/deepseek-llm-7b-chat
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     tokenizer_path: ${actor_rollout_ref.model.path}
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     override_config: { }
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     external_lib: ${actor_rollout_ref.model.external_lib}
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     enable_gradient_checkpointing: False
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     use_remove_padding: False
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     fsdp_config:
+      # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
       param_offload: False
+      # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
       grad_offload: False
+      # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
       optimizer_offload: False
+      # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
       wrap_policy:
         # transformer_layer_cls_to_wrap: None
+        # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
         min_num_params: 0
+      # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
       fsdp_size: -1
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   ppo_mini_batch_size: ${actor_rollout_ref.actor.ppo_mini_batch_size}
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   ppo_micro_batch_size: 64
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   forward_micro_batch_size: ${critic.ppo_micro_batch_size}
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   use_dynamic_bsz: ${actor_rollout_ref.actor.use_dynamic_bsz}
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   ppo_max_token_len_per_gpu: 32768 # (${actor_rollout_ref.actor.ppo_max_token_len_per_gpu}) * 2
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   forward_max_token_len_per_gpu: ${critic.ppo_max_token_len_per_gpu}
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   ulysses_sequence_parallel_size: 1 # sp size
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   ppo_epochs: ${actor_rollout_ref.actor.ppo_epochs}
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   shuffle: ${actor_rollout_ref.actor.shuffle}
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   grad_clip: 1.0
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   cliprange_value: 0.5
 
+# 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
 reward_model:
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   enable: False
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   strategy: fsdp
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   model:
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     input_tokenizer: ${actor_rollout_ref.model.path}  # set this to null if the chat template is identical
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     path: ~/models/FsfairX-LLaMA3-RM-v0.1
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     external_lib: ${actor_rollout_ref.model.external_lib}
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     use_remove_padding: False
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     fsdp_config:
+      # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
       min_num_params: 0
+      # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
       param_offload: False
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   micro_batch_size: 64
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   max_length: null
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   ulysses_sequence_parallel_size: 1 # sp size
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   use_dynamic_bsz: ${critic.use_dynamic_bsz}
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   forward_max_token_len_per_gpu: ${critic.forward_max_token_len_per_gpu}
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   structure_format_score: 0
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   final_format_score: 0
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   retrieval_score: 0
 
+# 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
 retriever:
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   url: "http://127.0.0.1:8000/retrieve"
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   topk: 3
 
+# 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
 algorithm:
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   gamma: 1.0
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   lam: 1.0
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   adv_estimator: gae
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   no_think_rl: False
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   kl_penalty: kl  # how to estimate kl divergence
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   kl_ctrl:
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     type: fixed
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     kl_coef: 0.001
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   state_masking:
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     start_state_marker: "<information>"
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     end_state_marker: "</information>"
 
+# 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
 trainer:
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   total_epochs: 30
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   total_training_steps: null
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   project_name: verl_examples
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   experiment_name: gsm8k
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   logger: [ 'console', 'wandb' ]
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   nnodes: 1
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   n_gpus_per_node: 8
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   save_freq: -1
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   test_freq: -1
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   critic_warmup: 0
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   default_hdfs_dir: ~/experiments/gsm8k/ppo/${trainer.experiment_name}
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   default_local_dir: checkpoints/${trainer.project_name}/${trainer.experiment_name}
 
+# 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
 max_turns: 10
-do_search: true
+# 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。do_search: true

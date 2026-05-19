@@ -1,22 +1,34 @@
+# === 中文逐行注释辅助：本文件已按复现学习用途补充中文注释，原始配置/脚本逻辑保持不变。===
+# 中文注释：下一行定义 Shell 变量，用于集中管理路径、模型或实验参数。
 data_name=nq_hotpotqa_train
 
+# 中文注释：下一行设置环境变量，供后续命令或训练进程读取。
 export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
+# 中文注释：下一行设置环境变量，供后续命令或训练进程读取。
 export DATA_DIR=data/${data_name} # first download the data from https://huggingface.co/datasets/PeterJinGo/nq_hotpotqa_train
 
+# 中文注释：下一行定义 Shell 变量，用于集中管理路径、模型或实验参数。
 WAND_PROJECT="Search-R1"
+# 中文注释：下一行定义 Shell 变量，用于集中管理路径、模型或实验参数。
 RAY_DASHBOARD_ADDRESS="http://xx.xx.xx.xx:8265" # your head node address
+# 中文注释：下一行定义 Shell 变量，用于集中管理路径、模型或实验参数。
 N_NODES=4
 
+# 中文注释：下一行设置环境变量，供后续命令或训练进程读取。
 export BASE_MODEL='Qwen/Qwen2.5-32B'
+# 中文注释：下一行设置环境变量，供后续命令或训练进程读取。
 export EXPERIMENT_NAME=${train_data}-${test_data}-search-r1-grpo-qwen2.5-32b-em-multinode-${N_NODES}
 
 # set -x
+# 中文注释：下一行设置环境变量，供后续命令或训练进程读取。
 export VLLM_ATTENTION_BACKEND=XFORMERS # vllm + qwen2-7b with flash_attn has some issues
 
 # max_prompt_length = (config['training']['max_start_length'] + config['training']['max_response_length'] * (config['training']['max_turns'] - 1) + config['training']['max_obs_length'] * config['training']['max_turns'])
 
+# 中文注释：下一行执行脚本步骤，保持原有复现流程不变。
 ulimit -n 65535
 
+# 中文注释：下一行定义 Shell 变量，用于集中管理路径、模型或实验参数。
 ray job submit --address=$RAY_DASHBOARD_ADDRESS \
     --runtime-env=verl/trainer/runtime_env.yaml \
     --no-wait \

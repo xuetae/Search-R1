@@ -1,3 +1,4 @@
+# === 中文逐行注释辅助：本文件已按复现学习用途补充中文注释，原始代码逻辑保持不变。===
 # Copyright 2024 Bytedance Ltd. and/or its affiliates
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# 中文注释：下一行保持原始实现逻辑，是当前流程中的一个具体执行步骤。
 """
 Actor Worker基类 (Actor Base Class)
 =================================
@@ -26,16 +28,23 @@ Actor模型通常是一个因果语言模型（Causal LM），在RL训练中被�
 Actor与Critic（价值函数）协同工作：Actor生成动作，Critic估计价值基线。
 """
 
+# 中文注释：下一行导入依赖，为后续代码提供外部模块或工具函数。
 from abc import ABC, abstractmethod  # 抽象基类库
+# 中文注释：下一行导入依赖，为后续代码提供外部模块或工具函数。
 from typing import Iterable, Dict  # 类型注解
 
+# 中文注释：下一行导入依赖，为后续代码提供外部模块或工具函数。
 from verl import DataProto  # DataProto数据接口
+# 中文注释：下一行导入依赖，为后续代码提供外部模块或工具函数。
 import torch  # PyTorch
 
+# 中文注释：下一行保持原始实现逻辑，是当前流程中的一个具体执行步骤。
 __all__ = ['BasePPOActor']  # 导出的公共接口
 
 
+# 中文注释：下一行定义类，用于组织相关状态与行为。
 class BasePPOActor(ABC):
+    # 中文注释：下一行保持原始实现逻辑，是当前流程中的一个具体执行步骤。
     """
     PPO Actor基类
     
@@ -53,7 +62,9 @@ class BasePPOActor(ABC):
     4. 重复2-3直到收敛
     """
 
+    # 中文注释：下一行定义函数，封装当前模块中的一段可复用逻辑。
     def __init__(self, config):
+        # 中文注释：下一行保持原始实现逻辑，是当前流程中的一个具体执行步骤。
         """
         初始化Actor
         
@@ -61,11 +72,16 @@ class BasePPOActor(ABC):
             config: 配置对象（OmegaConf DictConfig）
                     包含模型路径、学习率等配置参数
         """
+        # 中文注释：下一行保持原始实现逻辑，是当前流程中的一个具体执行步骤。
         super().__init__()
+        # 中文注释：下一行保持原始实现逻辑，是当前流程中的一个具体执行步骤。
         self.config = config
 
+    # 中文注释：下一行是装饰器，用于给后续函数或类附加框架行为。
     @abstractmethod
+    # 中文注释：下一行定义函数，封装当前模块中的一段可复用逻辑。
     def compute_log_prob(self, data: DataProto) -> torch.Tensor:
+        # 中文注释：下一行保持原始实现逻辑，是当前流程中的一个具体执行步骤。
         """
         计算日志概率
         
@@ -86,10 +102,14 @@ class BasePPOActor(ABC):
         - 通常通过softmax后取log得到
         - 需要忽略pad token的贡献（通过attention_mask过滤）
         """
+        # 中文注释：下一行保持原始实现逻辑，是当前流程中的一个具体执行步骤。
         pass
 
+    # 中文注释：下一行是装饰器，用于给后续函数或类附加框架行为。
     @abstractmethod
+    # 中文注释：下一行定义函数，封装当前模块中的一段可复用逻辑。
     def update_policy(self, data: DataProto) -> Dict:
+        # 中文注释：下一行保持原始实现逻辑，是当前流程中的一个具体执行步骤。
         """
         更新策略网络
         
@@ -117,4 +137,5 @@ class BasePPOActor(ABC):
         - 通常需要配合熵正则化和KL惩罚
         - 返回的统计信息用于监控训练进度
         """
+        # 中文注释：下一行保持原始实现逻辑，是当前流程中的一个具体执行步骤。
         pass

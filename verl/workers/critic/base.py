@@ -1,3 +1,4 @@
+# === 中文逐行注释辅助：本文件已按复现学习用途补充中文注释，原始代码逻辑保持不变。===
 # Copyright 2024 Bytedance Ltd. and/or its affiliates
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# 中文注释：下一行保持原始实现逻辑，是当前流程中的一个具体执行步骤。
 """
 Critic Worker基类 (Critic Base Class)
 =====================================
@@ -27,16 +29,22 @@ Critic与Actor协同工作：Critic提供价值基线，Actor基于优势信号�
 价值函数的准确性直接影响RL训练的稳定性和效率。
 """
 
+# 中文注释：下一行导入依赖，为后续代码提供外部模块或工具函数。
 from abc import ABC, abstractmethod  # 抽象基类库
 
+# 中文注释：下一行导入依赖，为后续代码提供外部模块或工具函数。
 import torch  # PyTorch
 
+# 中文注释：下一行导入依赖，为后续代码提供外部模块或工具函数。
 from verl import DataProto  # DataProto数据接口
 
+# 中文注释：下一行保持原始实现逻辑，是当前流程中的一个具体执行步骤。
 __all__ = ['BasePPOCritic']  # 导出的公共接口
 
 
+# 中文注释：下一行定义类，用于组织相关状态与行为。
 class BasePPOCritic(ABC):
+    # 中文注释：下一行保持原始实现逻辑，是当前流程中的一个具体执行步骤。
     """
     PPO Critic基类
     
@@ -54,7 +62,9 @@ class BasePPOCritic(ABC):
     4. 重复2-3直到收敛
     """
 
+    # 中文注释：下一行定义函数，封装当前模块中的一段可复用逻辑。
     def __init__(self, config):
+        # 中文注释：下一行保持原始实现逻辑，是当前流程中的一个具体执行步骤。
         """
         初始化Critic
         
@@ -62,11 +72,16 @@ class BasePPOCritic(ABC):
             config: 配置对象（OmegaConf DictConfig）
                     包含模型路径、学习率等配置参数
         """
+        # 中文注释：下一行保持原始实现逻辑，是当前流程中的一个具体执行步骤。
         super().__init__()
+        # 中文注释：下一行保持原始实现逻辑，是当前流程中的一个具体执行步骤。
         self.config = config
 
+    # 中文注释：下一行是装饰器，用于给后续函数或类附加框架行为。
     @abstractmethod
+    # 中文注释：下一行定义函数，封装当前模块中的一段可复用逻辑。
     def compute_values(self, data: DataProto) -> torch.Tensor:
+        # 中文注释：下一行保持原始实现逻辑，是当前流程中的一个具体执行步骤。
         """
         计算价值估计
         
@@ -88,10 +103,14 @@ class BasePPOCritic(ABC):
         - 需要忽略pad token的贡献（通过attention_mask过滤）
         - 返回的价值用于计算：advantage = reward + gamma * next_value - value
         """
+        # 中文注释：下一行保持原始实现逻辑，是当前流程中的一个具体执行步骤。
         pass
 
+    # 中文注释：下一行是装饰器，用于给后续函数或类附加框架行为。
     @abstractmethod
+    # 中文注释：下一行定义函数，封装当前模块中的一段可复用逻辑。
     def update_critic(self, data: DataProto):
+        # 中文注释：下一行保持原始实现逻辑，是当前流程中的一个具体执行步骤。
         """
         更新Critic网络
         
@@ -118,4 +137,5 @@ class BasePPOCritic(ABC):
         - 返回的统计信息用于监控Critic训练进度
         - Critic的好坏直接影响Actor的优势计算准确性
         """
+        # 中文注释：下一行保持原始实现逻辑，是当前流程中的一个具体执行步骤。
         pass

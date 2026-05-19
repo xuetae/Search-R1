@@ -1,78 +1,126 @@
+# === 中文逐行注释辅助：本文件已按复现学习用途补充中文注释，原始配置/脚本逻辑保持不变。===
 # -------------------------------
 # build-system
 # -------------------------------
+# 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
 [build-system]
+# 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
 requires = [
+    # 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
     "setuptools>=61.0",
+    # 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
     "wheel"
+# 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
 ]
+# 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
 build-backend = "setuptools.build_meta"
 
 # -------------------------------
 # project (PEP 621 metadata)
 # -------------------------------
+# 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
 [project]
+# 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
 name = "verl"
 # We'll mark the version as "dynamic" because it's read from the file "verl/version/version" 
 # (PEP 621 calls this "dynamic version"). 
 # The actual version is specified in the [tool.setuptools.dynamic] section below.
+# 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
 dynamic = ["version"]
 
+# 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
 description = "veRL: Volcano Engine Reinforcement Learning for LLM"
+# 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
 license = {file = "LICENSE"}  # or "Apache-2.0", if you prefer an SPDX identifier
+# 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
 readme = {file = "README.md", content-type = "text/markdown"}
+# 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
 requires-python = ">=3.8"
 
+# 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
 authors = [
+  # 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
   { name = "Bytedance - Seed - MLSys", email = "zhangchi.usc1992@bytedance.com" },
+  # 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
   { name = "Bytedance - Seed - MLSys", email = "gmsheng@connect.hku.hk" },
+# 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
 ]
 
 # Dependencies corresponding to install_requires in setup.py
+# 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
 dependencies = [
+    # 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
     "accelerate",
+    # 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
     "codetiming",
+    # 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
     "datasets",
+    # 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
     "dill",
+    # 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
     "hydra-core",
+    # 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
     "numpy",
+    # 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
     "pybind11",
+    # 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
     "ray",
+    # 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
     "tensordict",
+    # 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
     "transformers<4.48",
+    # 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
     "vllm<=0.6.3",
+# 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
 ]
 
 # Optional dependencies (extras_require in setup.py)
+# 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
 [project.optional-dependencies]
+# 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
 test = [
+  # 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
   "pytest", "yapf"
+# 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
 ]
 
 # URLs
+# 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
 [project.urls]
+# 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
 Homepage = "https://github.com/volcengine/verl"
 
 # -------------------------------
 # tool.setuptools - Additional config
 # -------------------------------
+# 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
 [tool.setuptools]
 # True means `setuptools` will attempt to include all relevant files in package_data automatically.
 # This corresponds to `include_package_data=True` in setup.py.
+# 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
 include-package-data = true
 
 # We read the version from a file in 'verl/version/version'
+# 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
 [tool.setuptools.dynamic]
+# 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
 version = {file = "verl/version/version"}
 
 # If you need to mimic `package_dir={'': '.'}`:
+# 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
 [tool.setuptools.package-dir]
+# 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
 "" = "."
 
 # If you need to include specific non-Python data (like YAML files or version file):
 # This is the rough equivalent of package_data={'': ['version/*'], 'verl': ['trainer/config/*.yaml']}
+# 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
 [tool.setuptools.package-data]
+# 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
 verl = [
+  # 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
   "version/*",
+  # 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
   "trainer/config/*.yaml"
+# 中文注释：下一行是 TOML 配置项，用于声明项目、依赖或工具设置。
 ]

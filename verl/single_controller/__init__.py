@@ -1,3 +1,4 @@
+# === 中文逐行注释辅助：本文件已按复现学习用途补充中文注释，原始代码逻辑保持不变。===
 # Copyright 2024 Bytedance Ltd. and/or its affiliates
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,9 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# 中文注释：下一行导入依赖，为后续代码提供外部模块或工具函数。
 import os
 
+# 中文注释：下一行保持原始实现逻辑，是当前流程中的一个具体执行步骤。
 version_folder = os.path.dirname(os.path.join(os.path.abspath(__file__)))
 
+# 中文注释：下一行进入上下文管理器，自动管理资源生命周期。
 with open(os.path.join(version_folder, 'version/version')) as f:
+    # 中文注释：下一行保持原始实现逻辑，是当前流程中的一个具体执行步骤。
     __version__ = f.read().strip()

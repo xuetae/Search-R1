@@ -1,6 +1,10 @@
+# === 中文逐行注释辅助：本文件已按复现学习用途补充中文注释，原始配置/脚本逻辑保持不变。===
+# 中文注释：下一行设置环境变量，供后续命令或训练进程读取。
 export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
+# 中文注释：下一行设置环境变量，供后续命令或训练进程读取。
 export DATA_DIR='data/nq_search'
 
+# 中文注释：下一行定义 Shell 变量，用于集中管理路径、模型或实验参数。
 WAND_PROJECT='Search-R1'
 
 # export BASE_MODEL='meta-llama/Llama-3.2-3B'
@@ -12,7 +16,9 @@ WAND_PROJECT='Search-R1'
 # export BASE_MODEL='meta-llama/Llama-3.1-8B-Instruct'
 # export EXPERIMENT_NAME=nq-search-r1-grpo-llama3.1-8b-it-em
 
+# 中文注释：下一行设置环境变量，供后续命令或训练进程读取。
 export BASE_MODEL='Qwen/Qwen2.5-3B'
+# 中文注释：下一行设置环境变量，供后续命令或训练进程读取。
 export EXPERIMENT_NAME=nq-search-r1-grpo-qwen2.5-3b-em
 # export BASE_MODEL='Qwen/Qwen2.5-3B-Instruct'
 # export EXPERIMENT_NAME=nq-search-r1-grpo-qwen2.5-3b-it-em
@@ -22,10 +28,12 @@ export EXPERIMENT_NAME=nq-search-r1-grpo-qwen2.5-3b-em
 # export EXPERIMENT_NAME=nq-search-r1-grpo-qwen2.5-7b-it-em
 
 # set -x
+# 中文注释：下一行设置环境变量，供后续命令或训练进程读取。
 export VLLM_ATTENTION_BACKEND=XFORMERS # vllm + qwen2-7b with flash_attn has some issues
 
 # max_prompt_length = (config['training']['max_start_length'] + config['training']['max_response_length'] * (config['training']['max_turns'] - 1) + config['training']['max_obs_length'] * config['training']['max_turns'])
 
+# 中文注释：下一行启动 Python 程序，是脚本的主要执行命令。
 PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
     data.train_files=$TRAIN_DATA_DIR/train.parquet \
     data.val_files=$TEST_DATA_DIR/test.parquet \

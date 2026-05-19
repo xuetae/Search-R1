@@ -1,42 +1,84 @@
+# === 中文逐行注释辅助：本文件已按复现学习用途补充中文注释，原始配置/脚本逻辑保持不变。===
+# 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
 data:
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   train_batch_size: 256
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   micro_batch_size: 16  # this is also val batch size
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   train_files: ~/data/gsm8k/train.parquet
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   val_files: ~/data/gsm8k/test.parquet
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   prompt_key: question
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   response_key: answer
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   max_length: 1024
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   truncation: error
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   balance_dp_token: False
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   chat_template: null
+# 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
 model:
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   partial_pretrain: ~/models/gemma-1.1-7b-it
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   fsdp_config:
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     wrap_policy:
+      # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
       min_num_params: 0
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     cpu_offload: False
+    # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
     offload_params: False
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   external_lib: null
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   enable_gradient_checkpointing: False
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   trust_remote_code: False
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   lora_rank: 0  # Set to positive value to enable LoRA (e.g., 32)
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   lora_alpha: 16  # LoRA scaling factor
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   target_modules: [q_proj, v_proj]  # Target modules for LoRA adaptation
+# 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
 optim:
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   lr: 1e-5
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   betas: [0.9, 0.95]
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   weight_decay: 0.01
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   warmup_steps_ratio: 0.1
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   clip_grad: 1.0
 
+# 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
 trainer:
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   default_local_dir: /tmp/sft_model
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   default_hdfs_dir: hdfs://tmp/experiments/gsm8k/gemma-1.1-7b-it/ # change the hdfs path here
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   resume_path: null
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   project_name: gsm8k-sft
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   experiment_name: test
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   total_epochs: 4
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   total_training_steps: null
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   validate_before_training: False
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   logger: ['console']
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   seed: 1

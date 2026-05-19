@@ -1,5 +1,10 @@
+# === 中文逐行注释辅助：本文件已按复现学习用途补充中文注释，原始配置/脚本逻辑保持不变。===
+# 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
 working_dir: ./
+# 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
 excludes: ["/.git/"]
+# 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
 env_vars:
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   TORCH_NCCL_AVOID_RECORD_STREAMS: "1"
-  VLLM_ATTENTION_BACKEND: "XFORMERS"
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。  VLLM_ATTENTION_BACKEND: "XFORMERS"

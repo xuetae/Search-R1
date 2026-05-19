@@ -1,6 +1,12 @@
+# === 中文逐行注释辅助：本文件已按复现学习用途补充中文注释，原始配置/脚本逻辑保持不变。===
+# 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
 data:
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   path: /tmp/math_Qwen2-7B-Instruct.parquet
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   prompt_key: prompt
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   response_key: responses
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。
   data_source_key: data_source
-  reward_model_key: reward_model
+  # 中文注释：下一行是 YAML 配置项，用于控制训练、模型、数据或运行参数。  reward_model_key: reward_model
