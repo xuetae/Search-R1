@@ -1,24 +1,55 @@
+"""
+检索和重排服务器 (Retrieval and Reranking Server)
+========================================
+功能：结合检索和交叉编码重排的联合服务器
+
+架构：
+1. 检索阶段：使用BM25或FAISS获取初始候选文档
+2. 重排阶段：使用交叉编码器重新排序文档
+
+工作流：
+1. 接收查询列表
+2. 使用检索器批量获取文档
+3. 使用重排器重新评分和排序
+4. 返回最终排序结果
+
+依赖：
+- sentence-transformers: 交叉编码器模型
+- FastAPI: Web服务框架
+"""
+
 # pip install -U sentence-transformers
-import os
-import re
-import argparse
-from dataclasses import dataclass, field
-from typing import List, Optional
-from collections import defaultdict
+import os  # 操作系统接口
+import re  # 正则表达式
+import argparse  # 命令行参数解析
+from dataclasses import dataclass, field  # 数据类
+from typing import List, Optional  # 类型注解
+from collections import defaultdict  # 默认字典
 
-import torch
-import numpy as np
-from fastapi import FastAPI
-from pydantic import BaseModel
-from sentence_transformers import CrossEncoder
+import torch  # PyTorch
+import numpy as np  # NumPy
+from fastapi import FastAPI  # FastAPI框架
+from pydantic import BaseModel  # 数据验证模型
+from sentence_transformers import CrossEncoder  # 交叉编码器
 
-from retrieval_server import get_retriever, Config as RetrieverConfig
-from rerank_server import SentenceTransformerCrossEncoder
+from retrieval_server import get_retriever, Config as RetrieverConfig  # 检索器
+from rerank_server import SentenceTransformerCrossEncoder  # 重排器
 
-app = FastAPI()
+app = FastAPI()  # 创建FastAPI应用
 
 def convert_title_format(text):
-    # Use regex to extract the title and the content
+    """
+    转换标题格式
+    
+    功能：将'(Title: xxx) content'格式转换为'"xxx"\\ncontent'格式
+    
+    参数：
+        text: 原始文本
+        
+    返回：
+        转换后的文本
+    """
+    # 使用正则表达式提取标题和内容
     match = re.match(r'\(Title:\s*([^)]+)\)\s*(.+)', text, re.DOTALL)
     if match:
         title, content = match.groups()
@@ -26,28 +57,58 @@ def convert_title_format(text):
     else:
         return text
 
-# ----------- Combined Request Schema -----------
 class SearchRequest(BaseModel):
-    queries: List[str]
-    topk_retrieval: Optional[int] = 10
-    topk_rerank: Optional[int] = 3
-    return_scores: bool = False
+    """
+    搜索请求数据模型
+    
+    属性：
+        queries: 查询文本列表
+        topk_retrieval: 检索阶段返回的文档数
+        topk_rerank: 重排后返回的文档数
+        return_scores: 是否返回相似度分数
+    """
+    queries: List[str]  # 查询列表
+    topk_retrieval: Optional[int] = 10  # 检索Top-K
+    topk_rerank: Optional[int] = 3  # 重排Top-K
+    return_scores: bool = False  # 是否返回分数
 
-# ----------- Reranker Config Schema -----------
 @dataclass
 class RerankerArguments:
-    max_length: int = field(default=512)
-    rerank_topk: int = field(default=3)
-    rerank_model_name_or_path: str = field(default="cross-encoder/ms-marco-MiniLM-L12-v2")
-    batch_size: int = field(default=32)
-    reranker_type: str = field(default="sentence_transformer")
+    """
+    重排器配置参数
+    
+    属性：
+        max_length: 最大输入长度
+        rerank_topk: 重排返回文档数
+        rerank_model_name_or_path: 重排模型路径
+        batch_size: 批处理大小
+        reranker_type: 重排器类型
+    """
+    max_length: int = field(default=512)  # 最大长度
+    rerank_topk: int = field(default=3)  # 重排Top-K
+    rerank_model_name_or_path: str = field(default="cross-encoder/ms-marco-MiniLM-L12-v2")  # 模型
+    batch_size: int = field(default=32)  # 批大小
+    reranker_type: str = field(default="sentence_transformer")  # 重排器类型
 
 def get_reranker(config):
+    """
+    获取重排器实例
+    
+    参数：
+        config: 重排器配置对象
+        
+    返回：
+        交叉编码器重排器实例
+        
+    说明：
+    - 支持sentence_transformer交叉编码器
+    - 自动选择GPU或CPU
+    """
     if config.reranker_type == "sentence_transformer":
         return SentenceTransformerCrossEncoder.load(
             config.rerank_model_name_or_path,
             batch_size=config.batch_size,
-            device="cuda" if torch.cuda.is_available() else "cpu"
+            device="cuda" if torch.cuda.is_available() else "cpu"  # GPU优先
         )
     else:
         raise ValueError(f"Unknown reranker type: {config.reranker_type}")

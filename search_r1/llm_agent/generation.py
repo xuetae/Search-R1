@@ -1,45 +1,98 @@
-import torch
-import re
-from collections import defaultdict
-import os
-from typing import List, Dict, Any, Tuple
-from dataclasses import dataclass
-from .tensor_helper import TensorHelper, TensorConfig
-from verl import DataProto
-from verl.utils.tracking import Tracking
-import shutil
-import requests
+"""
+Search-R1 LLM生成管理模块
+============================
+功能：负责LLM的推理与搜索交织的生成逻辑，包括：
+1. 多轮交互生成（思考、搜索、回答）
+2. 张量操作与批处理
+3. 与环境交互执行预测
+4. 多GPU并行处理
+
+主要类：GenerationConfig, LLMGenerationManager
+"""
+import torch  # PyTorch 张量计算库
+import re  # 正则表达式，用于解析搜索查询和答案
+from collections import defaultdict  # 默认字典，便于统计
+import os  # 操作系统接口
+from typing import List, Dict, Any, Tuple  # 类型注解
+from dataclasses import dataclass  # 数据类装饰器
+from .tensor_helper import TensorHelper, TensorConfig  # 张量处理工具
+from verl import DataProto  # veRL框架的数据协议
+from verl.utils.tracking import Tracking  # 轨迹跟踪工具
+import shutil  # 文件操作库
+import requests  # HTTP请求库
 
 @dataclass
 class GenerationConfig:
-    max_turns: int
-    max_start_length: int
-    max_prompt_length: int 
-    max_response_length: int
-    max_obs_length: int
-    num_gpus: int
-    no_think_rl: bool=False
-    search_url: str = None
-    topk: int = 3
+    """
+    生成配置数据类
+    ================
+    包含生成过程中的所有超参数配置
+    
+    属性：
+        max_turns: 最大交互轮数 (思考+搜索+回答的轮数)
+        max_start_length: 提示词的最大长度
+        max_prompt_length: 包括所有内容的最大提示长度
+        max_response_length: 单次生成响应的最大长度
+        max_obs_length: 观察信息（搜索结果）的最大长度
+        num_gpus: 用于生成的GPU数量
+        no_think_rl: 是否禁用思考模式（仅保留动作）
+        search_url: 搜索服务的URL端点
+        topk: 检索返回的前K个文档
+    """
+    max_turns: int  # 最多执行多少轮的搜索/答案循环
+    max_start_length: int  # 初始提示的最大令牌数
+    max_prompt_length: int  # 当前上下文的最大令牌数
+    max_response_length: int  # 单次生成的最大令牌数
+    max_obs_length: int  # 搜索结果观察的最大令牌数
+    num_gpus: int  # 用于并行生成的GPU数量
+    no_think_rl: bool=False  # 是否不进行思考RL训练
+    search_url: str = None  # 搜索服务的HTTP地址
+    topk: int = 3  # 每次搜索返回的文档数
 
 class LLMGenerationManager:
+    """
+    LLM生成管理器
+    =============
+    管理LLM的多轮推理与搜索交织的生成过程
+    
+    主要功能：
+    1. 批量处理多个样本的生成
+    2. 协调LLM生成、搜索、环境交互
+    3. 处理张量的并行化和同步
+    4. 管理多轮对话状态
+    
+    工作流程：
+    for each turn:
+        LLM生成 -> 解析<search>或<answer>标签 -> 执行行为 
+        -> 获取观察 -> 更新上下文 -> 下一轮
+    """
     def __init__(
         self,
-        tokenizer,
-        actor_rollout_wg,
-        config: GenerationConfig,
-        is_validation: bool = False,
+        tokenizer,  # 分词器（将文本转换为令牌）
+        actor_rollout_wg,  # Actor回滚工作组（执行LLM生成）
+        config: GenerationConfig,  # 生成配置对象
+        is_validation: bool = False,  # 是否处于验证模式
     ):
-        self.tokenizer = tokenizer
-        self.actor_rollout_wg = actor_rollout_wg
-        self.config = config
-        self.is_validation = is_validation
+        """
+        初始化生成管理器
+        
+        参数：
+            tokenizer: 用于编码/解码文本的分词器
+            actor_rollout_wg: 执行LLM推理的计算单元
+            config: 包含所有超参数的配置对象
+            is_validation: 是否为验证阶段（可能有不同的行为）
+        """
+        self.tokenizer = tokenizer  # 保存分词器
+        self.actor_rollout_wg = actor_rollout_wg  # 保存Actor工作组
+        self.config = config  # 保存配置
+        self.is_validation = is_validation  # 保存验证标志
 
+        # 初始化张量处理工具，配置令牌长度限制
         self.tensor_fn = TensorHelper(TensorConfig(
-            pad_token_id=tokenizer.pad_token_id,
-            max_prompt_length=config.max_prompt_length,
-            max_obs_length=config.max_obs_length,
-            max_start_length=config.max_start_length
+            pad_token_id=tokenizer.pad_token_id,  # 填充令牌ID
+            max_prompt_length=config.max_prompt_length,  # 最大提示长度
+            max_obs_length=config.max_obs_length,  # 最大观察长度
+            max_start_length=config.max_start_length  # 最大起始长度
         ))
 
     def _batch_tokenize(self, responses: List[str]) -> torch.Tensor:

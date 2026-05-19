@@ -11,45 +11,105 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""
-Utilities to create common models from huggingface
-"""
-import os
-import warnings
-from typing import Dict, Type
 
-import numpy as np
-import torch
-from torch import nn
-from transformers import AutoConfig, AutoModelForCausalLM, PretrainedConfig, MistralForSequenceClassification
-from verl.models.registry import ModelRegistry
+"""
+模型工具 (Model Utils)
+======================
+功能：从Hugging Face加载和创建模型的通用工具
+
+主要功能：
+1. 创建Actor模型（LLM，用于生成）
+2. 创建Critic模型（LLM + 价值头）
+3. 配置模型覆盖
+4. 模型大小计算
+
+支持的模型：
+- 所有AutoModelForCausalLM支持的模型
+- 如：LLaMA, GPT, Mistral等
+"""
+
+import os  # 操作系统接口
+import warnings  # 警告管理
+from typing import Dict, Type  # 类型注解
+
+import numpy as np  # NumPy数组库
+import torch  # PyTorch
+from torch import nn  # 神经网络模块
+from transformers import AutoConfig, AutoModelForCausalLM, PretrainedConfig, MistralForSequenceClassification  # Hugging Face
+from verl.models.registry import ModelRegistry  # 模型注册表
 
 
 class LambdaLayer(nn.Module):
-
+    """
+    Lambda层：包装任意函数为PyTorch模块
+    
+    功能：将Python函数转换为可调用的神经网络层
+    
+    用途：在模型中集成自定义操作
+    
+    例子：
+        # 创建一个squeeze层
+        squeeze_layer = LambdaLayer(lambda x: torch.squeeze(x, dim=-1))
+    """
     def __init__(self, fn):
         super().__init__()
-        self.fn = fn
+        self.fn = fn  # 保存函数
 
     def forward(self, *args, **kwargs):
+        """前向传播：调用包装的函数"""
         return self.fn(*args, **kwargs)
 
 
 def squeeze(x):
+    """
+    压缩最后一个维度
+    
+    参数：
+        x: 张量
+        
+    返回：
+        压缩后的张量
+    """
     return torch.squeeze(x, dim=-1)
 
 
 def update_model_config(module_config, override_config_kwargs):
+    """
+    更新模型配置
+    
+    参数：
+        module_config: 模型配置对象
+        override_config_kwargs: 要覆盖的配置字典
+        
+    说明：
+    - 直接修改module_config对象的属性
+    - 用于在模型创建前调整配置参数
+    """
     for key, val in override_config_kwargs.items():
-        setattr(module_config, key, val)
+        setattr(module_config, key, val)  # 设置配置属性
 
 
 def get_huggingface_actor_config(model_name: str, override_config_kwargs=None, trust_remote_code=False) -> Dict:
+    """
+    获取Actor模型配置
+    
+    参数：
+        model_name: 模型名称或路径
+        override_config_kwargs: 配置覆盖字典
+        trust_remote_code: 是否信任远程代码
+        
+    返回：
+        更新后的模型配置对象
+    """
     if override_config_kwargs is None:
         override_config_kwargs = {}
     assert isinstance(override_config_kwargs, Dict), \
         f'override_config_kwargs must be a dict, got {type(override_config_kwargs)}'
+    
+    # 从Hugging Face加载配置
     module_config = AutoConfig.from_pretrained(model_name, trust_remote_code=trust_remote_code)
+    
+    # 应用配置覆盖
     update_model_config(module_config, override_config_kwargs)
 
     return module_config
@@ -57,13 +117,24 @@ def get_huggingface_actor_config(model_name: str, override_config_kwargs=None, t
 
 def create_huggingface_actor(model_name: str, override_config_kwargs=None, automodel_kwargs=None) -> nn.Module:
     """
-
-    Args:
-        model_name:
-        actor_override_config_kwargs:
-
-    Returns:
-
+    创建Actor模型（生成模型）
+    
+    功能：创建用于生成文本的LLM模型
+    
+    参数：
+        model_name: 模型名称或路径（如'meta-llama/Llama-2-7b'）
+        override_config_kwargs: 配置覆盖（如num_hidden_layers=12）
+        automodel_kwargs: AutoModelForCausalLM的参数（如device_map='auto'）
+        
+    返回：
+        初始化的模型对象
+        
+    例子：
+        actor = create_huggingface_actor(
+            'meta-llama/Llama-2-7b',
+            override_config_kwargs={'num_layers': 12},
+            automodel_kwargs={'torch_dtype': torch.float16}
+        )
     """
     if override_config_kwargs is None:
         override_config_kwargs = {}
@@ -71,31 +142,52 @@ def create_huggingface_actor(model_name: str, override_config_kwargs=None, autom
         automodel_kwargs = {}
     assert isinstance(override_config_kwargs, Dict), \
         f'override_config_kwargs must be a dict, got {type(override_config_kwargs)}'
+    
+    # 获取配置
     module_config = get_huggingface_actor_config(model_name,
                                                  override_config_kwargs,
                                                  trust_remote_code=automodel_kwargs.get('trust_remote_code', False))
+    
+    # 从配置创建模型
     module: nn.Module = AutoModelForCausalLM.from_config(module_config, **automodel_kwargs)
     return module
 
 
 def create_huggingface_critic(model_name: str, override_config_kwargs=None, automodel_kwargs=None) -> nn.Module:
     """
-
-    Args:
-        model_name:
-        override_config_kwargs:
-
-    Returns:
-
+    创建Critic模型（价值评估模型）
+    
+    功能：创建用于价值评估的模型
+    
+    架构：
+    - 基础：Actor模型（LLM）
+    - 修改：用价值头替换语言模型头
+        - 输入：隐藏状态 [batch_size, seq_len, hidden_size]
+        - 输出：价值分数 [batch_size]
+    
+    参数：
+        model_name: 模型名称
+        override_config_kwargs: 配置覆盖
+        automodel_kwargs: 模型参数
+        
+    返回：
+        初始化的Critic模型
     """
+    # 基于Actor创建模型
     critic_module: nn.Module = create_huggingface_actor(model_name,
                                                         override_config_kwargs=override_config_kwargs,
                                                         automodel_kwargs=automodel_kwargs)
     if automodel_kwargs is None:
         automodel_kwargs = {}
+    
     torch_dtype = automodel_kwargs.get('torch_dtype', torch.float32)
-    critic_module.lm_head = nn.Sequential(nn.Linear(critic_module.config.hidden_size, 1, dtype=torch_dtype),
-                                          LambdaLayer(fn=squeeze))
+    
+    # 替换语言模型头为价值头
+    # 价值头：线性层将隐藏状态映射到单个价值分数，然后squeeze
+    critic_module.lm_head = nn.Sequential(
+        nn.Linear(critic_module.config.hidden_size, 1, dtype=torch_dtype),  # 线性投影到1维
+        LambdaLayer(fn=squeeze)  # 压缩维度
+    )
     return critic_module
 
 

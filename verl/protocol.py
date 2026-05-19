@@ -11,26 +11,45 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 """
-Implement base data transfer protocol between any two functions, modules.
-We can subclass Protocol to define more detailed batch info with specific keys
+veRL数据传输协议
+================
+功能：定义函数和模块之间的标准数据交换协议
+
+核心概念：
+- DataProto: 主要的数据容器，包含张量数据和元信息
+- DataProtoItem: 单个数据点的表示
+- TensorDict: PyTorch的张量字典结构，支持高效的批处理操作
+
+设计特点：
+1. 支持混合数据类型（张量和非张量数据）
+2. 自动批处理管理
+3. 支持灵活的数据索引和切片
+4. 支持元信息存储（用于追踪数据源、权重等）
+
+典型使用场景：
+- 在Actor（生成）、Reward Model、Critic等组件间传输数据
+- 管理RL轨迹数据（prompts、responses、rewards等）
+- 支持分布式训练中的数据同步
 """
 
-import pickle
-import numpy as np
-import copy
-from dataclasses import dataclass, field
-from typing import Callable, Dict, List, Union
+import pickle  # Python对象序列化
+import numpy as np  # NumPy数组库
+import copy  # 深度复制
+from dataclasses import dataclass, field  # 数据类装饰器
+from typing import Callable, Dict, List, Union  # 类型注解
 
-import torch
-import tensordict
-from tensordict import TensorDict
-from torch.utils.data import DataLoader, Dataset
+import torch  # PyTorch张量库
+import tensordict  # PyTorch TensorDict库
+from tensordict import TensorDict  # TensorDict类
+from torch.utils.data import DataLoader, Dataset  # 数据加载工具
 
-from verl.utils.py_functional import union_two_dict
+from verl.utils.py_functional import union_two_dict  # 字典合并工具
 
-__all__ = ['DataProto', 'union_tensor_dict']
+__all__ = ['DataProto', 'union_tensor_dict']  # 导出接口
 
+# 禁用TensorDict的遗留模式
 try:
     tensordict.set_lazy_legacy(False).set()
 except:
@@ -38,39 +57,79 @@ except:
 
 
 def pad_dataproto_to_divisor(data: 'DataProto', size_divisor: int):
-    """Pad a DataProto to size divisible by size_divisor
-
-    Args:
-        size_divisor (int): size divisor
-
-    Returns:
-        data: (DataProto): the padded DataProto
-        pad_size (int)
+    """
+    填充DataProto使其大小可被指定整数整除
+    
+    功能：对于多GPU训练，批次大小需要能被GPU数整除
+    
+    参数：
+        data: 待填充的DataProto
+        size_divisor: 大小整除数（通常是GPU数量）
+        
+    返回：
+        (填充后的DataProto, 填充的样本数)
+        
+    例子：
+        原始批次大小: 10
+        size_divisor: 4
+        填充后: 12（需要添加2个样本）
     """
     assert isinstance(data, DataProto), 'data must be a DataProto'
     if len(data) % size_divisor != 0:
+        # 计算需要填充的样本数
         pad_size = size_divisor - len(data) % size_divisor
+        # 通过复制前pad_size个样本来填充
         data_padded = DataProto.concat([data, data[:pad_size]])
     else:
+        # 无需填充
         pad_size = 0
         data_padded = data
     return data_padded, pad_size
 
 
 def unpad_dataproto(data: 'DataProto', pad_size):
+    """
+    移除填充的样本
+    
+    功能：与pad_dataproto_to_divisor相反
+    
+    参数：
+        data: 包含填充的DataProto
+        pad_size: 填充的样本数（来自pad_dataproto_to_divisor的返回值）
+        
+    返回：
+        去除填充后的DataProto
+    """
     if pad_size != 0:
-        data = data[:-pad_size]
+        data = data[:-pad_size]  # 移除最后pad_size个样本
     return data
 
 
 def union_tensor_dict(tensor_dict1: TensorDict, tensor_dict2: TensorDict) -> TensorDict:
-    """Union two tensordicts."""
+    """
+    合并两个TensorDict
+    
+    功能：将tensor_dict2中的所有键值对添加到tensor_dict1
+    
+    参数：
+        tensor_dict1: 目标TensorDict（会被修改）
+        tensor_dict2: 源TensorDict
+        
+    返回：
+        合并后的TensorDict（与tensor_dict1相同）
+        
+    约束：
+    - 两个字典必须有相同的批次大小
+    - 如果键重复，值必须相同
+    """
     assert tensor_dict1.batch_size == tensor_dict2.batch_size, \
         f'Two tensor dict must have identical batch size. Got {tensor_dict1.batch_size} and {tensor_dict2.batch_size}'
     for key in tensor_dict2.keys():
         if key not in tensor_dict1.keys():
+            # 新键直接添加
             tensor_dict1[key] = tensor_dict2[key]
         else:
+            # 重复键需要验证值相同
             assert tensor_dict1[key].equal(tensor_dict2[key]), \
                 f'{key} in tensor_dict1 and tensor_dict2 are not the same object'
 
@@ -78,10 +137,17 @@ def union_tensor_dict(tensor_dict1: TensorDict, tensor_dict2: TensorDict) -> Ten
 
 
 def union_numpy_dict(tensor_dict1: dict[np.ndarray], tensor_dict2: dict[np.ndarray]) -> dict[np.ndarray]:
+    """
+    合并两个NumPy数组字典
+    
+    类似于union_tensor_dict但用于NumPy数组
+    """
     for key, val in tensor_dict2.items():
         if key in tensor_dict1:
+            # 验证类型
             assert isinstance(tensor_dict2[key], np.ndarray)
             assert isinstance(tensor_dict1[key], np.ndarray)
+            # 验证值相同
             assert np.all(tensor_dict2[key] == tensor_dict1[key]), \
                 f'{key} in tensor_dict1 and tensor_dict2 are not the same object'
         tensor_dict1[key] = val
@@ -90,31 +156,45 @@ def union_numpy_dict(tensor_dict1: dict[np.ndarray], tensor_dict2: dict[np.ndarr
 
 
 def list_of_dict_to_dict_of_list(list_of_dict: list[dict]):
+    """
+    转换数据结构：从字典列表到列表字典
+    
+    功能：便于批处理
+    
+    例子：
+        输入:  [{'a': 1, 'b': 2}, {'a': 3, 'b': 4}]
+        输出:  {'a': [1, 3], 'b': [2, 4]}
+    """
     if len(list_of_dict) == 0:
         return {}
-    keys = list_of_dict[0].keys()
-    output = {key: [] for key in keys}
+    keys = list_of_dict[0].keys()  # 获取所有键
+    output = {key: [] for key in keys}  # 初始化输出字典
     for data in list_of_dict:
         for key, item in data.items():
             assert key in output
-            output[key].append(item)
+            output[key].append(item)  # 添加到对应键的列表
     return output
 
 
 def fold_batch_dim(data: 'DataProto', new_batch_size):
     """
-    Fold a batch dim from [bsz, xxx] into [new_bsz, bsz // new_bsz, xxx]
+    折叠批次维度
+    
+    功能：将[bsz, xxx]重形为[new_bsz, bsz // new_bsz, xxx]
+    
+    用途：用于某些特殊的处理流程（如多步RL）
     """
     batch_size = data.batch.batch_size[0]
-
     assert batch_size % new_batch_size == 0
 
     tensor: TensorDict = data.batch
     non_tensor = data.non_tensor_batch
 
+    # 重形张量
     tensor = tensor.view(new_batch_size, -1)
     tensor.auto_batch_size_(batch_dims=1)
 
+    # 重形非张量数据
     for key, val in non_tensor.items():
         non_tensor[key] = np.reshape(val, newshape=(new_batch_size, -1, *val.shape[1:]))
 
@@ -123,7 +203,11 @@ def fold_batch_dim(data: 'DataProto', new_batch_size):
 
 def unfold_batch_dim(data: 'DataProto', batch_dims=2):
     """
-    Unfold the first n dims as new batch dim
+    展开批次维度
+    
+    功能：与fold_batch_dim相反
+    
+    将[new_bsz, bsz // new_bsz, xxx]重形为[bsz, xxx]
     """
     tensor: TensorDict = data.batch
     non_tensor = data.non_tensor_batch
@@ -133,7 +217,6 @@ def unfold_batch_dim(data: 'DataProto', batch_dims=2):
     batch_size = tensor.batch_size[0]
 
     non_tensor_new = {}
-
     for key, val in non_tensor.items():
         non_tensor_new[key] = np.reshape(val, newshape=(batch_size, *val.shape[batch_dims:]))
 
@@ -141,12 +224,25 @@ def unfold_batch_dim(data: 'DataProto', batch_dims=2):
 
 
 def collate_fn(x: list['DataProtoItem']):
+    """
+    数据加载的整理函数
+    
+    功能：用于DataLoader，将多个DataProtoItem合并为单个DataProto
+    
+    参数：
+        x: DataProtoItem列表
+        
+    返回：
+        合并后的DataProto
+    """
     batch = []
     non_tensor_batch = []
     for data in x:
         batch.append(data.batch)
         non_tensor_batch.append(data.non_tensor_batch)
+    # 堆叠张量
     batch = torch.stack(batch).contiguous()
+    # 转换非张量数据
     non_tensor_batch = list_of_dict_to_dict_of_list(non_tensor_batch)
     for key, val in non_tensor_batch.items():
         non_tensor_batch[key] = np.array(val, dtype=object)
@@ -155,7 +251,14 @@ def collate_fn(x: list['DataProtoItem']):
 
 @dataclass
 class DataProtoItem:
-    # TODO(zhangchi.usc1992) add consistency check
+    """
+    单个数据点表示
+    
+    包含：
+    - batch: 张量数据（TensorDict）
+    - non_tensor_batch: 非张量数据（如字符串、对象等）
+    - meta_info: 元信息（如数据源、ID等）
+    """
     batch: TensorDict = None
     non_tensor_batch: Dict = field(default_factory=dict)
     meta_info: Dict = field(default_factory=dict)
@@ -164,37 +267,54 @@ class DataProtoItem:
 @dataclass
 class DataProto:
     """
-    A DataProto is a data structure that aims to provide a standard protocol for data exchange between functions.
-    It contains a batch (TensorDict) and a meta_info (Dict). The batch is a TensorDict https://pytorch.org/tensordict/.
-    TensorDict allows you to manipulate a dictionary of Tensors like a single Tensor. Ideally, the tensors with the
-    same batch size should be put inside batch.
+    veRL数据协议 - 主要数据容器
+    
+    功能：标准化函数间的数据交换
+    
+    属性：
+        batch: TensorDict，包含所有张量数据
+               支持高效的批处理操作
+        non_tensor_batch: 字典，包含非张量数据
+               如答案、元数据等不适合张量的数据
+        meta_info: 元信息字典
+               用于追踪数据源、权重分数等
+    
+    设计理念：
+    - TensorDict允许像操作单个Tensor一样操作Tensor字典
+    - 支持自动批处理（batch_size、device管理）
+    - 支持灵活的索引和切片操作
     """
     batch: TensorDict = None
     non_tensor_batch: Dict = field(default_factory=dict)
     meta_info: Dict = field(default_factory=dict)
 
     def __post_init__(self):
-        # perform necessary checking
+        # 执行初始化后的一致性检查
         self.check_consistency()
 
     def __len__(self):
+        """返回数据的样本数（批次大小）"""
         if self.batch is not None:
             return self.batch.batch_size[0]
         elif self.non_tensor_batch is not None and len(self.non_tensor_batch) > 0:
+            # 如果没有张量，从非张量数据获取大小
             random_key = list(self.non_tensor_batch.keys())[0]
             return self.non_tensor_batch[random_key].shape[0]
         else:
             return 0
 
     def __getitem__(self, item):
+        """索引操作，返回DataProtoItem"""
         tensor_data = self.batch[item]
         non_tensor_data = {key: val[item] for key, val in self.non_tensor_batch.items()}
         return DataProtoItem(batch=tensor_data, non_tensor_batch=non_tensor_data, meta_info=self.meta_info)
 
     def __getstate__(self):
+        """序列化支持"""
         import io
         buffer = io.BytesIO()
         if tensordict.__version__ >= '0.5.0' and self.batch is not None:
+            # 确保张量连续以提高I/O效率
             self.batch = self.batch.contiguous()
             self.batch = self.batch.consolidate()
         torch.save(self.batch, buffer)

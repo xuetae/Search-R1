@@ -11,18 +11,40 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Utils for tokenization."""
-import warnings
 
-__all__ = ['hf_tokenizer']
+"""
+分词器工具 (Tokenizer Utils)
+============================
+功能：提供分词器加载和配置的通用工具
+
+主要功能：
+1. 从Hugging Face预加载分词器
+2. 自动修正某些模型的特殊分词配置
+3. 处理填充符号配置
+
+支持的特殊处理：
+- Gemma-2模型：修正EOS标记的歧义
+- 自动设置填充符号ID
+"""
+
+import warnings  # 警告管理
+
+__all__ = ['hf_tokenizer']  # 导出的公共接口
 
 
 def set_pad_token_id(tokenizer):
-    """Set pad_token_id to eos_token_id if it is None.
-
-    Args:
-        tokenizer (transformers.PreTrainedTokenizer): The tokenizer to be set.
-
+    """
+    设置填充符号ID
+    
+    功能：如果pad_token_id为None，则使用eos_token_id作为替代
+    
+    参数：
+        tokenizer: Hugging Face分词器对象
+        
+    说明：
+    - 许多模型没有定义专用的填充符号
+    - 使用EOS（End-of-Sequence）作为填充符号是常见做法
+    - 添加警告信息以通知用户
     """
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token_id = tokenizer.eos_token_id
@@ -33,21 +55,28 @@ def set_pad_token_id(tokenizer):
 
 
 def hf_tokenizer(name_or_path, correct_pad_token=True, correct_gemma2=True, **kwargs):
-    """Create a huggingface pretrained tokenizer.
-
-    Args:
-        name (str): The name of the tokenizer.
-        correct_pad_token (bool): Whether to correct the pad token id.
-        correct_gemma2 (bool): Whether to correct the gemma2 tokenizer.
-        **kwargs: The keyword arguments for the tokenizer.
-
-    Returns:
-        transformers.PreTrainedTokenizer: The pretrained tokenizer.
-
+    """
+    创建Hugging Face预训练分词器
+    
+    参数：
+        name_or_path: 分词器名称或本地路径
+                      - 模型名称如'meta-llama/Llama-2-7b'
+                      - 本地路径如'/path/to/tokenizer'
+        correct_pad_token: 是否修正填充符号配置（默认True）
+        correct_gemma2: 是否应用Gemma-2特殊处理（默认True）
+        **kwargs: 其他传递给AutoTokenizer的参数
+        
+    返回：
+        分词器对象
+        
+    说明：
+    - Gemma-2修正：原模型中EOS标记存在歧义，可能影响RL性能
+    - 自动修正缺少的填充符号配置
     """
     from transformers import AutoTokenizer
+    
     if correct_gemma2 and isinstance(name_or_path, str) and 'gemma-2-2b-it' in name_or_path:
-        # the EOS token in gemma2 is ambiguious, which may worsen RL performance.
+        # Gemma-2中的EOS标记存在歧义，这可能会降低RL性能
         # https://huggingface.co/google/gemma-2-2b-it/commit/17a01657f5c87135bcdd0ec7abb4b2dece04408a
         warnings.warn('Found gemma-2-2b-it tokenizer. Set eos_token and eos_token_id to <end_of_turn> and 107.')
         kwargs['eos_token'] = '<end_of_turn>'

@@ -11,73 +11,134 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 """
-Note that we don't combine the main with ray_trainer as ray_trainer is used by other main.
+PPO训练主脚本
+=============
+功能：使用PPO（近端策略优化）算法训练LLM
+流程：
+1. 收集轨迹数据（使用当前策略生成回应）
+2. 计算奖励（基于任务或RM模型）
+3. 计算优势估计
+4. 更新策略网络
+5. 重复直到收敛
+
+PPO是一种流行的强化学习算法，在LLM微调中广泛使用
+
+注意：我们不将main与ray_trainer组合，因为ray_trainer被其他main使用
 """
 
-from verl import DataProto
-import torch
-from verl.utils.reward_score import qa_em
-from verl.trainer.ppo.ray_trainer import RayPPOTrainer
-import re
-import numpy as np
+from verl import DataProto  # veRL数据协议
+import torch  # PyTorch张量库
+from verl.utils.reward_score import qa_em  # QA精确匹配评分
+from verl.trainer.ppo.ray_trainer import RayPPOTrainer  # Ray PPO训练器
+import re  # 正则表达式
+import numpy as np  # NumPy数组
 
 def _select_rm_score_fn(data_source):
+    """
+    根据数据源选择相应的奖励计算函数
+    
+    参数：
+        data_source: 数据集名称（nq、hotpotqa等）
+        
+    返回：
+        计算奖励的函数
+    """
+    # 对于QA数据集，使用精确匹配作为奖励
     if data_source in ['nq', 'triviaqa', 'popqa', 'hotpotqa', '2wikimultihopqa', 'musique', 'bamboogle']:
-        return qa_em.compute_score_em
+        return qa_em.compute_score_em  # 返回精确匹配计算函数
     else:
-        raise NotImplementedError
+        raise NotImplementedError  # 其他数据集未实现
 
 
 class RewardManager():
-    """The reward manager.
+    """
+    奖励管理器
+    ==========
+    计算样本的奖励分数
+    
+    支持两种奖励来源：
+    1. 预计算的RM分数（如果数据中包含）
+    2. 基于规则的分数计算（如精确匹配）
     """
 
     def __init__(self, tokenizer, num_examine, format_score=0.) -> None:
-        self.tokenizer = tokenizer
-        self.num_examine = num_examine  # the number of batches of decoded responses to print to the console
-        self.format_score = format_score
+        """
+        初始化奖励管理器
+        
+        参数：
+            tokenizer: 分词器（用于解码）
+            num_examine: 要打印到控制台的解码响应的批次数
+            format_score: 格式分数奖励（0-1之间的浮点数）
+        """
+        self.tokenizer = tokenizer  # 保存分词器
+        self.num_examine = num_examine  # 要检查的样本数
+        self.format_score = format_score  # 格式奖励权重
 
     def __call__(self, data: DataProto):
-        """We will expand this function gradually based on the available datasets"""
+        """
+        计算数据批次的奖励
+        
+        参数：
+            data: DataProto对象，包含提示和响应
+            
+        返回：
+            奖励张量 [batch_size, response_len]
+        """
 
-        # If there is rm score, we directly return rm score. Otherwise, we compute via rm_score_fn
+        # 如果已经包含RM分数，直接返回
         if 'rm_scores' in data.batch.keys():
             return data.batch['rm_scores']
 
+        # 否则，创建零初始化的奖励张量
         reward_tensor = torch.zeros_like(data.batch['responses'], dtype=torch.float32)
 
         # all_scores = []
 
         already_print_data_sources = {}
 
+        # 逐个样本处理
         for i in range(len(data)):
-            data_item = data[i]  # DataProtoItem
+            data_item = data[i]  # 获取单个样本
 
             prompt_ids = data_item.batch['prompts']
 
             prompt_length = prompt_ids.shape[-1]
 
+            # 计算提示的有效长度（排除填充）
             valid_prompt_length = data_item.batch['attention_mask'][:prompt_length].sum()
             valid_prompt_ids = prompt_ids[-valid_prompt_length:]
 
+            # 获取响应
             response_ids = data_item.batch['responses']
+            # 计算响应的有效长度
             valid_response_length = data_item.batch['attention_mask'][prompt_length:].sum()
             valid_response_ids = response_ids[:valid_response_length]
 
-            # decode
+            # 组合提示和响应
             sequences = torch.cat((valid_prompt_ids, valid_response_ids))
+            # 解码为字符串
             sequences_str = self.tokenizer.decode(sequences)
 
+            # 获取真值标签
             ground_truth = data_item.non_tensor_batch['reward_model']['ground_truth']
 
-            # select rm_score
+            # 根据数据源选择计分函数
             data_source = data_item.non_tensor_batch['data_source']
             compute_score_fn = _select_rm_score_fn(data_source)
 
-            score = compute_score_fn(solution_str=sequences_str, ground_truth=ground_truth, format_score=self.format_score)
+            # 计算分数
+            score = compute_score_fn(
+                solution_str=sequences_str, 
+                ground_truth=ground_truth, 
+                format_score=self.format_score
+            )
 
+            # 将分数放在响应末尾
             reward_tensor[i, valid_response_length - 1] = score
+
+        return reward_tensor
             # all_scores.append(score)
 
             if data_source not in already_print_data_sources:
