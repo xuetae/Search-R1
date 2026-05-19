@@ -21,18 +21,19 @@ PPO算法核心函数 (PPO Core Algorithms)
 主要特性：
 1. KL散度控制（自适应或固定）
 2. GAE优势计算
-3. PPO棒杰（Clipped Surrogate）优化
-4. GRPO结果优化算法
+3. PPO裁剪代理目标优化
+4. GRPO结果监督优化算法
 
 算法流程：
 1. 收集体验数据（Rollout）
-2. 计算优势下界（GAE）
+2. 计算广义优势估计（GAE）
 3. 计算PPO损失函数
-4. 扩次数上肘【刮】一个【坯子/劈】粗法
+4. 进行梯度更新
 
-教材：
-- PPO计算: https://arxiv.org/abs/1707.06347
+参考资料：
+- PPO: https://arxiv.org/abs/1707.06347
 - GAE: https://arxiv.org/abs/1506.02438
+- AdaptiveKL: https://arxiv.org/pdf/1909.08593.pdf
 """
 
 import numpy as np  # NumPy数组
@@ -45,16 +46,17 @@ import verl.utils.torch_functional as verl_F  # veRL的函数处理
 class AdaptiveKLController:
     """
     自适应KL控制器
-    
-    来源：https://arxiv.org/pdf/1909.08593.pdf
+    参考论文：https://arxiv.org/pdf/1909.08593.pdf
     
     功能：根据实际KL散度与目标KL散度的差距来动态调整KL惩罚系数
     
-    算法：
-    - 计算比例轴：(current_kl / target - 1)
-    - 挑批值轴：市值范围在[-0.2, 0.2]之间
-    - 乘法币：1 + 比例轴 * n_steps / horizon
-    - 更新KL系数：value *= 乘法币
+    工作原理：
+    1. 计算比例误差：(current_kl / target_kl - 1)
+    2. 将误差限制在[-0.2, 0.2]范围内
+    3. 计算乘数：1 + 比例误差 * n_steps / horizon
+    4. 更新KL系数：value *= 乘数
+    
+    作用：确保训练过程中KL散度不会偏离目标值太远
     """
 
     def __init__(self, init_kl_coef, target_kl, horizon):
@@ -62,35 +64,34 @@ class AdaptiveKLController:
         初始化自适应KL控制器
         
         参数：
-            init_kl_coef: 初始的KL系数（常视为较小的正数）
-            target_kl: 目标KL散度（常视为0.01-0.05）
-            horizon: 水平线条数（用于橡化更新）
+            init_kl_coef: 初始的KL惩罚系数（通常是较小的正数）
+            target_kl: 目标KL散度值（通常0.01-0.05）
+            horizon: 调度的时间步长（用于平滑更新）
         """
         self.value = init_kl_coef  # 当前的KL惩罚系数
         self.target = target_kl  # 目标KL散度
-        self.horizon = horizon  # 更新水平线条数
+        self.horizon = horizon  # 更新时间跨度
 
     def update(self, current_kl, n_steps):
         """
         更新KL惩罚系数
         
         参数：
-            current_kl: 当前测量KL散度
+            current_kl: 当前测量的KL散度值
             n_steps: 已执行的训练步数
         """
         target = self.target
-        # 计算KL轴提：预定的KL點何位置（-0.2与0.2之间）
+        # 计算比例误差：相对于目标KL散度的偏差
+        # 限制在[-0.2, 0.2]范围内，避免过度调整
         proportional_error = np.clip(current_kl / target - 1, -0.2, 0.2)
-        # 乘法币：原比例轴 + 正正比例调整项
+        # 计算乘数：根据时间步长和误差大小调整KL系数
         mult = 1 + proportional_error * n_steps / self.horizon
+        # 更新KL系数：乘以计算出的乘数
+        self.value *= mult_steps / self.horizon
         self.value *= mult  # 乘以乘法币更新KL系数
 
 
-class FixedKLController:
-    """
-    固定KL控制器
-    
-    功能：不需要动态调整，KL惩罚系数保持恒定值
+class F使用恒定的KL惩罚系数，不需要动态调整
     """
 
     def __init__(self, kl_coef):
@@ -98,8 +99,16 @@ class FixedKLController:
         初始化固定KL控制器
         
         参数：
-            kl_coef: 固定的KL惩罚系数
+            kl_coef: 固定的KL惩罚系数值
         """
+        self.value = kl_coef  # 存储固定的KL系数
+
+    def update(self, current_kl, n_steps):
+        """
+        固定控制器无需更新
+        
+        注意：此方法仅为了保持接口一致性而设置，固定控制器不进行动态调整
+        
         self.value = kl_coef
 
     def update(self, current_kl, n_steps):

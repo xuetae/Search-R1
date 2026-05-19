@@ -17,14 +17,14 @@ Critic Worker基类 (Critic Base Class)
 =====================================
 功能：定义Critic Worker的标准接口
 
-Critic的职责：
-- 负责估计无偏策略值（Value Function）
-- 估计感受分技，作为优势上界（Baseline）
-- 根据Target Value更新值函数
+Critic是强化学习训练中的关键组件，职责包括：
+1. 估计价值函数：评估在给定状态下的长期收益
+2. 计算优势信号：提供Actor学习的基线
+3. 支持分布式训练：可在多GPU或多节点上运行
 
-Critic的作用：
-- 粗法估计：策略估计无名二值函数（优势上界）
-- 更新估计器：根据实断收益计算损失函数并更新估计器
+Critic模型通常是一个因果语言模型加上价值头（Value Head），用于估计每个令牌位置的价值。
+Critic与Actor协同工作：Critic提供价值基线，Actor基于优势信号更新策略。
+价值函数的准确性直接影响RL训练的稳定性和效率。
 """
 
 from abc import ABC, abstractmethod  # 抽象基类库
@@ -40,12 +40,18 @@ class BasePPOCritic(ABC):
     """
     PPO Critic基类
     
-    功能：定义Critic Worker的标准接口，所有子类都必须实现此接口
+    功能：定义所有Critic实现必须遵循的标准接口
     
     子类实现示例：
-    - HuggingFace Critic: 使用Transformers模型（加上值头）
-    - vLLM Critic: 使用vLLM执行引擎加速
-    - Megatron Critic: 使用Megatron分伙训练
+    - HuggingFace Critic: 使用Transformers库模型加价值头
+    - vLLM Critic: 使用vLLM推理引擎加速
+    - Megatron Critic: 使用Megatron进行模型并行训练
+    
+    Critic的生命周期：
+    1. 初始化：加载模型和分词器，添加价值头
+    2. 推理：调用compute_values计算价值估计
+    3. 反向传播：调用update_critic进行参数更新
+    4. 重复2-3直到收敛
     """
 
     def __init__(self, config):
@@ -53,8 +59,8 @@ class BasePPOCritic(ABC):
         初始化Critic
         
         参数：
-            config: 配置对象（DictConfig）
-                    包含估计器配置参数
+            config: 配置对象（OmegaConf DictConfig）
+                    包含模型路径、学习率等配置参数
         """
         super().__init__()
         self.config = config
@@ -62,34 +68,54 @@ class BasePPOCritic(ABC):
     @abstractmethod
     def compute_values(self, data: DataProto) -> torch.Tensor:
         """
-        计算估计值
+        计算价值估计
         
-        功能：给定输入，计算每个梭粞的估计值（Value）
+        功能：给定输入序列，计算Critic对每个令牌位置的价值估计
         
         参数：
-            data: DataProto批次数据
-                  包含无名符号、注意力屏蔽等
+            data: DataProto批次数据，包含：
+                  - input_ids: 输入令牌ID，形状 [batch_size, seq_len]
+                  - attention_mask: 注意力掩码，形状 [batch_size, seq_len]
+                  - position_ids: 位置ID，形状 [batch_size, seq_len]
         
         返回：
-            torch.Tensor: 估计值 [batch_size, seq_len]
-                          每个梭粞的估计值
+            torch.Tensor: 价值估计张量，形状 [batch_size, seq_len]
+                          表示每个位置的价值函数估计值
+                          
+        说明：
+        - 价值函数V(s)估计当前状态的长期累积奖励
+        - 用于计算广义优势估计（GAE）
+        - 需要忽略pad token的贡献（通过attention_mask过滤）
+        - 返回的价值用于计算：advantage = reward + gamma * next_value - value
         """
         pass
 
     @abstractmethod
     def update_critic(self, data: DataProto):
         """
-        更新估计器
+        更新Critic网络
         
-        功能：根据实际收益（回报）计算粗法损失函数并更新估计器梭纪
+        功能：使用实际收益（回报）对价值函数进行梯度更新
         
         参数：
-            data: DataProto迭代器
-                  呃包含data吗（输入、收益、粗法值等）
+            data: DataProto数据迭代器
+                  包含以下信息用于Critic更新：
+                  - input_ids: 输入令牌
+                  - values: 旧Critic的价值估计
+                  - returns: 计算出的累积回报（目标值）
+                  - attention_mask: 掩码（标记有效令牌）
         
         返回：
-            Dict: 更新统计信息（可选），一般包括：
-                - critic_loss: 估计器损失函数
-                - grad_norm: 梯度范整
+            Dict: 训练统计信息字典，一般包含：
+                  - critic_loss: 价值函数损失
+                  - grad_norm: 梯度范数
+                  - value_clipfrac: 被裁剪的比例
+                  
+        说明：
+        - 实现Critic损失函数（MSE或Huber损失）：
+          L_critic = MSE(V(s), returns)
+        - 通常使用价值函数裁剪（Value Clipping）
+        - 返回的统计信息用于监控Critic训练进度
+        - Critic的好坏直接影响Actor的优势计算准确性
         """
         pass
