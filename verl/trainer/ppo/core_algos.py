@@ -87,32 +87,16 @@ class AdaptiveKLController:
         # 计算乘数：根据时间步长和误差大小调整KL系数
         mult = 1 + proportional_error * n_steps / self.horizon
         # 更新KL系数：乘以计算出的乘数
-        self.value *= mult_steps / self.horizon
         self.value *= mult  # 乘以乘法币更新KL系数
 
 
-class F使用恒定的KL惩罚系数，不需要动态调整
-    """
+class FixedKLController:
+    """Fixed KL controller."""
 
     def __init__(self, kl_coef):
-        """
-        初始化固定KL控制器
-        
-        参数：
-            kl_coef: 固定的KL惩罚系数值
-        """
-        self.value = kl_coef  # 存储固定的KL系数
-
-    def update(self, current_kl, n_steps):
-        """
-        固定控制器无需更新
-        
-        注意：此方法仅为了保持接口一致性而设置，固定控制器不进行动态调整
-        
         self.value = kl_coef
 
     def update(self, current_kl, n_steps):
-        """固定控制器不需要更新"""
         pass
 
 
