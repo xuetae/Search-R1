@@ -393,7 +393,10 @@ class LLMGenerationManager:
                     valid_action.append(1)
                     is_search.append(1)
                 else:
-                    next_obs.append(f'\nMy previous action is invalid. \
+                    if os.getenv("SEARCH_R1_SHORT_INVALID_FEEDBACK", "0") == "1":
+                        next_obs.append('\nInvalid action. Use <search> query </search> or <answer> answer </answer>.\n')
+                    else:
+                        next_obs.append(f'\nMy previous action is invalid. \
 If I want to search, I should put the query between <search> and </search>. \
 If I want to give the final answer, I should put the answer between <answer> and </answer>. Let me try again.\n')
                     dones.append(0)
@@ -464,6 +467,9 @@ If I want to give the final answer, I should put the answer between <answer> and
             content = doc_item['document']['contents']
             title = content.split("\n")[0]
             text = "\n".join(content.split("\n")[1:])
+            max_doc_chars = int(os.getenv("SEARCH_R1_MAX_DOC_CHARS", "0"))
+            if max_doc_chars > 0 and len(text) > max_doc_chars:
+                text = text[:max_doc_chars].rsplit(" ", 1)[0]
             format_reference += f"Doc {idx+1}(Title: {title}) {text}\n"
 
         return format_reference
