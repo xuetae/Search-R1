@@ -135,9 +135,11 @@ class SFTDataset(Dataset):
         loss_mask[response_start:] = 1
 
         input_ids, attention_mask, loss_mask = self._truncate_or_pad(input_ids, attention_mask, loss_mask)
+        position_ids = torch.clamp(attention_mask.cumsum(dim=0) - 1, min=0)
 
         return {
             "input_ids": input_ids.long(),
             "attention_mask": attention_mask.long(),
+            "position_ids": position_ids.long(),
             "loss_mask": loss_mask.float(),
         }
