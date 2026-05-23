@@ -355,6 +355,7 @@ class FSDPSFTTrainer(object):
 
         self.total_training_steps = total_training_steps
         print(f'Total training steps: {self.total_training_steps}')
+        save_freq = self.config.trainer.get('save_freq', -1)
 
         # TODO (zhangchi.usc1992) add back checkpoint manager. Currently, it blocks when uploading to hdfs. So very slow.
 
@@ -379,6 +380,9 @@ class FSDPSFTTrainer(object):
                 if rank == 0:
                     tracking.log(data=metric, step=global_step)
                 global_step += 1
+
+                if save_freq is not None and save_freq > 0 and global_step % save_freq == 0:
+                    self.save_checkpoint(step=global_step)
 
                 # for early exit validation
                 if global_step >= self.total_training_steps:

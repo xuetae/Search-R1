@@ -16,6 +16,7 @@ MAX_LENGTH="${MAX_LENGTH:-1536}"
 LR="${LR:-1e-5}"
 TOTAL_EPOCHS="${TOTAL_EPOCHS:-1}"
 TOTAL_TRAINING_STEPS="${TOTAL_TRAINING_STEPS:-1000}"
+SAVE_FREQ="${SAVE_FREQ:-100}"
 LORA_RANK="${LORA_RANK:-0}"
 
 if [[ ! -f "$DATA_DIR/train.parquet" || ! -f "$DATA_DIR/test.parquet" ]]; then
@@ -45,6 +46,7 @@ PYTHONUNBUFFERED=1 torchrun --standalone --nnodes=1 --nproc_per_node=1 -m verl.t
     trainer.experiment_name="$EXPERIMENT_NAME" \
     trainer.total_epochs="$TOTAL_EPOCHS" \
     trainer.total_training_steps="$TOTAL_TRAINING_STEPS" \
+    trainer.save_freq="$SAVE_FREQ" \
     trainer.validate_before_training=False \
     trainer.logger=['console'] \
     2>&1 | tee "$EXPERIMENT_NAME.log"

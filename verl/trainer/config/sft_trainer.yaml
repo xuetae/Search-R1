@@ -37,6 +37,7 @@ trainer:
   experiment_name: test
   total_epochs: 4
   total_training_steps: null
+  save_freq: -1
   validate_before_training: False
   logger: ['console']
   seed: 1
