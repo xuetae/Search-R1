@@ -8,6 +8,7 @@ answer, which keeps the SFT signal clean for small models.
 """
 
 import argparse
+import ast
 import os
 import re
 from typing import Iterable
@@ -27,14 +28,30 @@ def normalize_answer(text: str) -> str:
 
 
 def extract_question(prompt) -> str:
+    content = ""
     if isinstance(prompt, list):
-        content = " ".join(str(item.get("content", "")) for item in prompt)
-    else:
+        content = " ".join(str(item.get("content", "")) if isinstance(item, dict) else str(item) for item in prompt)
+    elif hasattr(prompt, "tolist"):
+        prompt_list = prompt.tolist()
+        if isinstance(prompt_list, list):
+            content = " ".join(str(item.get("content", "")) if isinstance(item, dict) else str(item) for item in prompt_list)
+    if not content:
         content = str(prompt)
+        if content.startswith("[") and "content" in content:
+            try:
+                parsed = ast.literal_eval(content)
+                if isinstance(parsed, list):
+                    content = " ".join(str(item.get("content", "")) if isinstance(item, dict) else str(item) for item in parsed)
+            except (SyntaxError, ValueError):
+                pass
     match = QUESTION_RE.search(content)
     if match:
-        return " ".join(match.group(1).strip().split())
-    return " ".join(content.strip().split())
+        question = match.group(1)
+    else:
+        question = content
+    question = question.replace("\\n", "\n").splitlines()[0]
+    question = re.sub(r"""['"}\]\)]+$""", "", question.strip())
+    return " ".join(question.split())
 
 
 def extract_answers(reward_model) -> list[str]:
