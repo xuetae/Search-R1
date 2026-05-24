@@ -15,7 +15,64 @@ import uvicorn
 from fastapi import FastAPI
 from pydantic import BaseModel
 
+
+class LazyJsonlCorpus:
+    """Random-access JSONL corpus with an on-disk line offset cache.
+
+    HuggingFace datasets/pyarrow can fail on very large JSONL corpora if one row
+    is malformed. BM25 retrieval only needs docid-based random access, so a line
+    offset index is both lighter and more tolerant for local retrieval serving.
+    """
+
+    def __init__(self, corpus_path: str):
+        self.corpus_path = corpus_path
+        self.offset_path = f"{corpus_path}.offsets.npy"
+        self.offsets = self._load_or_build_offsets()
+
+    def _load_or_build_offsets(self):
+        if os.path.exists(self.offset_path):
+            try:
+                return np.load(self.offset_path, mmap_mode="r")
+            except Exception as exc:
+                warnings.warn(f"Failed to load offset cache {self.offset_path}: {exc}; rebuilding.")
+
+        offsets = []
+        with open(self.corpus_path, "rb") as f:
+            while True:
+                offset = f.tell()
+                line = f.readline()
+                if not line:
+                    break
+                offsets.append(offset)
+
+        offsets = np.asarray(offsets, dtype=np.int64)
+        try:
+            np.save(self.offset_path, offsets)
+        except Exception as exc:
+            warnings.warn(f"Failed to save offset cache {self.offset_path}: {exc}")
+        return offsets
+
+    def __len__(self):
+        return len(self.offsets)
+
+    def __getitem__(self, idx: int):
+        idx = int(idx)
+        with open(self.corpus_path, "rb") as f:
+            f.seek(int(self.offsets[idx]))
+            line = f.readline()
+        try:
+            return json.loads(line)
+        except json.JSONDecodeError:
+            return {
+                "id": str(idx),
+                "contents": f"Malformed corpus row {idx}\n",
+            }
+
+
 def load_corpus(corpus_path: str):
+    if os.getenv("SEARCH_R1_USE_LAZY_JSONL", "1") == "1":
+        return LazyJsonlCorpus(corpus_path)
+
     corpus = datasets.load_dataset(
         'json', 
         data_files=corpus_path,
