@@ -33,13 +33,21 @@ class RewardManager():
     """The reward manager.
     """
 
-    def __init__(self, tokenizer, num_examine, structure_format_score=0., final_format_score=0., retrieval_score=0., format_score=0.) -> None:
+    def __init__(self,
+                 tokenizer,
+                 num_examine,
+                 structure_format_score=0.,
+                 final_format_score=0.,
+                 retrieval_score=0.,
+                 answer_grounding_score=0.,
+                 format_score=0.) -> None:
         self.tokenizer = tokenizer
         self.num_examine = num_examine  # the number of batches of decoded responses to print to the console
         self.format_score = format_score
         self.structure_format_score = structure_format_score
         self.final_format_score = final_format_score
         self.retrieval_score = retrieval_score
+        self.answer_grounding_score = answer_grounding_score
 
     def __call__(self, data: DataProto):
         """We will expand this function gradually based on the available datasets"""
@@ -82,6 +90,7 @@ class RewardManager():
                                      structure_format_score=self.structure_format_score, 
                                      final_format_score=self.final_format_score, 
                                      retrieval_score=self.retrieval_score,
+                                     answer_grounding_score=self.answer_grounding_score,
                                      format_score=self.format_score)
 
             reward_tensor[i, valid_response_length - 1] = score
@@ -183,7 +192,8 @@ def main_task(config):
     reward_fn = RewardManager(tokenizer=tokenizer, num_examine=0, 
                               structure_format_score=config.reward_model.structure_format_score, 
                               final_format_score=config.reward_model.final_format_score,
-                              retrieval_score=config.reward_model.retrieval_score)
+                              retrieval_score=config.reward_model.retrieval_score,
+                              answer_grounding_score=config.reward_model.get('answer_grounding_score', 0.))
 
     # Note that we always use function-based RM for validation
     val_reward_fn = RewardManager(tokenizer=tokenizer, num_examine=1)

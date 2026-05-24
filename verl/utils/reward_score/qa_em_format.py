@@ -142,6 +142,18 @@ def extract_information_blocks(text: str) -> list[str]:
     return [match.strip() for match in matches]
 
 
+def answer_supported_by_information(text: str, answer: str) -> bool:
+    if not answer:
+        return False
+    normalized_answer = normalize_answer(answer)
+    if not normalized_answer:
+        return False
+    for seq in extract_information_blocks(text):
+        if normalized_answer in normalize_answer(seq):
+            return True
+    return False
+
+
 def is_retrieval_correct(text: str, golden_answers: list[str]) -> list[str]:
     seqs = extract_information_blocks(text)
     for seq in seqs:
@@ -151,7 +163,15 @@ def is_retrieval_correct(text: str, golden_answers: list[str]) -> list[str]:
     return False
 
 
-def compute_score_em(solution_str, ground_truth, method='strict', structure_format_score=0, final_format_score=0, retrieval_score=0, format_score=0, score=1.):
+def compute_score_em(solution_str,
+                     ground_truth,
+                     method='strict',
+                     structure_format_score=0,
+                     final_format_score=0,
+                     retrieval_score=0,
+                     format_score=0,
+                     answer_grounding_score=0,
+                     score=1.):
     """The scoring function for exact match (EM).
 
     Args:
@@ -189,9 +209,10 @@ def compute_score_em(solution_str, ground_truth, method='strict', structure_form
             else:
                 return score - structure_format_score # 0.8
         elif is_valid_format:
+            grounded_answer = answer_supported_by_information(solution_str, answer)
             if retrieval_correct:
-                return structure_format_score + retrieval_score # 0.3
+                return structure_format_score + retrieval_score + (answer_grounding_score if grounded_answer else 0)
             else:
-                return structure_format_score # 0.2
+                return structure_format_score + (answer_grounding_score if grounded_answer else 0)
         else:
             return final_format_score # 0.1

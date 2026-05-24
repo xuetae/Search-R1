@@ -61,3 +61,66 @@ bash scripts/train_grpo_qwen15_bm25_shaped_1gpu.sh
 ```
 
 After top1 is stable, try `TOPK=3` with `MAX_OBS_LENGTH=512`.
+
+## Grounding Enhancement
+
+If the model can search but fails to summarize evidence, build a grounding SFT
+set with `post_search_answer` examples. This directly trains the missing state
+transition:
+
+```text
+question + <search>query</search> + <information>evidence</information>
+-> <think> supporting fact </think>
+-> <answer> answer </answer>
+```
+
+Build the grounding data:
+
+```bash
+python scripts/data_process/nq_search_lite_sft.py \
+  --input_dir data/nq_search \
+  --local_dir data/nq_search_lite_grounding_sft \
+  --task grounding \
+  --topk 3 \
+  --train_limit 3000 \
+  --test_limit 384 \
+  --filter_answer_in_evidence
+```
+
+Continue SFT from the previous Search-R1-lite SFT checkpoint:
+
+```bash
+BASE_MODEL=/root/autodl-tmp/projects/Search-R1/verl_checkpoints/qwen2.5-1.5b-search-lite-sft/global_step_1000 \
+DATA_DIR=data/nq_search_lite_grounding_sft \
+EXPERIMENT_NAME=qwen2.5-1.5b-search-lite-grounding-sft \
+TRAIN_BATCH_SIZE=1 \
+MICRO_BATCH_SIZE=1 \
+MAX_LENGTH=1536 \
+TOTAL_TRAINING_STEPS=500 \
+SAVE_FREQ=100 \
+bash scripts/sft_qwen15_search_lite_1gpu.sh
+```
+
+Then run shaped GRPO from the grounding SFT checkpoint:
+
+```bash
+BASE_MODEL=/root/autodl-tmp/projects/Search-R1/verl_checkpoints/qwen2.5-1.5b-search-lite-grounding-sft/global_step_500 \
+TOPK=3 \
+MAX_OBS_LENGTH=512 \
+MAX_RESPONSE_LENGTH=192 \
+TRAIN_DATA_NUM=2048 \
+VAL_DATA_NUM=64 \
+TOTAL_TRAINING_STEPS=400 \
+TRAIN_BATCH_SIZE=2 \
+VAL_BATCH_SIZE=2 \
+TEMPERATURE=0.3 \
+TOP_P=0.8 \
+EXPERIMENT_NAME=nq-search-r1-qwen15-grounding-sft500-grpo-shaped-top3-400step \
+bash scripts/train_grpo_qwen15_bm25_shaped_1gpu.sh
+```
+
+Compare against the previous result:
+
+```text
+SFT+GRPO shaped top3, obs512, 400 steps: val/test_score/nq = 0.203125
+```

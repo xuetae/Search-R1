@@ -18,6 +18,9 @@ TOTAL_EPOCHS="${TOTAL_EPOCHS:-1}"
 TOTAL_TRAINING_STEPS="${TOTAL_TRAINING_STEPS:-1000}"
 SAVE_FREQ="${SAVE_FREQ:-100}"
 LORA_RANK="${LORA_RANK:-0}"
+GRADIENT_CHECKPOINTING="${GRADIENT_CHECKPOINTING:-True}"
+CPU_OFFLOAD="${CPU_OFFLOAD:-True}"
+OFFLOAD_PARAMS="${OFFLOAD_PARAMS:-True}"
 
 if [[ ! -f "$DATA_DIR/train.parquet" || ! -f "$DATA_DIR/test.parquet" ]]; then
     echo "Missing $DATA_DIR/train.parquet or $DATA_DIR/test.parquet" >&2
@@ -35,9 +38,9 @@ PYTHONUNBUFFERED=1 torchrun --standalone --nnodes=1 --nproc_per_node=1 -m verl.t
     data.max_length="$MAX_LENGTH" \
     data.truncation=right \
     model.partial_pretrain="$BASE_MODEL" \
-    model.enable_gradient_checkpointing=True \
-    model.fsdp_config.cpu_offload=True \
-    model.fsdp_config.offload_params=True \
+    model.enable_gradient_checkpointing="$GRADIENT_CHECKPOINTING" \
+    model.fsdp_config.cpu_offload="$CPU_OFFLOAD" \
+    model.fsdp_config.offload_params="$OFFLOAD_PARAMS" \
     model.lora_rank="$LORA_RANK" \
     optim.lr="$LR" \
     trainer.default_hdfs_dir=null \

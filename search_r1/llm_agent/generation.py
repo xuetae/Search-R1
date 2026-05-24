@@ -447,8 +447,8 @@ If I want to give the final answer, I should put the answer between <answer> and
             search results which is concatenated into a string
         """
         results = self._batch_search(queries)['result']
-        
-        return [self._passages2string(result) for result in results]
+
+        return [self._passages2string(result, query=query) for result, query in zip(results, queries)]
 
     def _batch_search(self, queries):
         
@@ -460,15 +460,45 @@ If I want to give the final answer, I should put the answer between <answer> and
         
         return requests.post(self.config.search_url, json=payload).json()
 
-    def _passages2string(self, retrieval_result):
+    @staticmethod
+    def _normalize_for_overlap(text):
+        import string
+        text = text.lower()
+        text = ''.join(ch for ch in text if ch not in set(string.punctuation))
+        text = re.sub(r"\b(a|an|the)\b", " ", text)
+        return " ".join(text.split())
+
+    @classmethod
+    def _sentence_score(cls, query, sentence):
+        query_terms = set(cls._normalize_for_overlap(query).split())
+        sent_terms = set(cls._normalize_for_overlap(sentence).split())
+        if not query_terms or not sent_terms:
+            return 0
+        return len(query_terms & sent_terms)
+
+    @classmethod
+    def _compress_passage(cls, query, text):
+        if os.getenv("SEARCH_R1_COMPRESS_EVIDENCE", "1") != "1":
+            return text
+        max_chars = int(os.getenv("SEARCH_R1_EVIDENCE_MAX_CHARS_PER_DOC", "360"))
+        max_sentences = int(os.getenv("SEARCH_R1_EVIDENCE_SENTENCES_PER_DOC", "2"))
+        sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", re.sub(r"\s+", " ", text).strip()) if s.strip()]
+        if not sentences:
+            return text[:max_chars]
+        ranked = sorted(sentences, key=lambda sent: cls._sentence_score(query, sent), reverse=True)
+        compressed = " ".join(ranked[:max_sentences]).strip()
+        return compressed[:max_chars]
+
+    def _passages2string(self, retrieval_result, query=''):
         format_reference = ''
         for idx, doc_item in enumerate(retrieval_result):
             
             content = doc_item['document']['contents']
             title = content.split("\n")[0]
             text = "\n".join(content.split("\n")[1:])
+            text = self._compress_passage(query, text)
             max_doc_chars = int(os.getenv("SEARCH_R1_MAX_DOC_CHARS", "0"))
-            if max_doc_chars > 0 and len(text) > max_doc_chars:
+            if os.getenv("SEARCH_R1_COMPRESS_EVIDENCE", "1") != "1" and max_doc_chars > 0 and len(text) > max_doc_chars:
                 text = text[:max_doc_chars].rsplit(" ", 1)[0]
             format_reference += f"Doc {idx+1}(Title: {title}) {text}\n"
 
