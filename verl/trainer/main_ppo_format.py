@@ -40,6 +40,8 @@ class RewardManager():
                  final_format_score=0.,
                  retrieval_score=0.,
                  answer_grounding_score=0.,
+                 invalid_action_penalty=0.,
+                 collapse_penalty=0.,
                  format_score=0.) -> None:
         self.tokenizer = tokenizer
         self.num_examine = num_examine  # the number of batches of decoded responses to print to the console
@@ -48,6 +50,8 @@ class RewardManager():
         self.final_format_score = final_format_score
         self.retrieval_score = retrieval_score
         self.answer_grounding_score = answer_grounding_score
+        self.invalid_action_penalty = invalid_action_penalty
+        self.collapse_penalty = collapse_penalty
 
     def __call__(self, data: DataProto):
         """We will expand this function gradually based on the available datasets"""
@@ -91,6 +95,8 @@ class RewardManager():
                                      final_format_score=self.final_format_score, 
                                      retrieval_score=self.retrieval_score,
                                      answer_grounding_score=self.answer_grounding_score,
+                                     invalid_action_penalty=self.invalid_action_penalty,
+                                     collapse_penalty=self.collapse_penalty,
                                      format_score=self.format_score)
 
             reward_tensor[i, valid_response_length - 1] = score
@@ -193,7 +199,9 @@ def main_task(config):
                               structure_format_score=config.reward_model.structure_format_score, 
                               final_format_score=config.reward_model.final_format_score,
                               retrieval_score=config.reward_model.retrieval_score,
-                              answer_grounding_score=config.reward_model.get('answer_grounding_score', 0.))
+                              answer_grounding_score=config.reward_model.get('answer_grounding_score', 0.),
+                              invalid_action_penalty=config.reward_model.get('invalid_action_penalty', 0.),
+                              collapse_penalty=config.reward_model.get('collapse_penalty', 0.))
 
     # Note that we always use function-based RM for validation
     val_reward_fn = RewardManager(tokenizer=tokenizer, num_examine=1)

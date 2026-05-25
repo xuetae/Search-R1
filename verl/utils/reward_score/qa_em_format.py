@@ -154,6 +154,36 @@ def answer_supported_by_information(text: str, answer: str) -> bool:
     return False
 
 
+def assistant_content_without_information(text: str) -> str:
+    assistant_pattern = r"<\|im_start\|>assistant\s*"
+    assistant_match = re.search(assistant_pattern, text)
+    content = text[assistant_match.end():] if assistant_match else text
+    return re.sub(r"<information>.*?</information>", " ", content, flags=re.DOTALL)
+
+
+def has_invalid_action_feedback(text: str) -> bool:
+    return "Invalid action. Use <search> query </search> or <answer> answer </answer>." in text
+
+
+def has_repetition_collapse(text: str) -> bool:
+    content = assistant_content_without_information(text)
+    tokens = re.findall(r"\S+", content)
+    run_token = None
+    run_len = 0
+    for token in tokens:
+        stripped = token.strip()
+        if stripped == run_token:
+            run_len += 1
+        else:
+            run_token = stripped
+            run_len = 1
+        if len(stripped) >= 2 and run_len >= 8:
+            return True
+
+    compact = re.sub(r"\s+", "", content)
+    return re.search(r"(.{2,32})\1{7,}", compact) is not None
+
+
 def is_retrieval_correct(text: str, golden_answers: list[str]) -> list[str]:
     seqs = extract_information_blocks(text)
     for seq in seqs:
@@ -171,6 +201,8 @@ def compute_score_em(solution_str,
                      retrieval_score=0,
                      format_score=0,
                      answer_grounding_score=0,
+                     invalid_action_penalty=0,
+                     collapse_penalty=0,
                      score=1.):
     """The scoring function for exact match (EM).
 
@@ -186,6 +218,11 @@ def compute_score_em(solution_str,
     if is_valid_format:
         retrieval_correct = is_retrieval_correct(solution_str, ground_truth['target'])
     answer = extract_solution(solution_str=solution_str)
+    penalty = 0
+    if invalid_action_penalty and has_invalid_action_feedback(solution_str):
+        penalty += invalid_action_penalty
+    if collapse_penalty and has_repetition_collapse(solution_str):
+        penalty += collapse_penalty
     do_print = random.randint(1, 64) == 1
     
     if do_print:
@@ -197,22 +234,24 @@ def compute_score_em(solution_str,
     if answer is None:
         if is_valid_format:
             if retrieval_correct:
-                return structure_format_score + retrieval_score # 0.3
+                base_score = structure_format_score + retrieval_score # 0.3
             else:
-                return structure_format_score # 0.2
+                base_score = structure_format_score # 0.2
         else:
-            return 0
+            base_score = 0
     else:
         if em_check(answer, ground_truth['target']):
             if is_valid_format:
-                return score # 1
+                base_score = score # 1
             else:
-                return score - structure_format_score # 0.8
+                base_score = score - structure_format_score # 0.8
         elif is_valid_format:
             grounded_answer = answer_supported_by_information(solution_str, answer)
             if retrieval_correct:
-                return structure_format_score + retrieval_score + (answer_grounding_score if grounded_answer else 0)
+                base_score = structure_format_score + retrieval_score + (answer_grounding_score if grounded_answer else 0)
             else:
-                return structure_format_score + (answer_grounding_score if grounded_answer else 0)
+                base_score = structure_format_score + (answer_grounding_score if grounded_answer else 0)
         else:
-            return final_format_score # 0.1
+            base_score = final_format_score # 0.1
+
+    return max(0, base_score - penalty)
