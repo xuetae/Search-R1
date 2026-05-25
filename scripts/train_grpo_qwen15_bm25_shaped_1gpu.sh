@@ -37,7 +37,7 @@ TEST_FREQ="${TEST_FREQ:-100}"
 LLDS_ENABLE="${LLDS_ENABLE:-false}"
 LLDS_COEF="${LLDS_COEF:-0.02}"
 LLDS_REDUCE_THRES="${LLDS_REDUCE_THRES:-0.0}"
-LLDS_ADV_GATE="${LLDS_ADV_GATE:-non_negative}"
+LLDS_ADV_GATE="${LLDS_ADV_GATE:-positive}"
 LLDS_CHUNK="${LLDS_CHUNK:-false}"
 
 if [[ ! -f "$DATA_DIR/train.parquet" || ! -f "$DATA_DIR/test.parquet" ]]; then

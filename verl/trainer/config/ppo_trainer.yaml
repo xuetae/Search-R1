@@ -39,7 +39,7 @@ actor_rollout_ref:
     llds_enable: False
     llds_coef: 0.02
     llds_reduce_thres: 0.0
-    llds_adv_gate: non_negative
+    llds_adv_gate: positive
     llds_chunk: False
     ppo_epochs: 1
     shuffle: False
