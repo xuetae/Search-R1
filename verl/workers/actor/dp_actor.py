@@ -36,6 +36,31 @@ from flash_attn.bert_padding import pad_input, unpad_input, rearrange, index_fir
 __all__ = ['DataParallelPPOActor']
 
 
+def _expand_chunk_mask(chunk_mask, chunk_id):
+    batch_size, _ = chunk_id.shape
+    padded_mask = torch.cat([
+        torch.zeros(batch_size, 1, dtype=chunk_mask.dtype, device=chunk_mask.device),
+        chunk_mask,
+    ], dim=1)
+    return padded_mask.gather(1, chunk_id)
+
+
+def _chunk_sums(mask, values):
+    mask = mask.bool()
+    batch_size, seq_len = mask.shape
+    prev = torch.nn.functional.pad(mask[:, :-1], (1, 0), value=False)
+    starts = mask & ~prev
+    chunk_id = starts.cumsum(dim=1).to(torch.long) * mask.to(torch.long)
+    lengths = chunk_id.max(dim=1).values
+    max_chunks = int(lengths.max().item())
+    if max_chunks == 0:
+        return values.new_zeros((batch_size, 0)), lengths, chunk_id
+
+    sums = values.new_zeros((batch_size, max_chunks + 1))
+    sums.scatter_add_(1, chunk_id.clamp_max(max_chunks), values * mask)
+    return sums[:, 1:], lengths, chunk_id
+
+
 class DataParallelPPOActor(BasePPOActor):
 
     def __init__(
@@ -271,6 +296,42 @@ class DataParallelPPOActor(BasePPOActor):
                     policy_loss = policy_loss + kl_loss * self.config.kl_loss_coef
                     metrics['actor/kl_loss'] = kl_loss.detach().item()
                     metrics['actor/kl_coef'] = self.config.kl_loss_coef
+
+                if self.config.get('llds_enable', False):
+                    llds_active_mask = None
+                    llds_chunk_active_mean = 0.0
+                    if self.config.get('llds_chunk', False):
+                        valid_mask = response_mask.bool()
+                        adv_gate = self.config.get('llds_adv_gate', 'non_negative')
+                        if adv_gate == 'non_negative':
+                            preserve_mask = valid_mask & (advantages >= 0)
+                        elif adv_gate == 'positive':
+                            preserve_mask = valid_mask & (advantages > 0)
+                        elif adv_gate == 'all':
+                            preserve_mask = valid_mask
+                        else:
+                            raise ValueError(f"Unknown LLDS advantage gate: {adv_gate}")
+
+                        drop = old_log_prob.detach() - log_prob
+                        chunk_sums, _, chunk_ids = _chunk_sums(preserve_mask, drop)
+                        chunk_mask = (chunk_sums > self.config.get('llds_reduce_thres', 0.0)).to(torch.long)
+                        if chunk_mask.numel() > 0:
+                            llds_chunk_active_mean = chunk_mask.sum(-1).float().mean().detach().item()
+                        llds_active_mask = _expand_chunk_mask(chunk_mask, chunk_ids) * preserve_mask.float()
+
+                    llds_loss, llds_metrics = core_algos.compute_llds_loss(
+                        old_log_prob=old_log_prob,
+                        log_prob=log_prob,
+                        advantages=advantages,
+                        eos_mask=response_mask,
+                        reduce_thres=self.config.get('llds_reduce_thres', 0.0),
+                        adv_gate=self.config.get('llds_adv_gate', 'non_negative'),
+                        chunk_noreduce=self.config.get('llds_chunk', False),
+                        active_mask_override=llds_active_mask)
+                    if self.config.get('llds_chunk', False):
+                        llds_metrics['actor/llds_chunk_active_mean'] = llds_chunk_active_mean
+                    policy_loss = policy_loss + llds_loss * self.config.get('llds_coef', 0.0)
+                    append_to_dict(metrics, llds_metrics)
 
                 loss = policy_loss / self.gradient_accumulation
                 loss.backward()

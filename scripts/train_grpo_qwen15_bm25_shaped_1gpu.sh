@@ -34,6 +34,11 @@ RETRIEVAL_SCORE="${RETRIEVAL_SCORE:-0.2}"
 ANSWER_GROUNDING_SCORE="${ANSWER_GROUNDING_SCORE:-0.1}"
 SAVE_FREQ="${SAVE_FREQ:-100}"
 TEST_FREQ="${TEST_FREQ:-100}"
+LLDS_ENABLE="${LLDS_ENABLE:-false}"
+LLDS_COEF="${LLDS_COEF:-0.02}"
+LLDS_REDUCE_THRES="${LLDS_REDUCE_THRES:-0.0}"
+LLDS_ADV_GATE="${LLDS_ADV_GATE:-non_negative}"
+LLDS_CHUNK="${LLDS_CHUNK:-false}"
 
 if [[ ! -f "$DATA_DIR/train.parquet" || ! -f "$DATA_DIR/test.parquet" ]]; then
     echo "Missing $DATA_DIR/train.parquet or $DATA_DIR/test.parquet" >&2
@@ -77,6 +82,11 @@ PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo_format \
     actor_rollout_ref.ref.fsdp_config.param_offload=True \
     actor_rollout_ref.actor.kl_loss_coef=0.001 \
     actor_rollout_ref.actor.kl_loss_type=low_var_kl \
+    actor_rollout_ref.actor.llds_enable="$LLDS_ENABLE" \
+    actor_rollout_ref.actor.llds_coef="$LLDS_COEF" \
+    actor_rollout_ref.actor.llds_reduce_thres="$LLDS_REDUCE_THRES" \
+    actor_rollout_ref.actor.llds_adv_gate="$LLDS_ADV_GATE" \
+    actor_rollout_ref.actor.llds_chunk="$LLDS_CHUNK" \
     algorithm.no_think_rl=false \
     actor_rollout_ref.rollout.n=1 \
     actor_rollout_ref.rollout.n_agent=2 \

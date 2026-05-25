@@ -184,6 +184,7 @@ def compute_policy_loss(old_log_prob, log_prob, advantages, eos_mask, cliprange)
     """
     negative_approx_kl = log_prob - old_log_prob
     ratio = torch.exp(negative_approx_kl)
+    ratio = torch.clamp(ratio, min=-100, max=100)
     ppo_kl = verl_F.masked_mean(-negative_approx_kl, eos_mask)
 
     pg_losses = -advantages * ratio
@@ -192,6 +193,58 @@ def compute_policy_loss(old_log_prob, log_prob, advantages, eos_mask, cliprange)
     pg_loss = verl_F.masked_mean(torch.max(pg_losses, pg_losses2), eos_mask)
     pg_clipfrac = verl_F.masked_mean(torch.gt(pg_losses2, pg_losses).float(), eos_mask)
     return pg_loss, pg_clipfrac, ppo_kl
+
+
+def compute_llds_loss(old_log_prob,
+                      log_prob,
+                      advantages,
+                      eos_mask,
+                      reduce_thres=0.0,
+                      adv_gate='non_negative',
+                      chunk_noreduce=False,
+                      active_mask_override=None):
+    """Likelihood-preserving regularization for GRPO-style actor updates.
+
+    LLDS-lite only penalizes likelihood drops on preserved tokens. By default,
+    preserved tokens are valid response tokens with non-negative advantages.
+    """
+    valid_mask = eos_mask.bool()
+    if adv_gate == 'non_negative':
+        preserve_mask = valid_mask & (advantages >= 0)
+    elif adv_gate == 'positive':
+        preserve_mask = valid_mask & (advantages > 0)
+    elif adv_gate == 'all':
+        preserve_mask = valid_mask
+    else:
+        raise ValueError(f"Unknown LLDS advantage gate: {adv_gate}")
+
+    logp_delta = log_prob - old_log_prob.detach()
+    drop = old_log_prob.detach() - log_prob
+    if active_mask_override is None:
+        active_mask = preserve_mask & (drop > reduce_thres)
+    else:
+        active_mask = preserve_mask & active_mask_override.bool()
+
+    active_mask_f = active_mask.float()
+    preserve_mask_f = preserve_mask.float()
+    valid_mask_f = valid_mask.float()
+
+    valid_penalty_tokens = torch.clamp(drop, min=0.0) * active_mask_f
+    llds_loss = (valid_penalty_tokens * valid_mask_f).sum() / valid_mask_f.sum().clamp_min(1.0)
+    active_ratio = active_mask_f.sum() / preserve_mask_f.sum().clamp_min(1.0)
+    preserve_ratio = preserve_mask_f.sum() / valid_mask_f.sum().clamp_min(1.0)
+    logp_delta_mean = (logp_delta * valid_mask_f).sum() / valid_mask_f.sum().clamp_min(1.0)
+    drop_mean = (torch.clamp(drop, min=0.0) * preserve_mask_f).sum() / preserve_mask_f.sum().clamp_min(1.0)
+
+    metrics = {
+        'actor/llds_loss': llds_loss.detach().item(),
+        'actor/llds_active_ratio': active_ratio.detach().item(),
+        'actor/llds_logp_delta_mean': logp_delta_mean.detach().item(),
+        'actor/llds_drop_mean': drop_mean.detach().item(),
+        'actor/llds_preserve_ratio': preserve_ratio.detach().item(),
+        'actor/llds_chunk_active_mean': 0.0,
+    }
+    return llds_loss, metrics
 
 
 def compute_entropy_loss(logits, eos_mask):
