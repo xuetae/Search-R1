@@ -12,13 +12,13 @@ RETRIEVER_MODEL="${RETRIEVER_MODEL:-intfloat/e5-base-v2}"
 
 if [[ ! -f "${INDEX_FILE}" ]]; then
   echo "Missing index file: ${INDEX_FILE}" >&2
-  echo "Run scripts/llama_7b_run/prepare_data.sh first." >&2
+  echo "Run reproduction/7b_base/prepare_data.sh first." >&2
   exit 1
 fi
 
 if [[ ! -f "${CORPUS_FILE}" ]]; then
   echo "Missing corpus file: ${CORPUS_FILE}" >&2
-  echo "Run scripts/llama_7b_run/prepare_data.sh first." >&2
+  echo "Run reproduction/7b_base/prepare_data.sh first." >&2
   exit 1
 fi
 
@@ -30,4 +30,3 @@ python search_r1/search/retrieval_server.py \
   --retriever_name "${RETRIEVER_NAME}" \
   --retriever_model "${RETRIEVER_MODEL}" \
   --faiss_gpu
-

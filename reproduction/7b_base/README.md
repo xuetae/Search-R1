@@ -1,6 +1,6 @@
 # 7B Base Search-R1 Reproduction Setup
 
-This branch adds a self-contained launcher set under `scripts/llama_7b_run/` for testing the paper-style 7B base result.
+This directory contains the self-contained launcher set for testing the paper-style 7B base result.
 
 ## What To Prepare
 
@@ -16,7 +16,7 @@ The branch name is `llama-7b-run`, but this repository's paper reproduction scri
 ## Prepare Data
 
 ```bash
-bash scripts/llama_7b_run/prepare_data.sh
+bash reproduction/7b_base/prepare_data.sh
 ```
 
 Optional overrides:
@@ -25,7 +25,7 @@ Optional overrides:
 WORK_DIR=/path/to/Search-R1 \
 DATA_DIR=/path/to/data/nq_hotpotqa_train \
 WIKI18_DIR=/path/to/data/wiki-18 \
-bash scripts/llama_7b_run/prepare_data.sh
+bash reproduction/7b_base/prepare_data.sh
 ```
 
 ## Launch Retriever
@@ -33,7 +33,7 @@ bash scripts/llama_7b_run/prepare_data.sh
 Run this in the retriever environment:
 
 ```bash
-bash scripts/llama_7b_run/launch_retriever.sh
+bash reproduction/7b_base/launch_retriever.sh
 ```
 
 The server listens on `http://127.0.0.1:8000/retrieve` by default. Override with `RETRIEVER_URL` in the training/evaluation shell if needed.
@@ -43,13 +43,13 @@ The server listens on `http://127.0.0.1:8000/retrieve` by default. Override with
 GRPO, matching the upstream v0.2 7B-base GRPO settings:
 
 ```bash
-bash scripts/llama_7b_run/train_grpo_7b_base.sh
+bash reproduction/7b_base/train_grpo_7b_base.sh
 ```
 
 PPO, matching the upstream v0.2 7B-base PPO settings:
 
 ```bash
-bash scripts/llama_7b_run/train_ppo_7b_base.sh
+bash reproduction/7b_base/train_ppo_7b_base.sh
 ```
 
 Useful overrides:
@@ -58,7 +58,7 @@ Useful overrides:
 BASE_MODEL=Qwen/Qwen2.5-7B \
 EXPERIMENT_NAME=nq_hotpotqa_train-search-r1-grpo-qwen2.5-7b-em \
 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 \
-bash scripts/llama_7b_run/train_grpo_7b_base.sh
+bash reproduction/7b_base/train_grpo_7b_base.sh
 ```
 
 ## Evaluate
@@ -66,14 +66,14 @@ bash scripts/llama_7b_run/train_grpo_7b_base.sh
 Evaluate the base model:
 
 ```bash
-bash scripts/llama_7b_run/evaluate_7b_base.sh
+bash reproduction/7b_base/evaluate_7b_base.sh
 ```
 
 Evaluate a trained checkpoint:
 
 ```bash
 EVAL_MODEL=verl_checkpoints/nq_hotpotqa_train-search-r1-grpo-qwen2.5-7b-em/global_step_1000/actor \
-bash scripts/llama_7b_run/evaluate_7b_base.sh
+bash reproduction/7b_base/evaluate_7b_base.sh
 ```
 
 ## Notes
@@ -81,4 +81,3 @@ bash scripts/llama_7b_run/evaluate_7b_base.sh
 - Data, wiki corpus, FAISS index, model weights, checkpoints, logs, and wandb output are intentionally not committed.
 - `data/`, `*.log`, checkpoints, and wandb directories are already covered by `.gitignore`.
 - The retriever must be running before training or evaluation, because rollouts call the `/retrieve` API whenever the model emits `<search>...</search>`.
-
