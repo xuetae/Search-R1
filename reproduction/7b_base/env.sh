@@ -8,8 +8,22 @@ export WORK_DIR="${WORK_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 export DATA_NAME="${DATA_NAME:-nq_hotpotqa_train}"
 export DATA_DIR="${DATA_DIR:-${WORK_DIR}/data/${DATA_NAME}}"
 export WIKI18_DIR="${WIKI18_DIR:-${WORK_DIR}/data/wiki-18}"
+export MODEL_ROOT="${MODEL_ROOT:-${WORK_DIR}/models/7b_base}"
+export LOCAL_BASE_MODEL="${LOCAL_BASE_MODEL:-${MODEL_ROOT}/qwen2.5-7b}"
+export LOCAL_RETRIEVER_MODEL="${LOCAL_RETRIEVER_MODEL:-${MODEL_ROOT}/e5-base-v2}"
 
-export BASE_MODEL="${BASE_MODEL:-Qwen/Qwen2.5-7B}"
+if [[ -z "${BASE_MODEL:-}" && -d "${LOCAL_BASE_MODEL}" ]]; then
+  export BASE_MODEL="${LOCAL_BASE_MODEL}"
+else
+  export BASE_MODEL="${BASE_MODEL:-Qwen/Qwen2.5-7B}"
+fi
+
+if [[ -z "${RETRIEVER_MODEL:-}" && -d "${LOCAL_RETRIEVER_MODEL}" ]]; then
+  export RETRIEVER_MODEL="${LOCAL_RETRIEVER_MODEL}"
+else
+  export RETRIEVER_MODEL="${RETRIEVER_MODEL:-intfloat/e5-base-v2}"
+fi
+
 export WAND_PROJECT="${WAND_PROJECT:-Search-R1}"
 
 export RETRIEVER_URL="${RETRIEVER_URL:-http://127.0.0.1:8000/retrieve}"

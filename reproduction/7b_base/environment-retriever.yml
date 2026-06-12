@@ -1,0 +1,21 @@
+name: retriever
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pytorch=2.4.0
+  - torchvision=0.19.0
+  - torchaudio=2.4.0
+  - pytorch-cuda=12.1
+  - faiss-gpu=1.8.0
+  - pip
+  - pip:
+      - transformers<4.48
+      - datasets
+      - pyserini
+      - uvicorn
+      - fastapi
+      - huggingface_hub
+

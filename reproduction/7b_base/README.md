@@ -4,18 +4,51 @@ This directory contains the self-contained launcher set for testing the paper-st
 
 ## What To Prepare
 
-- Python/Search-R1 environment: install the main repo requirements as described in `README.md`.
-- Retriever environment: install `faiss-gpu`, `pyserini`, `fastapi`, `uvicorn`, and the retriever dependencies from `README.md`.
+- Python/Search-R1 environment: `searchr1`, created by `setup_envs.sh`.
+- Retriever environment: `retriever`, created by `setup_envs.sh`.
 - GPUs: the upstream 7B scripts assume 1 node with 8 GPUs.
 - Dataset: `PeterJinGo/nq_hotpotqa_train`, downloaded to `data/nq_hotpotqa_train`.
 - Retrieval corpus/index: `wiki-18.jsonl` plus `e5_Flat.index`, downloaded to `data/wiki-18`.
-- Base model: default is `Qwen/Qwen2.5-7B`, matching the repository's v0.2 7B-base scripts.
+- Base model: default is `Qwen/Qwen2.5-7B`, downloaded to `models/7b_base/qwen2.5-7b`.
+- Retriever model: default is `intfloat/e5-base-v2`, downloaded to `models/7b_base/e5-base-v2`.
 
 The branch name is `llama-7b-run`, but this repository's paper reproduction scripts do not contain an official LLaMA-7B setting. The available 7B-base paper configuration is Qwen2.5-7B. You can override `BASE_MODEL` if you want to test a local LLaMA-family 7B checkpoint.
+
+## One-Command Server Bootstrap
+
+After cloning this branch on the server, run:
+
+```bash
+bash reproduction/7b_base/bootstrap_server.sh
+```
+
+This creates/updates the `searchr1` and `retriever` conda environments, downloads the 7B base model, downloads the e5 retriever model, prepares the NQ/HotpotQA data and wiki-18 retrieval files, and runs a preflight check.
+
+If the server needs a Hugging Face token, log in first:
+
+```bash
+huggingface-cli login
+```
+
+## Step-By-Step Setup
+
+Create environments:
+
+```bash
+bash reproduction/7b_base/setup_envs.sh
+```
+
+Download local model copies:
+
+```bash
+conda activate searchr1
+bash reproduction/7b_base/download_models.sh
+```
 
 ## Prepare Data
 
 ```bash
+conda activate searchr1
 bash reproduction/7b_base/prepare_data.sh
 ```
 
@@ -33,6 +66,7 @@ bash reproduction/7b_base/prepare_data.sh
 Run this in the retriever environment:
 
 ```bash
+conda activate retriever
 bash reproduction/7b_base/launch_retriever.sh
 ```
 
@@ -43,12 +77,14 @@ The server listens on `http://127.0.0.1:8000/retrieve` by default. Override with
 GRPO, matching the upstream v0.2 7B-base GRPO settings:
 
 ```bash
+conda activate searchr1
 bash reproduction/7b_base/train_grpo_7b_base.sh
 ```
 
 PPO, matching the upstream v0.2 7B-base PPO settings:
 
 ```bash
+conda activate searchr1
 bash reproduction/7b_base/train_ppo_7b_base.sh
 ```
 
@@ -66,6 +102,7 @@ bash reproduction/7b_base/train_grpo_7b_base.sh
 Evaluate the base model:
 
 ```bash
+conda activate searchr1
 bash reproduction/7b_base/evaluate_7b_base.sh
 ```
 
@@ -80,4 +117,5 @@ bash reproduction/7b_base/evaluate_7b_base.sh
 
 - Data, wiki corpus, FAISS index, model weights, checkpoints, logs, and wandb output are intentionally not committed.
 - `data/`, `*.log`, checkpoints, and wandb directories are already covered by `.gitignore`.
+- `models/7b_base/` is ignored so local downloaded model weights are not committed.
 - The retriever must be running before training or evaluation, because rollouts call the `/retrieve` API whenever the model emits `<search>...</search>`.

@@ -8,7 +8,6 @@ source "${SCRIPT_DIR}/env.sh"
 INDEX_FILE="${INDEX_FILE:-${WIKI18_DIR}/e5_Flat.index}"
 CORPUS_FILE="${CORPUS_FILE:-${WIKI18_DIR}/wiki-18.jsonl}"
 RETRIEVER_NAME="${RETRIEVER_NAME:-e5}"
-RETRIEVER_MODEL="${RETRIEVER_MODEL:-intfloat/e5-base-v2}"
 
 if [[ ! -f "${INDEX_FILE}" ]]; then
   echo "Missing index file: ${INDEX_FILE}" >&2
