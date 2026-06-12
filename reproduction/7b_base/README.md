@@ -30,6 +30,62 @@ If the server needs a Hugging Face token, log in first:
 huggingface-cli login
 ```
 
+## Local Upload Bundle With Docker Images
+
+If the server cannot download dependencies directly, prepare an upload bundle locally:
+
+```bash
+bash reproduction/7b_base/docker/build_images.sh
+conda activate searchr1
+bash reproduction/7b_base/download_models.sh
+bash reproduction/7b_base/prepare_data.sh
+bash reproduction/7b_base/docker/make_upload_bundle.sh
+```
+
+For a Linux x86_64 GPU server, keep the default `IMAGE_PLATFORM=linux/amd64`. On Apple Silicon/macOS Docker Desktop, this cross-platform CUDA build can be very slow and may require more Docker memory/disk than the default allocation. If possible, build the upload bundle on a Linux x86_64 machine with a stable network.
+
+This creates:
+
+```text
+offline_upload.tar.gz
+```
+
+Upload `offline_upload.tar.gz` to the server, put it at the repository root, then run:
+
+```bash
+tar -xzf offline_upload.tar.gz
+bash offline_upload/restore_on_server.sh
+```
+
+The upload bundle contains Docker image archives plus optional local data/model archives:
+
+- `searchr1-7b:cuda121`
+- `searchr1-retriever:cuda121`
+- `data/nq_hotpotqa_train`
+- `data/wiki-18`
+- `models/7b_base`
+
+If the archive is too large for your upload channel, split it locally:
+
+```bash
+SPLIT_SIZE=10G bash reproduction/7b_base/docker/make_upload_bundle.sh
+```
+
+Then upload all `offline_upload.tar.gz.part-*` files and reassemble on the server:
+
+```bash
+cat offline_upload.tar.gz.part-* > offline_upload.tar.gz
+tar -xzf offline_upload.tar.gz
+bash offline_upload/restore_on_server.sh
+```
+
+After restore, run with Docker:
+
+```bash
+bash reproduction/7b_base/docker/run_retriever_container.sh
+bash reproduction/7b_base/docker/run_grpo_container.sh
+```
+
 ## Step-By-Step Setup
 
 Create environments:

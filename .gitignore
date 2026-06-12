@@ -123,3 +123,6 @@ log/
 
 # Local model caches for reproduction scripts
 models/7b_base/
+offline_upload/
+offline_upload.tar.gz
+offline_upload.tar.gz.part-*

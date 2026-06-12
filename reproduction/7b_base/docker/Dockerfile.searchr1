@@ -1,0 +1,25 @@
+FROM pytorch/pytorch:2.4.0-cuda12.1-cudnn9-devel
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    VLLM_ATTENTION_BACKEND=XFORMERS
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    curl \
+    ca-certificates \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /workspace/Search-R1
+COPY . /workspace/Search-R1
+
+RUN pip install --upgrade pip setuptools wheel \
+    && pip install vllm==0.6.3 \
+    && pip install -e . \
+    && pip install flash-attn --no-build-isolation \
+    && pip install wandb huggingface_hub
+
+CMD ["/bin/bash"]
+
