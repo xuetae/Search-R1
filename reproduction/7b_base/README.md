@@ -130,6 +130,67 @@ The server listens on `http://127.0.0.1:8000/retrieve` by default. Override with
 
 ## Train 7B Base
 
+Recommended workflow: run a small smoke training first, inspect runtime, GPU memory, and checkpoints, then run the full dataset.
+
+Smoke run with local profiling:
+
+```bash
+conda activate searchr1
+ALGO=grpo RUN_MODE=smoke bash reproduction/7b_base/run_profiled_train.sh
+```
+
+The smoke defaults are intentionally small:
+
+- `TRAIN_DATA_NUM=32`
+- `VAL_DATA_NUM=16`
+- `TRAIN_BATCH_SIZE=32`
+- `TOTAL_TRAINING_STEPS=2`
+- `SAVE_FREQ=1`
+- `TEST_FREQ=-1`
+- `TRAIN_LOGGER=[]`
+
+Each profiled run writes:
+
+```text
+reproduction/7b_base/runs/<experiment_name>/summary.txt
+reproduction/7b_base/runs/<experiment_name>/gpu_memory.csv
+reproduction/7b_base/runs/<experiment_name>/train.log
+reproduction/7b_base/runs/<experiment_name>/checkpoints.txt
+```
+
+Check these fields before starting full training:
+
+- `summary.txt`: exit code, wall-clock duration, peak GPU memory, ckpt directory.
+- `gpu_memory.csv`: sampled `nvidia-smi` memory and utilization.
+- `checkpoints.txt`: saved `global_step_*` checkpoint directories.
+- `train.log`: full stdout/stderr from veRL.
+
+Full profiled run:
+
+```bash
+conda activate searchr1
+ALGO=grpo RUN_MODE=full bash reproduction/7b_base/run_profiled_train.sh
+```
+
+PPO is also supported:
+
+```bash
+ALGO=ppo RUN_MODE=smoke bash reproduction/7b_base/run_profiled_train.sh
+ALGO=ppo RUN_MODE=full bash reproduction/7b_base/run_profiled_train.sh
+```
+
+Useful profiling overrides:
+
+```bash
+GPU_SAMPLE_INTERVAL=5 \
+EXPERIMENT_NAME=nq_hotpotqa-grpo-7b-smoke-test \
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 \
+N_GPUS_PER_NODE=8 \
+ALGO=grpo \
+RUN_MODE=smoke \
+bash reproduction/7b_base/run_profiled_train.sh
+```
+
 GRPO, matching the upstream v0.2 7B-base GRPO settings:
 
 ```bash
