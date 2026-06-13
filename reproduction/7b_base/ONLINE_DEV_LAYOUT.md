@@ -94,6 +94,31 @@ cd /workspace/filesdir/code/search-r1/projects/Search-R1
 bash reproduction/7b_base/prepare_data.sh
 ```
 
+## Organize Existing Files
+
+If files were already downloaded under the old project-local layout, inspect and
+move them into the persistent layout.
+
+First inspect only:
+
+```bash
+. /workspace/filesdir/code/search-r1/venvs/searchr1/bin/activate
+cd /workspace/filesdir/code/search-r1/projects/Search-R1
+bash reproduction/7b_base/organize_online_dev_files.sh --dry-run
+```
+
+Then apply the move:
+
+```bash
+bash reproduction/7b_base/organize_online_dev_files.sh --apply
+```
+
+The script writes a manifest to:
+
+```text
+/workspace/filesdir/code/search-r1/outputs/layout_manifests/
+```
+
 Expected files:
 
 ```text
