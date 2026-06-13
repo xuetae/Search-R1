@@ -72,6 +72,7 @@ GPU_LOG="${RUN_DIR}/gpu_memory.csv"
 SUMMARY_FILE="${RUN_DIR}/summary.txt"
 CKPT_LIST="${RUN_DIR}/checkpoints.txt"
 ENV_FILE="${RUN_DIR}/env.txt"
+REPORT_IMAGE="${RUN_DIR}/report.png"
 
 write_env_snapshot() {
   {
@@ -177,6 +178,12 @@ wait "${MONITOR_PID}" 2>/dev/null || true
 trap - EXIT
 
 summarize_run "${EXIT_CODE}" "${START_EPOCH}" "${END_EPOCH}"
+
+if python3 "${SCRIPT_DIR}/render_training_report.py" "${RUN_DIR}" --output "${REPORT_IMAGE}" >/dev/null 2>&1; then
+  echo "Training report: ${REPORT_IMAGE}"
+else
+  echo "Training report generation failed. Install matplotlib in the active environment to enable report.png." >&2
+fi
 
 echo "Run summary: ${SUMMARY_FILE}"
 echo "GPU memory log: ${GPU_LOG}"

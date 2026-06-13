@@ -156,10 +156,12 @@ reproduction/7b_base/runs/<experiment_name>/summary.txt
 reproduction/7b_base/runs/<experiment_name>/gpu_memory.csv
 reproduction/7b_base/runs/<experiment_name>/train.log
 reproduction/7b_base/runs/<experiment_name>/checkpoints.txt
+reproduction/7b_base/runs/<experiment_name>/report.png
 ```
 
 Check these fields before starting full training:
 
+- `report.png`: visual summary with status, wall-clock time, peak GPU memory, checkpoint count, memory curve, and GPU utilization curve.
 - `summary.txt`: exit code, wall-clock duration, peak GPU memory, ckpt directory.
 - `gpu_memory.csv`: sampled `nvidia-smi` memory and utilization.
 - `checkpoints.txt`: saved `global_step_*` checkpoint directories.
