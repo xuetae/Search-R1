@@ -118,17 +118,6 @@ authorized repo id:
 HF_BASE_MODEL_ID=meta-llama/Llama-2-7b-hf bash reproduction/7b_base/download_models.sh
 ```
 
-If the LLaMA repo returns `GatedRepoError` or `403`, your Hugging Face account is
-not authorized for that model. Request access on the model page, use another
-authorized LLaMA-7B repo, or upload the model files manually to
-`/workspace/filesdir/code/search-r1/models/7b_base/llama-7b/`.
-
-You can still download the retriever model first:
-
-```bash
-SKIP_BASE_MODEL_DOWNLOAD=1 bash reproduction/7b_base/download_models.sh
-```
-
 ## Prepare Data
 
 ```bash

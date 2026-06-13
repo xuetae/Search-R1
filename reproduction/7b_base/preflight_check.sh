@@ -29,46 +29,12 @@ check_dir() {
   fi
 }
 
-check_hf_model_dir() {
-  local path="$1"
-  local label="$2"
-  if [[ ! -d "${path}" ]]; then
-    echo "[missing] ${label}: ${path}" >&2
-    missing=1
-    return
-  fi
-
-  if [[ ! -f "${path}/config.json" ]]; then
-    echo "[incomplete] ${label}: missing config.json in ${path}" >&2
-    missing=1
-    return
-  fi
-
-  shopt -s nullglob
-  local weights=(
-    "${path}"/*.safetensors
-    "${path}"/*.bin
-    "${path}"/*.pt
-    "${path}"/pytorch_model*.bin
-    "${path}"/model*.safetensors
-  )
-  shopt -u nullglob
-
-  if [[ "${#weights[@]}" -eq 0 ]]; then
-    echo "[incomplete] ${label}: no model weight files found in ${path}" >&2
-    missing=1
-    return
-  fi
-
-  echo "[ok] ${label}: ${path}"
-}
-
 check_file "${DATA_DIR}/train.parquet" "train parquet"
 check_file "${DATA_DIR}/test.parquet" "test parquet"
 check_file "${WIKI18_DIR}/wiki-18.jsonl" "wiki-18 corpus"
 check_file "${WIKI18_DIR}/e5_Flat.index" "e5 FAISS index"
-check_hf_model_dir "${LOCAL_BASE_MODEL}" "local ${BASE_MODEL_NAME} base model"
-check_hf_model_dir "${LOCAL_RETRIEVER_MODEL}" "local e5 retriever model"
+check_dir "${LOCAL_BASE_MODEL}" "local ${BASE_MODEL_NAME} base model"
+check_dir "${LOCAL_RETRIEVER_MODEL}" "local e5 retriever model"
 
 if command -v nvidia-smi >/dev/null 2>&1; then
   nvidia-smi --query-gpu=index,name,memory.total --format=csv,noheader
