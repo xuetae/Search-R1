@@ -118,6 +118,22 @@ authorized repo id:
 HF_BASE_MODEL_ID=meta-llama/Llama-2-7b-hf bash reproduction/7b_base/download_models.sh
 ```
 
+If Hugging Face access is blocked, download the LLaMA-7B base model from
+ModelScope instead:
+
+```bash
+python -m pip install --no-cache-dir modelscope
+BASE_MODEL_SOURCE=modelscope \
+MS_BASE_MODEL_ID=modelscope/Llama-2-7b-ms \
+bash reproduction/7b_base/download_models.sh
+```
+
+This stores the base model at:
+
+```text
+/workspace/filesdir/code/search-r1/models/7b_base/llama-7b/
+```
+
 ## Prepare Data
 
 ```bash
