@@ -172,16 +172,18 @@ def render_report(run_dir: Path, output: Path) -> None:
     details = [
         ("Run mode", summary.get("run_mode", env.get("RUN_MODE", "n/a"))),
         ("Algorithm", summary.get("algo", env.get("ALGO", "n/a"))),
+        ("GPUs", env.get("N_GPUS_PER_NODE", "n/a")),
         ("Train samples", env.get("TRAIN_DATA_NUM", "n/a")),
         ("Val samples", env.get("VAL_DATA_NUM", "n/a")),
         ("Total steps", env.get("TOTAL_TRAINING_STEPS", "n/a")),
         ("Save freq", env.get("SAVE_FREQ", "n/a")),
         ("Batch size", env.get("TRAIN_BATCH_SIZE", "n/a")),
-        ("Model", env.get("BASE_MODEL", "n/a")),
+        ("Max lengths", f"{env.get('MAX_PROMPT_LENGTH', 'n/a')}/{env.get('MAX_RESPONSE_LENGTH', 'n/a')}"),
+        ("Rollout mem", env.get("ROLLOUT_GPU_MEMORY_UTILIZATION", "n/a")),
     ]
     details_ax.text(0.0, 0.95, "Run Configuration", fontsize=12, weight="bold", color="#111827")
     for row_idx, (label, value) in enumerate(details):
-        y = 0.82 - row_idx * 0.10
+        y = 0.82 - row_idx * 0.09
         details_ax.text(0.00, y, label, color="#667085")
         details_ax.text(0.34, y, str(value), color="#111827")
 

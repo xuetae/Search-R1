@@ -132,6 +132,28 @@ The server listens on `http://127.0.0.1:8000/retrieve` by default. Override with
 
 Recommended workflow: run a small smoke training first, inspect runtime, GPU memory, and checkpoints, then run the full dataset.
 
+Single-H20 smoke run:
+
+```bash
+conda activate searchr1
+ALGO=grpo RUN_MODE=h20_smoke bash reproduction/7b_base/run_profiled_train.sh
+```
+
+`h20_smoke` is the safest first run for a 1-GPU online development instance. It sets:
+
+- `CUDA_VISIBLE_DEVICES=0`
+- `N_GPUS_PER_NODE=1`
+- `TRAIN_DATA_NUM=8`
+- `VAL_DATA_NUM=4`
+- `TRAIN_BATCH_SIZE=4`
+- `PPO_MICRO_BATCH_SIZE=1`
+- `MAX_PROMPT_LENGTH=2048`
+- `MAX_RESPONSE_LENGTH=256`
+- `MAX_TURNS=2`
+- `ROLLOUT_GPU_MEMORY_UTILIZATION=0.45`
+- `TOTAL_TRAINING_STEPS=2`
+- `SAVE_FREQ=1`
+
 Smoke run with local profiling:
 
 ```bash
