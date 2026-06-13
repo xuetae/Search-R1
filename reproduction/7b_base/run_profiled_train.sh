@@ -8,7 +8,7 @@ source "${SCRIPT_DIR}/env.sh"
 ALGO="${ALGO:-grpo}"
 RUN_MODE="${RUN_MODE:-smoke}"
 GPU_SAMPLE_INTERVAL="${GPU_SAMPLE_INTERVAL:-10}"
-RUN_ROOT="${RUN_ROOT:-${WORK_DIR}/reproduction/7b_base/runs}"
+RUN_ROOT="${RUN_ROOT:-${OUTPUT_ROOT}/runs}"
 RUN_ID="${RUN_ID:-$(date +%Y%m%d_%H%M%S)}"
 
 case "${ALGO}" in
@@ -91,7 +91,7 @@ export EXPERIMENT_NAME="${EXPERIMENT_NAME:-${DATA_NAME}-search-r1-${ALGO}-qwen2.
 RUN_DIR="${RUN_ROOT}/${EXPERIMENT_NAME}"
 mkdir -p "${RUN_DIR}"
 
-export CKPT_DIR="${CKPT_DIR:-${WORK_DIR}/verl_checkpoints/${EXPERIMENT_NAME}}"
+export CKPT_DIR="${CKPT_DIR:-${OUTPUT_ROOT}/checkpoints/${EXPERIMENT_NAME}}"
 export TRAIN_LOG_FILE="${TRAIN_LOG_FILE:-${RUN_DIR}/train.log}"
 
 GPU_LOG="${RUN_DIR}/gpu_memory.csv"
@@ -107,7 +107,13 @@ write_env_snapshot() {
     echo "RUN_ID=${RUN_ID}"
     echo "EXPERIMENT_NAME=${EXPERIMENT_NAME}"
     echo "WORK_DIR=${WORK_DIR}"
+    echo "SEARCH_R1_ROOT=${SEARCH_R1_ROOT}"
     echo "DATA_DIR=${DATA_DIR}"
+    echo "WIKI18_DIR=${WIKI18_DIR}"
+    echo "MODEL_ROOT=${MODEL_ROOT}"
+    echo "OUTPUT_ROOT=${OUTPUT_ROOT}"
+    echo "LOG_ROOT=${LOG_ROOT}"
+    echo "CACHE_ROOT=${CACHE_ROOT}"
     echo "BASE_MODEL=${BASE_MODEL}"
     echo "RETRIEVER_URL=${RETRIEVER_URL}"
     echo "RETRIEVER_TOPK=${RETRIEVER_TOPK}"

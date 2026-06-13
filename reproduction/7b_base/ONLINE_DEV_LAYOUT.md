@@ -1,0 +1,131 @@
+# Online Development Layout
+
+Use this layout in the platform JupyterLab Terminal. Keep code, virtual
+environments, data, models, logs, and outputs separated under the persistent
+`filesdir` path.
+
+## Directory Layout
+
+```text
+/workspace/filesdir/code/search-r1/
+  projects/
+    Search-R1/              # git clone, branch llama-7b-run
+  venvs/
+    searchr1/               # Python virtual environment
+  data/
+    nq_hotpotqa_train/      # train.parquet, test.parquet
+    wiki-18/                # wiki-18.jsonl, e5_Flat.index
+  models/
+    7b_base/
+      qwen2.5-7b/
+      e5-base-v2/
+  outputs/
+    runs/                   # summary.txt, gpu_memory.csv, report.png
+    checkpoints/            # saved actor/critic checkpoints
+  logs/
+  cache/
+```
+
+The reproduction scripts infer this root automatically when the repository is
+cloned to:
+
+```text
+/workspace/filesdir/code/search-r1/projects/Search-R1
+```
+
+That means these defaults are used:
+
+```text
+WORK_DIR=/workspace/filesdir/code/search-r1/projects/Search-R1
+SEARCH_R1_ROOT=/workspace/filesdir/code/search-r1
+DATA_DIR=/workspace/filesdir/code/search-r1/data/nq_hotpotqa_train
+WIKI18_DIR=/workspace/filesdir/code/search-r1/data/wiki-18
+MODEL_ROOT=/workspace/filesdir/code/search-r1/models/7b_base
+OUTPUT_ROOT=/workspace/filesdir/code/search-r1/outputs
+```
+
+## First-Time Setup
+
+Run commands in JupyterLab Terminal, not in a notebook cell.
+
+```bash
+mkdir -p /workspace/filesdir/code/search-r1/projects
+mkdir -p /workspace/filesdir/code/search-r1/venvs
+mkdir -p /workspace/filesdir/code/search-r1/data
+mkdir -p /workspace/filesdir/code/search-r1/models
+mkdir -p /workspace/filesdir/code/search-r1/outputs
+mkdir -p /workspace/filesdir/code/search-r1/logs
+mkdir -p /workspace/filesdir/code/search-r1/cache
+```
+
+Create and activate the Python environment:
+
+```bash
+python3 -m venv /workspace/filesdir/code/search-r1/venvs/searchr1
+. /workspace/filesdir/code/search-r1/venvs/searchr1/bin/activate
+python -m pip install --no-cache-dir --upgrade pip setuptools wheel
+```
+
+Clone the project:
+
+```bash
+cd /workspace/filesdir/code/search-r1/projects
+git clone -b llama-7b-run --depth=1 https://github.com/xuetae/Search-R1.git
+cd /workspace/filesdir/code/search-r1/projects/Search-R1
+git branch
+```
+
+Install dependencies:
+
+```bash
+. /workspace/filesdir/code/search-r1/venvs/searchr1/bin/activate
+cd /workspace/filesdir/code/search-r1/projects/Search-R1
+python -m pip install --no-cache-dir -e .
+python -m pip install --no-cache-dir "transformers<4.48" datasets pyserini uvicorn fastapi huggingface_hub faiss-cpu wandb IPython matplotlib
+python -m pip install --no-cache-dir "vllm==0.6.3"
+python -m pip install --no-cache-dir flash-attn --no-build-isolation || true
+```
+
+## Prepare Data
+
+```bash
+. /workspace/filesdir/code/search-r1/venvs/searchr1/bin/activate
+cd /workspace/filesdir/code/search-r1/projects/Search-R1
+bash reproduction/7b_base/prepare_data.sh
+```
+
+Expected files:
+
+```text
+/workspace/filesdir/code/search-r1/data/nq_hotpotqa_train/train.parquet
+/workspace/filesdir/code/search-r1/data/nq_hotpotqa_train/test.parquet
+/workspace/filesdir/code/search-r1/data/wiki-18/wiki-18.jsonl
+/workspace/filesdir/code/search-r1/data/wiki-18/e5_Flat.index
+```
+
+## Run H20 Smoke Training
+
+Start the retriever first in one terminal:
+
+```bash
+. /workspace/filesdir/code/search-r1/venvs/searchr1/bin/activate
+cd /workspace/filesdir/code/search-r1/projects/Search-R1
+bash reproduction/7b_base/launch_retriever.sh
+```
+
+Run smoke training in another terminal:
+
+```bash
+. /workspace/filesdir/code/search-r1/venvs/searchr1/bin/activate
+cd /workspace/filesdir/code/search-r1/projects/Search-R1
+ALGO=grpo RUN_MODE=h20_smoke bash reproduction/7b_base/run_profiled_train.sh
+```
+
+Results are written to:
+
+```text
+/workspace/filesdir/code/search-r1/outputs/runs/<experiment_name>/
+/workspace/filesdir/code/search-r1/outputs/checkpoints/<experiment_name>/
+```
+
+Open `report.png` in the run directory for the visual training summary.

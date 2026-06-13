@@ -5,10 +5,26 @@ set -euo pipefail
 # The official v0.2 scripts in this repository use Qwen/Qwen2.5-7B as the 7B base model.
 
 export WORK_DIR="${WORK_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+
+# Keep code, environments, data, models, and outputs separated on platforms that
+# mount a persistent filesdir root such as /workspace/filesdir/code/search-r1.
+if [[ -z "${SEARCH_R1_ROOT:-}" ]]; then
+  if [[ "$(basename "${WORK_DIR}")" == "Search-R1" && "$(basename "$(dirname "${WORK_DIR}")")" == "projects" ]]; then
+    export SEARCH_R1_ROOT="$(dirname "$(dirname "${WORK_DIR}")")"
+  else
+    export SEARCH_R1_ROOT="${WORK_DIR}"
+  fi
+else
+  export SEARCH_R1_ROOT
+fi
+
 export DATA_NAME="${DATA_NAME:-nq_hotpotqa_train}"
-export DATA_DIR="${DATA_DIR:-${WORK_DIR}/data/${DATA_NAME}}"
-export WIKI18_DIR="${WIKI18_DIR:-${WORK_DIR}/data/wiki-18}"
-export MODEL_ROOT="${MODEL_ROOT:-${WORK_DIR}/models/7b_base}"
+export DATA_DIR="${DATA_DIR:-${SEARCH_R1_ROOT}/data/${DATA_NAME}}"
+export WIKI18_DIR="${WIKI18_DIR:-${SEARCH_R1_ROOT}/data/wiki-18}"
+export MODEL_ROOT="${MODEL_ROOT:-${SEARCH_R1_ROOT}/models/7b_base}"
+export OUTPUT_ROOT="${OUTPUT_ROOT:-${SEARCH_R1_ROOT}/outputs}"
+export LOG_ROOT="${LOG_ROOT:-${SEARCH_R1_ROOT}/logs}"
+export CACHE_ROOT="${CACHE_ROOT:-${SEARCH_R1_ROOT}/cache}"
 export LOCAL_BASE_MODEL="${LOCAL_BASE_MODEL:-${MODEL_ROOT}/qwen2.5-7b}"
 export LOCAL_RETRIEVER_MODEL="${LOCAL_RETRIEVER_MODEL:-${MODEL_ROOT}/e5-base-v2}"
 

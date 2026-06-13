@@ -2,6 +2,9 @@
 
 This directory contains the self-contained launcher set for testing the paper-style 7B base result.
 
+For platform online development with persistent storage under
+`/workspace/filesdir/code/search-r1`, follow `ONLINE_DEV_LAYOUT.md`.
+
 ## What To Prepare
 
 - Python/Search-R1 environment: `searchr1`, created by `setup_envs.sh`.
@@ -189,11 +192,11 @@ The smoke defaults are intentionally small:
 Each profiled run writes:
 
 ```text
-reproduction/7b_base/runs/<experiment_name>/summary.txt
-reproduction/7b_base/runs/<experiment_name>/gpu_memory.csv
-reproduction/7b_base/runs/<experiment_name>/train.log
-reproduction/7b_base/runs/<experiment_name>/checkpoints.txt
-reproduction/7b_base/runs/<experiment_name>/report.png
+outputs/runs/<experiment_name>/summary.txt
+outputs/runs/<experiment_name>/gpu_memory.csv
+outputs/runs/<experiment_name>/train.log
+outputs/runs/<experiment_name>/checkpoints.txt
+outputs/runs/<experiment_name>/report.png
 ```
 
 Check these fields before starting full training:
@@ -265,7 +268,7 @@ bash reproduction/7b_base/evaluate_7b_base.sh
 Evaluate a trained checkpoint:
 
 ```bash
-EVAL_MODEL=verl_checkpoints/nq_hotpotqa_train-search-r1-grpo-qwen2.5-7b-em/global_step_1000/actor \
+EVAL_MODEL=/workspace/filesdir/code/search-r1/outputs/checkpoints/nq_hotpotqa_train-search-r1-grpo-qwen2.5-7b-em/actor/global_step_1000 \
 bash reproduction/7b_base/evaluate_7b_base.sh
 ```
 
