@@ -107,21 +107,28 @@ write_inventory() {
 write_expected_files() {
   log ""
   log "## Expected Files After Organization"
-  for path in \
-    "${DATA_DIR}/train.parquet" \
-    "${DATA_DIR}/test.parquet" \
-    "${WIKI18_DIR}/wiki-18.jsonl" \
-    "${WIKI18_DIR}/e5_Flat.index" \
-    "${LOCAL_BASE_MODEL}" \
-    "${LOCAL_RETRIEVER_MODEL}" \
-    "${OUTPUT_ROOT}/runs" \
-    "${OUTPUT_ROOT}/checkpoints"; do
-    if [[ -e "${path}" ]]; then
-      log "[ok] ${path}"
-    else
-      log "[missing] ${path}"
-    fi
-  done
+  check_expected "${DATA_DIR}/train.parquet" "${WORK_DIR}/data/${DATA_NAME}/train.parquet"
+  check_expected "${DATA_DIR}/test.parquet" "${WORK_DIR}/data/${DATA_NAME}/test.parquet"
+  check_expected "${WIKI18_DIR}/wiki-18.jsonl" "${WORK_DIR}/data/wiki-18/wiki-18.jsonl"
+  check_expected "${WIKI18_DIR}/e5_Flat.index" "${WORK_DIR}/data/wiki-18/e5_Flat.index"
+  check_expected "${LOCAL_BASE_MODEL}" "${WORK_DIR}/models/7b_base/qwen2.5-7b"
+  check_expected "${LOCAL_RETRIEVER_MODEL}" "${WORK_DIR}/models/7b_base/e5-base-v2"
+  check_expected "${OUTPUT_ROOT}/runs" "${WORK_DIR}/reproduction/7b_base/runs"
+  check_expected "${OUTPUT_ROOT}/checkpoints" "${WORK_DIR}/verl_checkpoints"
+}
+
+check_expected() {
+  local target="$1"
+  local legacy_source="$2"
+
+  if [[ -e "${target}" ]]; then
+    log "[ok] ${target}"
+  elif [[ -e "${legacy_source}" ]]; then
+    log "[planned] ${target}"
+    log "          source: ${legacy_source}"
+  else
+    log "[missing] ${target}"
+  fi
 }
 
 log "Search-R1 online development layout organizer"
