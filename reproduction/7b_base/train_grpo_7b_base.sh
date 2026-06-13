@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=env.sh
 source "${SCRIPT_DIR}/env.sh"
 
-export EXPERIMENT_NAME="${EXPERIMENT_NAME:-${DATA_NAME}-search-r1-grpo-qwen2.5-7b-em}"
+export EXPERIMENT_NAME="${EXPERIMENT_NAME:-${DATA_NAME}-search-r1-grpo-${BASE_MODEL_NAME}-em}"
 export TRAIN_DATA_NUM="${TRAIN_DATA_NUM:-null}"
 export VAL_DATA_NUM="${VAL_DATA_NUM:-null}"
 export TRAIN_BATCH_SIZE="${TRAIN_BATCH_SIZE:-512}"

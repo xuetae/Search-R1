@@ -33,7 +33,7 @@ check_file "${DATA_DIR}/train.parquet" "train parquet"
 check_file "${DATA_DIR}/test.parquet" "test parquet"
 check_file "${WIKI18_DIR}/wiki-18.jsonl" "wiki-18 corpus"
 check_file "${WIKI18_DIR}/e5_Flat.index" "e5 FAISS index"
-check_dir "${LOCAL_BASE_MODEL}" "local 7B base model"
+check_dir "${LOCAL_BASE_MODEL}" "local ${BASE_MODEL_NAME} base model"
 check_dir "${LOCAL_RETRIEVER_MODEL}" "local e5 retriever model"
 
 if command -v nvidia-smi >/dev/null 2>&1; then
@@ -44,8 +44,12 @@ fi
 
 if [[ "${missing}" -ne 0 ]]; then
   echo "Preflight failed. Run setup_envs.sh, download_models.sh, and prepare_data.sh as needed." >&2
+  echo "Current model settings:" >&2
+  echo "  BASE_MODEL_NAME=${BASE_MODEL_NAME}" >&2
+  echo "  LOCAL_BASE_MODEL=${LOCAL_BASE_MODEL}" >&2
+  echo "  HF_BASE_MODEL_ID=${HF_BASE_MODEL_ID}" >&2
+  echo "For a pre-uploaded LLaMA-7B directory, set LOCAL_BASE_MODEL=/path/to/llama-7b or put it at ${LOCAL_BASE_MODEL}." >&2
   exit 1
 fi
 
 echo "Preflight passed."
-

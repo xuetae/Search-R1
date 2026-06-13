@@ -87,7 +87,7 @@ case "${RUN_MODE}" in
     ;;
 esac
 
-export EXPERIMENT_NAME="${EXPERIMENT_NAME:-${DATA_NAME}-search-r1-${ALGO}-qwen2.5-7b-${RUN_MODE}-${RUN_ID}}"
+export EXPERIMENT_NAME="${EXPERIMENT_NAME:-${DATA_NAME}-search-r1-${ALGO}-${BASE_MODEL_NAME}-${RUN_MODE}-${RUN_ID}}"
 RUN_DIR="${RUN_ROOT}/${EXPERIMENT_NAME}"
 mkdir -p "${RUN_DIR}"
 

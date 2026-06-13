@@ -12,10 +12,10 @@ For platform online development with persistent storage under
 - GPUs: the upstream 7B scripts assume 1 node with 8 GPUs.
 - Dataset: `PeterJinGo/nq_hotpotqa_train`, downloaded to `data/nq_hotpotqa_train`.
 - Retrieval corpus/index: `wiki-18.jsonl` plus `e5_Flat.index`, downloaded to `data/wiki-18`.
-- Base model: default is `Qwen/Qwen2.5-7B`, downloaded to `models/7b_base/qwen2.5-7b`.
+- Base model: default local directory is `models/7b_base/llama-7b`; set `LOCAL_BASE_MODEL` if your LLaMA-7B weights are elsewhere.
 - Retriever model: default is `intfloat/e5-base-v2`, downloaded to `models/7b_base/e5-base-v2`.
 
-The branch name is `llama-7b-run`, but this repository's paper reproduction scripts do not contain an official LLaMA-7B setting. The available 7B-base paper configuration is Qwen2.5-7B. You can override `BASE_MODEL` if you want to test a local LLaMA-family 7B checkpoint.
+This branch is configured for a LLaMA-family 7B base model by default. The upstream paper scripts used Qwen2.5-7B, so keep the exact base model path recorded in each run's `env.txt`.
 
 ## One-Command Server Bootstrap
 
@@ -250,8 +250,8 @@ bash reproduction/7b_base/train_ppo_7b_base.sh
 Useful overrides:
 
 ```bash
-BASE_MODEL=Qwen/Qwen2.5-7B \
-EXPERIMENT_NAME=nq_hotpotqa_train-search-r1-grpo-qwen2.5-7b-em \
+LOCAL_BASE_MODEL=/workspace/filesdir/code/search-r1/models/7b_base/llama-7b \
+EXPERIMENT_NAME=nq_hotpotqa_train-search-r1-grpo-llama-7b-em \
 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 \
 bash reproduction/7b_base/train_grpo_7b_base.sh
 ```
@@ -268,7 +268,7 @@ bash reproduction/7b_base/evaluate_7b_base.sh
 Evaluate a trained checkpoint:
 
 ```bash
-EVAL_MODEL=/workspace/filesdir/code/search-r1/outputs/checkpoints/nq_hotpotqa_train-search-r1-grpo-qwen2.5-7b-em/actor/global_step_1000 \
+EVAL_MODEL=/workspace/filesdir/code/search-r1/outputs/checkpoints/nq_hotpotqa_train-search-r1-grpo-llama-7b-em/actor/global_step_1000 \
 bash reproduction/7b_base/evaluate_7b_base.sh
 ```
 

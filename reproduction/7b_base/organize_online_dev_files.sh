@@ -111,7 +111,7 @@ write_expected_files() {
   check_expected "${DATA_DIR}/test.parquet" "${WORK_DIR}/data/${DATA_NAME}/test.parquet"
   check_expected "${WIKI18_DIR}/wiki-18.jsonl" "${WORK_DIR}/data/wiki-18/wiki-18.jsonl"
   check_expected "${WIKI18_DIR}/e5_Flat.index" "${WORK_DIR}/data/wiki-18/e5_Flat.index"
-  check_expected "${LOCAL_BASE_MODEL}" "${WORK_DIR}/models/7b_base/qwen2.5-7b"
+  check_expected "${LOCAL_BASE_MODEL}" "${WORK_DIR}/models/7b_base/${BASE_MODEL_NAME}"
   check_expected "${LOCAL_RETRIEVER_MODEL}" "${WORK_DIR}/models/7b_base/e5-base-v2"
   check_expected "${OUTPUT_ROOT}/runs" "${WORK_DIR}/reproduction/7b_base/runs"
   check_expected "${OUTPUT_ROOT}/checkpoints" "${WORK_DIR}/verl_checkpoints"

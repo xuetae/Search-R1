@@ -17,7 +17,7 @@ environments, data, models, logs, and outputs separated under the persistent
     wiki-18/                # wiki-18.jsonl, e5_Flat.index
   models/
     7b_base/
-      qwen2.5-7b/
+      llama-7b/
       e5-base-v2/
   outputs/
     runs/                   # summary.txt, gpu_memory.csv, report.png
@@ -84,6 +84,38 @@ python -m pip install --no-cache-dir -e .
 python -m pip install --no-cache-dir "transformers<4.48" datasets pyserini uvicorn fastapi huggingface_hub faiss-cpu wandb IPython matplotlib
 python -m pip install --no-cache-dir "vllm==0.6.3"
 python -m pip install --no-cache-dir flash-attn --no-build-isolation || true
+```
+
+## Base Model
+
+This branch defaults to:
+
+```text
+BASE_MODEL_NAME=llama-7b
+LOCAL_BASE_MODEL=/workspace/filesdir/code/search-r1/models/7b_base/llama-7b
+```
+
+If you already uploaded LLaMA-7B weights, put the Hugging Face format model
+files under:
+
+```text
+/workspace/filesdir/code/search-r1/models/7b_base/llama-7b/
+```
+
+If your model is stored somewhere else, pass it explicitly:
+
+```bash
+LOCAL_BASE_MODEL=/path/to/llama-7b \
+ALGO=grpo \
+RUN_MODE=h20_smoke \
+bash reproduction/7b_base/run_profiled_train.sh
+```
+
+If you want `download_models.sh` to download from Hugging Face, set the exact
+authorized repo id:
+
+```bash
+HF_BASE_MODEL_ID=meta-llama/Llama-2-7b-hf bash reproduction/7b_base/download_models.sh
 ```
 
 ## Prepare Data
