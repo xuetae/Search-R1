@@ -26,9 +26,9 @@ esac
 
 case "${RUN_MODE}" in
   h20_smoke)
-    export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-0}"
-    export N_GPUS_PER_NODE="${N_GPUS_PER_NODE:-1}"
-    export NNODES="${NNODES:-1}"
+    export CUDA_VISIBLE_DEVICES="${H20_CUDA_VISIBLE_DEVICES:-0}"
+    export N_GPUS_PER_NODE="${H20_N_GPUS_PER_NODE:-1}"
+    export NNODES="${H20_NNODES:-1}"
     export TRAIN_DATA_NUM="${TRAIN_DATA_NUM:-8}"
     export VAL_DATA_NUM="${VAL_DATA_NUM:-4}"
     export TRAIN_BATCH_SIZE="${TRAIN_BATCH_SIZE:-4}"
@@ -194,7 +194,46 @@ summarize_run() {
   } > "${SUMMARY_FILE}"
 }
 
+check_required_inputs() {
+  local missing=0
+  if [[ ! -f "${DATA_DIR}/train.parquet" ]]; then
+    echo "[missing] train parquet: ${DATA_DIR}/train.parquet" | tee -a "${TRAIN_LOG_FILE}" >&2
+    missing=1
+  fi
+  if [[ ! -f "${DATA_DIR}/test.parquet" ]]; then
+    echo "[missing] test parquet: ${DATA_DIR}/test.parquet" | tee -a "${TRAIN_LOG_FILE}" >&2
+    missing=1
+  fi
+  if [[ "${missing}" -ne 0 ]]; then
+    {
+      echo
+      echo "Data files are missing. Prepare the dataset before training:"
+      echo "  cd ${WORK_DIR}"
+      echo "  bash reproduction/7b_base/prepare_data.sh"
+      echo
+      echo "If your data is stored outside the repository, rerun with:"
+      echo "  DATA_DIR=/path/to/nq_hotpotqa_train ALGO=${ALGO} RUN_MODE=${RUN_MODE} bash reproduction/7b_base/run_profiled_train.sh"
+    } | tee -a "${TRAIN_LOG_FILE}" >&2
+    return 1
+  fi
+  return 0
+}
+
 write_env_snapshot
+if ! check_required_inputs; then
+  echo "wall_time,timestamp,gpu_index,gpu_name,memory_used_mb,memory_total_mb,gpu_util_percent" > "${GPU_LOG}"
+  START_EPOCH="$(date +%s)"
+  END_EPOCH="${START_EPOCH}"
+  summarize_run 2 "${START_EPOCH}" "${END_EPOCH}"
+  if python3 "${SCRIPT_DIR}/render_training_report.py" "${RUN_DIR}" --output "${REPORT_IMAGE}" >/dev/null 2>&1; then
+    echo "Training report: ${REPORT_IMAGE}"
+  fi
+  echo "Run summary: ${SUMMARY_FILE}"
+  echo "GPU memory log: ${GPU_LOG}"
+  echo "Checkpoint list: ${CKPT_LIST}"
+  exit 2
+fi
+
 START_EPOCH="$(date +%s)"
 monitor_gpu &
 MONITOR_PID="$!"

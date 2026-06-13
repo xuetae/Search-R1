@@ -154,6 +154,21 @@ ALGO=grpo RUN_MODE=h20_smoke bash reproduction/7b_base/run_profiled_train.sh
 - `TOTAL_TRAINING_STEPS=2`
 - `SAVE_FREQ=1`
 
+If the runner reports missing parquet files, prepare the dataset first:
+
+```bash
+bash reproduction/7b_base/prepare_data.sh
+```
+
+If the dataset is stored in a persistent directory outside the repository, pass it explicitly:
+
+```bash
+DATA_DIR=/workspace/filesdir/code/search-r1/data/nq_hotpotqa_train \
+ALGO=grpo \
+RUN_MODE=h20_smoke \
+bash reproduction/7b_base/run_profiled_train.sh
+```
+
 Smoke run with local profiling:
 
 ```bash
