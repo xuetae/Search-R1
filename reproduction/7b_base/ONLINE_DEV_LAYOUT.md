@@ -226,3 +226,29 @@ Results are written to:
 ```
 
 Open `report.png` in the run directory for the visual training summary.
+
+## Clean Failed Runs
+
+If a smoke run fails before completing, clean only the failed run artifacts.
+This does not touch datasets, wiki index files, or model directories.
+
+Inspect first:
+
+```bash
+cd /workspace/filesdir/code/search-r1/projects/Search-R1
+bash reproduction/7b_base/cleanup_failed_runs.sh
+```
+
+Delete the listed failed runs and matching checkpoints:
+
+```bash
+bash reproduction/7b_base/cleanup_failed_runs.sh --apply
+```
+
+Delete one known failed experiment:
+
+```bash
+bash reproduction/7b_base/cleanup_failed_runs.sh \
+  --experiment nq_hotpotqa_train-search-r1-grpo-llama-7b-h20_smoke-20260614_074816 \
+  --apply
+```
