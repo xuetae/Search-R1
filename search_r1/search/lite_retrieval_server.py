@@ -19,10 +19,16 @@ def tokenize(text: str):
 def load_lite_corpus(corpus_path: str, max_docs: int):
     docs = []
     with open(corpus_path, "r", encoding="utf-8", errors="replace") as f:
-        for idx, line in enumerate(f):
-            if idx >= max_docs:
+        for line_idx, line in enumerate(f):
+            if len(docs) >= max_docs:
                 break
-            item = json.loads(line)
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                item = json.loads(line)
+            except json.JSONDecodeError:
+                continue
             contents = item.get("contents") or item.get("text") or ""
             if not contents:
                 continue
@@ -31,7 +37,7 @@ def load_lite_corpus(corpus_path: str, max_docs: int):
                 title = contents.split("\n", 1)[0].strip('"')
             docs.append(
                 {
-                    "id": item.get("id", str(idx)),
+                    "id": item.get("id", str(line_idx)),
                     "title": title,
                     "text": item.get("text", "\n".join(contents.split("\n")[1:])),
                     "contents": contents,
