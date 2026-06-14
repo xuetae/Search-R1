@@ -201,6 +201,23 @@ cd /workspace/filesdir/code/search-r1/projects/Search-R1
 ALGO=grpo RUN_MODE=h20_smoke bash reproduction/7b_base/run_profiled_train.sh
 ```
 
+`h20_smoke` is a single-GPU connectivity run. It uses 1 training sample per
+batch, shorter generation limits, a smaller vLLM cache budget, and disables the
+reference-policy worker by default:
+
+```text
+USE_KL_LOSS=false
+DISABLE_REFERENCE_POLICY=true
+ROLLOUT_GPU_MEMORY_UTILIZATION=0.25
+MAX_NUM_BATCHED_TOKENS=2048
+MAX_NUM_SEQS=4
+```
+
+This mode is intended to confirm the retriever, rollout, training step,
+checkpoint saving, GPU memory logging, and `report.png` generation. It is not
+the paper-faithful final run. Use `RUN_MODE=full` on a multi-GPU allocation for
+the full reproduction settings.
+
 Results are written to:
 
 ```text
