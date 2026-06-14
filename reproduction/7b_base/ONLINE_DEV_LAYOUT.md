@@ -213,7 +213,7 @@ ROLLOUT_NAME=hf
 ROLLOUT_GPU_MEMORY_UTILIZATION=0.25
 ROLLOUT_DTYPE=float16
 ACTOR_MODEL_DTYPE=float16
-HF_SUMMON_FULL_PARAMS=false
+HF_SUMMON_FULL_PARAMS=true
 HF_USE_CACHE=false
 MAX_NUM_BATCHED_TOKENS=1024
 MAX_NUM_SEQS=4
@@ -227,11 +227,11 @@ checkpoint saving, GPU memory logging, and `report.png` generation. It keeps
 online search enabled and uses the slower Hugging Face rollout path by default
 to avoid vLLM kernel issues seen on some single-H20 environments. Because the
 local FAISS retriever can occupy about 61GB RAM and HF 7B rollout/training can
-occupy about 57GB RAM, the script raises Ray's memory kill threshold to 0.99 for
-this smoke run. It also limits retrieval to one document and one search turn to
-keep the verification run small while still exercising the retrieval path. It is
-not the paper-faithful final run. Use `RUN_MODE=full` on a multi-GPU allocation
-for the full reproduction settings.
+occupy about 57GB RAM, the script disables Ray's memory monitor for this short
+smoke run. It also limits retrieval to one document and one search turn to keep
+the verification run small while still exercising the retrieval path. It is not
+the paper-faithful final run. Use `RUN_MODE=full` on a multi-GPU allocation for
+the full reproduction settings.
 
 Results are written to:
 
