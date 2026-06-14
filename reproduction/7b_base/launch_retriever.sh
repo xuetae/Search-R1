@@ -11,6 +11,14 @@ RETRIEVER_NAME="${RETRIEVER_NAME:-e5}"
 RETRIEVER_FAISS_GPU="${RETRIEVER_FAISS_GPU:-0}"
 PYTHON_BIN="${PYTHON_BIN:-}"
 
+# CPU FAISS can trigger OpenBLAS "too many memory regions" crashes when the
+# runtime creates one BLAS thread per visible CPU. Keep defaults conservative;
+# override these env vars explicitly when the host has been validated.
+export OMP_NUM_THREADS="${OMP_NUM_THREADS:-4}"
+export OPENBLAS_NUM_THREADS="${OPENBLAS_NUM_THREADS:-1}"
+export MKL_NUM_THREADS="${MKL_NUM_THREADS:-1}"
+export NUMEXPR_NUM_THREADS="${NUMEXPR_NUM_THREADS:-1}"
+
 if [[ -z "${PYTHON_BIN}" ]]; then
   if command -v python >/dev/null 2>&1; then
     PYTHON_BIN="python"
