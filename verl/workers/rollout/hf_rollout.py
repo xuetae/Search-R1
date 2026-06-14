@@ -32,6 +32,14 @@ from transformers import GenerationConfig
 __all__ = ['HFRollout']
 
 
+def _torch_dtype(dtype_name):
+    if dtype_name in ('fp16', 'float16', 'half'):
+        return torch.float16
+    if dtype_name in ('bf16', 'bfloat16'):
+        return torch.bfloat16
+    return torch.float32
+
+
 class HFRollout(BaseRollout):
 
     def __init__(self, module: nn.Module, config):
@@ -81,7 +89,7 @@ class HFRollout(BaseRollout):
             # recurse need to set to False according to https://github.com/pytorch/pytorch/issues/100069
             param_ctx = FSDP.summon_full_params(self.module, writeback=False, recurse=False)
         with param_ctx:
-            with torch.autocast(device_type='cuda', dtype=torch.bfloat16):
+            with torch.autocast(device_type='cuda', dtype=_torch_dtype(self.config.get('dtype', 'bfloat16'))):
                 output = self.module.generate(
                     input_ids=idx,
                     attention_mask=attention_mask,

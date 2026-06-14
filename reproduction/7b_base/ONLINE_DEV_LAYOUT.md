@@ -208,6 +208,7 @@ reference-policy worker by default:
 ```text
 USE_KL_LOSS=false
 DISABLE_REFERENCE_POLICY=true
+ROLLOUT_NAME=hf
 ROLLOUT_GPU_MEMORY_UTILIZATION=0.25
 ROLLOUT_DTYPE=float16
 MAX_NUM_BATCHED_TOKENS=2048
@@ -215,9 +216,10 @@ MAX_NUM_SEQS=4
 ```
 
 This mode is intended to confirm the retriever, rollout, training step,
-checkpoint saving, GPU memory logging, and `report.png` generation. It is not
-the paper-faithful final run. Use `RUN_MODE=full` on a multi-GPU allocation for
-the full reproduction settings.
+checkpoint saving, GPU memory logging, and `report.png` generation. It uses the
+slower Hugging Face rollout path by default to avoid vLLM kernel issues seen on
+some single-H20 environments. It is not the paper-faithful final run. Use
+`RUN_MODE=full` on a multi-GPU allocation for the full reproduction settings.
 
 Results are written to:
 
