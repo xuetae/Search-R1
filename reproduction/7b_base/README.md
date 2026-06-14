@@ -129,6 +129,13 @@ conda activate retriever
 bash reproduction/7b_base/launch_retriever.sh
 ```
 
+For single-H20 method validation on a 128GB online-dev node, use the lite
+retriever instead of the full 61GB FAISS index:
+
+```bash
+RETRIEVER_TOPK=1 LITE_RETRIEVER_MAX_DOCS=20000 bash reproduction/7b_base/launch_lite_retriever.sh
+```
+
 The server listens on `http://127.0.0.1:8000/retrieve` by default. Override with `RETRIEVER_URL` in the training/evaluation shell if needed.
 
 ## Train 7B Base
@@ -166,13 +173,11 @@ ALGO=grpo RUN_MODE=h20_smoke bash reproduction/7b_base/run_profiled_train.sh
 - `TOTAL_TRAINING_STEPS=4`
 - `SAVE_FREQ=1`
 
-Keep the local retriever running for this mode. The 61GB FAISS index and HF 7B
-rollout/training are close to the limit on a 128GB online-dev node, so this mode
-uses one search result per turn, loads the actor in fp16 for the smoke run, and
-disables HF generation cache. It also disables Ray's memory monitor for the
-short smoke run because the retriever and 7B worker sit near the 128GB node
-limit. Use this smoke mode to validate online retrieval, several training
-updates, checkpointing, GPU memory logs, and report generation.
+Keep a retriever running for this mode. On a 128GB online-dev node, use
+`launch_lite_retriever.sh` for method validation; the full FAISS retriever and
+HF 7B rollout/training do not reliably fit in the same container. This smoke
+mode validates online retrieval, several training updates, checkpointing, GPU
+memory logs, and report generation.
 
 If the runner reports missing parquet files, prepare the dataset first:
 

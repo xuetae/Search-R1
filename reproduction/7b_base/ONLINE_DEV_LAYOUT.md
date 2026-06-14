@@ -186,6 +186,15 @@ cd /workspace/filesdir/code/search-r1/projects/Search-R1
 bash reproduction/7b_base/launch_retriever.sh
 ```
 
+For a single-H20 online-dev smoke run on a 128GB node, use the lite retriever
+instead. It keeps the same `/retrieve` API but loads only a small Wikipedia
+subset, avoiding the 61GB FAISS index resident memory:
+
+```bash
+cd /workspace/filesdir/code/search-r1/projects/Search-R1
+RETRIEVER_TOPK=1 LITE_RETRIEVER_MAX_DOCS=20000 bash reproduction/7b_base/launch_lite_retriever.sh
+```
+
 The launcher defaults to CPU FAISS because many venv installs provide
 `faiss-cpu`. If your environment has a GPU-enabled FAISS build, run:
 
@@ -225,13 +234,13 @@ TOTAL_TRAINING_STEPS=4
 This mode is intended to confirm online retrieval, rollout, training step,
 checkpoint saving, GPU memory logging, and `report.png` generation. It keeps
 online search enabled and uses the slower Hugging Face rollout path by default
-to avoid vLLM kernel issues seen on some single-H20 environments. Because the
-local FAISS retriever can occupy about 61GB RAM and HF 7B rollout/training can
-occupy about 57GB RAM, the script disables Ray's memory monitor for this short
-smoke run. It also limits retrieval to one document and one search turn to keep
-the verification run small while still exercising the retrieval path. It is not
-the paper-faithful final run. Use `RUN_MODE=full` on a multi-GPU allocation for
-the full reproduction settings.
+to avoid vLLM kernel issues seen on some single-H20 environments. Use the lite
+retriever above for this mode on 128GB nodes; the full FAISS retriever plus HF
+7B rollout/training is too close to the node memory limit. This mode also limits
+retrieval to one document and one search turn to keep the verification run small
+while still exercising the retrieval path. It is not the paper-faithful final
+run. Use the full FAISS retriever on a separate service or a larger-memory node
+for the full reproduction settings.
 
 Results are written to:
 
