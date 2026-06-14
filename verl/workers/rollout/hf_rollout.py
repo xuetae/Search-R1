@@ -85,9 +85,12 @@ class HFRollout(BaseRollout):
 
         generation_config = GenerationConfig(temperature=temperature, top_p=top_p, top_k=top_k)
 
-        if isinstance(self.module, FSDP):
+        summon_full_params = self.config.get('hf_summon_full_params', True)
+        if isinstance(self.module, FSDP) and summon_full_params:
             # recurse need to set to False according to https://github.com/pytorch/pytorch/issues/100069
             param_ctx = FSDP.summon_full_params(self.module, writeback=False, recurse=False)
+
+        use_cache = self.config.get('hf_use_cache', True)
         with param_ctx:
             with torch.autocast(device_type='cuda', dtype=_torch_dtype(self.config.get('dtype', 'bfloat16'))):
                 output = self.module.generate(
@@ -102,7 +105,7 @@ class HFRollout(BaseRollout):
                     # renormalize_logits=True,
                     output_scores=False,  # this is potentially very large
                     return_dict_in_generate=True,
-                    use_cache=True)
+                    use_cache=use_cache)
         # TODO: filter out the seq with no answers like ds-chat
         seq = output.sequences
 

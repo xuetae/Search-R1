@@ -59,6 +59,8 @@ case "${RUN_MODE}" in
     export DISABLE_REFERENCE_POLICY="${DISABLE_REFERENCE_POLICY:-true}"
     export DO_SEARCH="${DO_SEARCH:-true}"
     export ACTOR_MODEL_DTYPE="${ACTOR_MODEL_DTYPE:-float16}"
+    export HF_SUMMON_FULL_PARAMS="${HF_SUMMON_FULL_PARAMS:-false}"
+    export HF_USE_CACHE="${HF_USE_CACHE:-false}"
     export RAY_memory_usage_threshold="${RAY_memory_usage_threshold:-0.99}"
     export PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}"
     ;;
@@ -154,6 +156,8 @@ write_env_snapshot() {
     echo "DISABLE_REFERENCE_POLICY=${DISABLE_REFERENCE_POLICY:-}"
     echo "DO_SEARCH=${DO_SEARCH:-}"
     echo "ACTOR_MODEL_DTYPE=${ACTOR_MODEL_DTYPE:-}"
+    echo "HF_SUMMON_FULL_PARAMS=${HF_SUMMON_FULL_PARAMS:-}"
+    echo "HF_USE_CACHE=${HF_USE_CACHE:-}"
     echo "RAY_memory_usage_threshold=${RAY_memory_usage_threshold:-}"
     echo "PYTORCH_CUDA_ALLOC_CONF=${PYTORCH_CUDA_ALLOC_CONF:-}"
     echo "TOTAL_TRAINING_STEPS=${TOTAL_TRAINING_STEPS}"
