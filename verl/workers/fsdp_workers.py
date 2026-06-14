@@ -523,6 +523,11 @@ class ActorRolloutRefWorker(Worker):
         if self.rank == 0:
             print(f'Saving actor checkpoint to {local_path}')
             os.makedirs(local_path, exist_ok=True)
+            generation_config = getattr(self.actor_module, 'generation_config', None)
+            if generation_config is not None and not getattr(generation_config, 'do_sample', False):
+                generation_config.temperature = None
+                generation_config.top_p = None
+                generation_config.top_k = None
             self.actor_module.save_pretrained(local_path, state_dict=state_dict)
             self.tokenizer.save_pretrained(local_path)
             if hdfs_path is not None:
