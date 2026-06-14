@@ -18,7 +18,7 @@ def tokenize(text: str):
 
 def load_lite_corpus(corpus_path: str, max_docs: int):
     docs = []
-    with open(corpus_path, "r", encoding="utf-8") as f:
+    with open(corpus_path, "r", encoding="utf-8", errors="replace") as f:
         for idx, line in enumerate(f):
             if idx >= max_docs:
                 break
