@@ -153,17 +153,19 @@ ALGO=grpo RUN_MODE=h20_smoke bash reproduction/7b_base/run_profiled_train.sh
 - `MAX_PROMPT_LENGTH=1024`
 - `MAX_RESPONSE_LENGTH=128`
 - `MAX_TURNS=2`
-- `DO_SEARCH=false`
+- `DO_SEARCH=true`
 - `ROLLOUT_NAME=hf`
 - `ROLLOUT_DTYPE=float16`
 - `ROLLOUT_GPU_MEMORY_UTILIZATION=0.25`
+- `RAY_memory_usage_threshold=0.99`
 - `TOTAL_TRAINING_STEPS=2`
 - `SAVE_FREQ=1`
 
-Stop the local retriever before this mode if it is running. The 61GB FAISS
-index and HF 7B rollout/training do not fit together on a 128GB online-dev
-node. Use this smoke mode to validate training, checkpointing, GPU memory logs,
-and report generation after validating the retriever separately.
+Keep the local retriever running for this mode. The 61GB FAISS index and HF 7B
+rollout/training are close to the limit on a 128GB online-dev node, so this mode
+raises Ray's memory kill threshold to 0.99. Use this smoke mode to validate
+online retrieval, training, checkpointing, GPU memory logs, and report
+generation.
 
 If the runner reports missing parquet files, prepare the dataset first:
 

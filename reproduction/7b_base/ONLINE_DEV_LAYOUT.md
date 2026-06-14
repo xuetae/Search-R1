@@ -208,7 +208,7 @@ reference-policy worker by default:
 ```text
 USE_KL_LOSS=false
 DISABLE_REFERENCE_POLICY=true
-DO_SEARCH=false
+DO_SEARCH=true
 ROLLOUT_NAME=hf
 ROLLOUT_GPU_MEMORY_UTILIZATION=0.25
 ROLLOUT_DTYPE=float16
@@ -216,21 +216,14 @@ MAX_NUM_BATCHED_TOKENS=2048
 MAX_NUM_SEQS=4
 ```
 
-This mode is intended to confirm rollout, training step, checkpoint saving, GPU
-memory logging, and `report.png` generation. It disables online search by
-default because the local FAISS retriever can occupy about 61GB RAM and does not
-fit together with HF 7B rollout/training on a 128GB online-dev node. It uses the
-slower Hugging Face rollout path by default to avoid vLLM kernel issues seen on
-some single-H20 environments. It is not the paper-faithful final run. Use
-`RUN_MODE=full` on a multi-GPU allocation for the full reproduction settings.
-
-If the local retriever is still running, stop it before `h20_smoke` training to
-free node memory:
-
-```bash
-ps -ef | grep "search_r1/search/retrieval_server.py" | grep -v grep
-kill <retriever_pid>
-```
+This mode is intended to confirm online retrieval, rollout, training step,
+checkpoint saving, GPU memory logging, and `report.png` generation. It keeps
+online search enabled and uses the slower Hugging Face rollout path by default
+to avoid vLLM kernel issues seen on some single-H20 environments. Because the
+local FAISS retriever can occupy about 61GB RAM and HF 7B rollout/training can
+occupy about 57GB RAM, the script raises Ray's memory kill threshold to 0.99 for
+this smoke run. It is not the paper-faithful final run. Use `RUN_MODE=full` on a
+multi-GPU allocation for the full reproduction settings.
 
 Results are written to:
 

@@ -56,7 +56,8 @@ case "${RUN_MODE}" in
     export TRAIN_LOGGER="${TRAIN_LOGGER:-[]}"
     export USE_KL_LOSS="${USE_KL_LOSS:-false}"
     export DISABLE_REFERENCE_POLICY="${DISABLE_REFERENCE_POLICY:-true}"
-    export DO_SEARCH="${DO_SEARCH:-false}"
+    export DO_SEARCH="${DO_SEARCH:-true}"
+    export RAY_memory_usage_threshold="${RAY_memory_usage_threshold:-0.99}"
     export PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}"
     ;;
   smoke)
@@ -150,6 +151,7 @@ write_env_snapshot() {
     echo "USE_KL_LOSS=${USE_KL_LOSS:-}"
     echo "DISABLE_REFERENCE_POLICY=${DISABLE_REFERENCE_POLICY:-}"
     echo "DO_SEARCH=${DO_SEARCH:-}"
+    echo "RAY_memory_usage_threshold=${RAY_memory_usage_threshold:-}"
     echo "PYTORCH_CUDA_ALLOC_CONF=${PYTORCH_CUDA_ALLOC_CONF:-}"
     echo "TOTAL_TRAINING_STEPS=${TOTAL_TRAINING_STEPS}"
     echo "SAVE_FREQ=${SAVE_FREQ}"
