@@ -8,6 +8,7 @@ source "${SCRIPT_DIR}/env.sh"
 INDEX_FILE="${INDEX_FILE:-${WIKI18_DIR}/e5_Flat.index}"
 CORPUS_FILE="${CORPUS_FILE:-${WIKI18_DIR}/wiki-18.jsonl}"
 RETRIEVER_NAME="${RETRIEVER_NAME:-e5}"
+RETRIEVER_FAISS_GPU="${RETRIEVER_FAISS_GPU:-0}"
 PYTHON_BIN="${PYTHON_BIN:-}"
 
 if [[ -z "${PYTHON_BIN}" ]]; then
@@ -33,6 +34,11 @@ if [[ ! -f "${CORPUS_FILE}" ]]; then
   exit 1
 fi
 
+FAISS_ARGS=()
+if [[ "${RETRIEVER_FAISS_GPU}" == "1" || "${RETRIEVER_FAISS_GPU}" == "true" ]]; then
+  FAISS_ARGS+=(--faiss_gpu)
+fi
+
 cd "${WORK_DIR}"
 "${PYTHON_BIN}" search_r1/search/retrieval_server.py \
   --index_path "${INDEX_FILE}" \
@@ -40,4 +46,4 @@ cd "${WORK_DIR}"
   --topk "${RETRIEVER_TOPK}" \
   --retriever_name "${RETRIEVER_NAME}" \
   --retriever_model "${RETRIEVER_MODEL}" \
-  --faiss_gpu
+  "${FAISS_ARGS[@]}"

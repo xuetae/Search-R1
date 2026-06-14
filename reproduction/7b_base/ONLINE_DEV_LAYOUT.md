@@ -186,6 +186,13 @@ cd /workspace/filesdir/code/search-r1/projects/Search-R1
 bash reproduction/7b_base/launch_retriever.sh
 ```
 
+The launcher defaults to CPU FAISS because many venv installs provide
+`faiss-cpu`. If your environment has a GPU-enabled FAISS build, run:
+
+```bash
+RETRIEVER_FAISS_GPU=1 bash reproduction/7b_base/launch_retriever.sh
+```
+
 Run smoke training in another terminal:
 
 ```bash
