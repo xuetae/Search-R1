@@ -142,6 +142,38 @@ The server listens on `http://127.0.0.1:8000/retrieve` by default. Override with
 
 Recommended workflow: run a small smoke training first, inspect runtime, GPU memory, and checkpoints, then run the full dataset.
 
+Two-GPU paper-style pilot:
+
+```bash
+conda activate searchr1
+ALGO=grpo RUN_MODE=two_gpu_paper bash reproduction/7b_base/run_profiled_train.sh
+```
+
+`two_gpu_paper` keeps the original Search-R1 training design enabled while
+using a limited dataset size for validation:
+
+- `CUDA_VISIBLE_DEVICES=0,1`
+- `N_GPUS_PER_NODE=2`
+- `TRAIN_DATA_NUM=128`
+- `VAL_DATA_NUM=32`
+- `TRAIN_BATCH_SIZE=8`
+- `PPO_MINI_BATCH_SIZE=4`
+- `PPO_MICRO_BATCH_SIZE=1`
+- `ROLLOUT_NAME=vllm`
+- `TENSOR_MODEL_PARALLEL_SIZE=2`
+- `DO_SEARCH=true`
+- `RETRIEVER_TOPK=3`
+- `USE_KL_LOSS=true`
+- `DISABLE_REFERENCE_POLICY=false`
+- `N_AGENT=2`
+- `MAX_TURNS=2`
+- `TOTAL_TRAINING_STEPS=20`
+- `SAVE_FREQ=5`
+
+Use this mode for the next method-validating run on a 2-GPU allocation. It is
+closer to the paper setup than `h20_smoke`, but still much smaller than the full
+training schedule.
+
 Single-H20 smoke run:
 
 ```bash

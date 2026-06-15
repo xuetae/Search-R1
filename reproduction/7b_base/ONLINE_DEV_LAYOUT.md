@@ -210,6 +210,18 @@ cd /workspace/filesdir/code/search-r1/projects/Search-R1
 ALGO=grpo RUN_MODE=h20_smoke bash reproduction/7b_base/run_profiled_train.sh
 ```
 
+For a 2-GPU paper-style pilot, keep the full retriever running and use:
+
+```bash
+cd /workspace/filesdir/code/search-r1/projects/Search-R1
+ALGO=grpo RUN_MODE=two_gpu_paper bash reproduction/7b_base/run_profiled_train.sh
+```
+
+This mode restores the original Search-R1 design choices: vLLM rollout, online
+retrieval, reference policy/KL, and GRPO with multiple sampled agents. It uses
+128 training examples and 20 training steps by default so the run is large
+enough to validate the method without launching the full schedule.
+
 `h20_smoke` is a single-GPU connectivity run. It uses 1 training sample per
 batch, shorter generation limits, a smaller vLLM cache budget, and disables the
 reference-policy worker by default:
