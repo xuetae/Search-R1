@@ -154,25 +154,30 @@ using a limited dataset size for validation:
 
 - `CUDA_VISIBLE_DEVICES=0,1`
 - `N_GPUS_PER_NODE=2`
-- `TRAIN_DATA_NUM=128`
-- `VAL_DATA_NUM=32`
-- `TRAIN_BATCH_SIZE=8`
-- `PPO_MINI_BATCH_SIZE=4`
+- `TRAIN_DATA_NUM=64`
+- `VAL_DATA_NUM=16`
+- `TRAIN_BATCH_SIZE=4`
+- `PPO_MINI_BATCH_SIZE=2`
 - `PPO_MICRO_BATCH_SIZE=1`
+- `MAX_PROMPT_LENGTH=1024`
+- `MAX_RESPONSE_LENGTH=128`
 - `ROLLOUT_NAME=vllm`
 - `TENSOR_MODEL_PARALLEL_SIZE=2`
+- `ROLLOUT_GPU_MEMORY_UTILIZATION=0.35`
+- `MAX_NUM_BATCHED_TOKENS=2048`
+- `MAX_NUM_SEQS=8`
 - `DO_SEARCH=true`
 - `RETRIEVER_TOPK=3`
 - `USE_KL_LOSS=true`
 - `DISABLE_REFERENCE_POLICY=false`
 - `N_AGENT=2`
 - `MAX_TURNS=2`
-- `TOTAL_TRAINING_STEPS=20`
+- `TOTAL_TRAINING_STEPS=10`
 - `SAVE_FREQ=5`
 
 Use this mode for the next method-validating run on a 2-GPU allocation. It is
-closer to the paper setup than `h20_smoke`, but still much smaller than the full
-training schedule.
+closer to the paper setup than `h20_smoke`, but sized conservatively for two H20
+GPUs before increasing data size or sequence length.
 
 Single-H20 smoke run:
 
