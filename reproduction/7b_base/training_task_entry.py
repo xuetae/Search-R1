@@ -19,15 +19,19 @@ import urllib.request
 from pathlib import Path
 
 
-DEFAULT_PROJECT_DIR = Path("/workspace/filesdir/code/search-r1/projects/Search-R1")
+DEFAULT_PROJECT_DIRS = [
+    Path("/filesdir/code/search-r1/projects/Search-R1"),
+    Path("/workspace/filesdir/code/search-r1/projects/Search-R1"),
+]
 
 
 def project_dir() -> Path:
     configured = os.environ.get("WORK_DIR") or os.environ.get("SEARCH_R1_PROJECT_DIR")
     if configured:
         return Path(configured).resolve()
-    if DEFAULT_PROJECT_DIR.exists():
-        return DEFAULT_PROJECT_DIR
+    for candidate in DEFAULT_PROJECT_DIRS:
+        if candidate.exists():
+            return candidate
     return Path(__file__).resolve().parents[2]
 
 
@@ -73,7 +77,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--base-model-name", default=os.environ.get("BASE_MODEL_NAME", "llama-7b"))
     parser.add_argument(
         "--local-base-model",
-        default=os.environ.get("LOCAL_BASE_MODEL", "/workspace/filesdir/code/search-r1/models/7b_base/llama-7b"),
+        default=os.environ.get("LOCAL_BASE_MODEL"),
     )
     parser.add_argument("--cuda-visible-devices", default=os.environ.get("TWO_GPU_CUDA_VISIBLE_DEVICES", "0,1"))
     parser.add_argument("--retriever-topk", default=os.environ.get("RETRIEVER_TOPK", "3"))
@@ -91,12 +95,14 @@ def main() -> int:
     args = parse_args()
     root = project_dir()
     script_dir = root / "reproduction" / "7b_base"
+    persistent_root = root.parents[1] if root.name == "Search-R1" and root.parent.name == "projects" else root
+    local_base_model = args.local_base_model or str(persistent_root / "models" / "7b_base" / "llama-7b")
 
     env = os.environ.copy()
     env.setdefault("WORK_DIR", str(root))
-    env.setdefault("SEARCH_R1_ROOT", "/workspace/filesdir/code/search-r1")
+    env.setdefault("SEARCH_R1_ROOT", str(persistent_root))
     env.setdefault("BASE_MODEL_NAME", args.base_model_name)
-    env.setdefault("LOCAL_BASE_MODEL", args.local_base_model)
+    env.setdefault("LOCAL_BASE_MODEL", local_base_model)
     env.setdefault("ALGO", args.algo)
     env.setdefault("RUN_MODE", args.run_mode)
     env.setdefault("TWO_GPU_CUDA_VISIBLE_DEVICES", args.cuda_visible_devices)

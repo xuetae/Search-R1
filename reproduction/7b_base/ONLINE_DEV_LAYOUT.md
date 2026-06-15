@@ -2,12 +2,20 @@
 
 Use this layout in the platform JupyterLab Terminal. Keep code, virtual
 environments, data, models, logs, and outputs separated under the persistent
-`filesdir` path.
+`filesdir` path. On xFusion, first confirm the mount point:
+
+```bash
+mount | grep -E "file-manage|filesdir"
+```
+
+This project now uses `/filesdir/code/search-r1` as the recommended persistent
+root. If your platform mounts file management at `/workspace/filesdir`, set
+`SEARCH_R1_ROOT=/workspace/filesdir/code/search-r1` explicitly.
 
 ## Directory Layout
 
 ```text
-/workspace/filesdir/code/search-r1/
+/filesdir/code/search-r1/
   projects/
     Search-R1/              # git clone, branch llama-7b-run
   venvs/
@@ -30,56 +38,68 @@ The reproduction scripts infer this root automatically when the repository is
 cloned to:
 
 ```text
-/workspace/filesdir/code/search-r1/projects/Search-R1
+/filesdir/code/search-r1/projects/Search-R1
 ```
 
 That means these defaults are used:
 
 ```text
-WORK_DIR=/workspace/filesdir/code/search-r1/projects/Search-R1
-SEARCH_R1_ROOT=/workspace/filesdir/code/search-r1
-DATA_DIR=/workspace/filesdir/code/search-r1/data/nq_hotpotqa_train
-WIKI18_DIR=/workspace/filesdir/code/search-r1/data/wiki-18
-MODEL_ROOT=/workspace/filesdir/code/search-r1/models/7b_base
-OUTPUT_ROOT=/workspace/filesdir/code/search-r1/outputs
+WORK_DIR=/filesdir/code/search-r1/projects/Search-R1
+SEARCH_R1_ROOT=/filesdir/code/search-r1
+DATA_DIR=/filesdir/code/search-r1/data/nq_hotpotqa_train
+WIKI18_DIR=/filesdir/code/search-r1/data/wiki-18
+MODEL_ROOT=/filesdir/code/search-r1/models/7b_base
+OUTPUT_ROOT=/filesdir/code/search-r1/outputs
 ```
 
 ## First-Time Setup
 
 Run commands in JupyterLab Terminal, not in a notebook cell.
 
+If you uploaded the restore archives, use the rebuild helper:
+
 ```bash
-mkdir -p /workspace/filesdir/code/search-r1/projects
-mkdir -p /workspace/filesdir/code/search-r1/venvs
-mkdir -p /workspace/filesdir/code/search-r1/data
-mkdir -p /workspace/filesdir/code/search-r1/models
-mkdir -p /workspace/filesdir/code/search-r1/outputs
-mkdir -p /workspace/filesdir/code/search-r1/logs
-mkdir -p /workspace/filesdir/code/search-r1/cache
+bash /filesdir/rebuild_platform_project.sh \
+  --root /filesdir/code/search-r1 \
+  --code-archive /filesdir/Search-R1-code-llama-7b-run-fbed069.tar.gz \
+  --llama-archive /filesdir/llama-7b.tar.gz \
+  --e5-archive /filesdir/e5-base-v2.tar.gz
+```
+
+Otherwise create the layout manually:
+
+```bash
+mkdir -p /filesdir/code/search-r1/projects
+mkdir -p /filesdir/code/search-r1/venvs
+mkdir -p /filesdir/code/search-r1/data
+mkdir -p /filesdir/code/search-r1/models
+mkdir -p /filesdir/code/search-r1/outputs
+mkdir -p /filesdir/code/search-r1/logs
+mkdir -p /filesdir/code/search-r1/cache
 ```
 
 Create and activate the Python environment:
 
 ```bash
-python3 -m venv /workspace/filesdir/code/search-r1/venvs/searchr1
-. /workspace/filesdir/code/search-r1/venvs/searchr1/bin/activate
+python3 -m venv /filesdir/code/search-r1/venvs/searchr1
+. /filesdir/code/search-r1/venvs/searchr1/bin/activate
 python -m pip install --no-cache-dir --upgrade pip setuptools wheel
 ```
 
 Clone the project:
 
 ```bash
-cd /workspace/filesdir/code/search-r1/projects
+cd /filesdir/code/search-r1/projects
 git clone -b llama-7b-run --depth=1 https://github.com/xuetae/Search-R1.git
-cd /workspace/filesdir/code/search-r1/projects/Search-R1
+cd /filesdir/code/search-r1/projects/Search-R1
 git branch
 ```
 
 Install dependencies:
 
 ```bash
-. /workspace/filesdir/code/search-r1/venvs/searchr1/bin/activate
-cd /workspace/filesdir/code/search-r1/projects/Search-R1
+. /filesdir/code/search-r1/venvs/searchr1/bin/activate
+cd /filesdir/code/search-r1/projects/Search-R1
 python -m pip install --no-cache-dir -e .
 python -m pip install --no-cache-dir "transformers<4.48" datasets pyserini uvicorn fastapi huggingface_hub faiss-cpu wandb IPython matplotlib
 python -m pip install --no-cache-dir "vllm==0.6.3"
@@ -92,14 +112,14 @@ This branch defaults to:
 
 ```text
 BASE_MODEL_NAME=llama-7b
-LOCAL_BASE_MODEL=/workspace/filesdir/code/search-r1/models/7b_base/llama-7b
+LOCAL_BASE_MODEL=/filesdir/code/search-r1/models/7b_base/llama-7b
 ```
 
 If you already uploaded LLaMA-7B weights, put the Hugging Face format model
 files under:
 
 ```text
-/workspace/filesdir/code/search-r1/models/7b_base/llama-7b/
+/filesdir/code/search-r1/models/7b_base/llama-7b/
 ```
 
 If your model is stored somewhere else, pass it explicitly:
@@ -131,14 +151,14 @@ bash reproduction/7b_base/download_models.sh
 This stores the base model at:
 
 ```text
-/workspace/filesdir/code/search-r1/models/7b_base/llama-7b/
+/filesdir/code/search-r1/models/7b_base/llama-7b/
 ```
 
 ## Prepare Data
 
 ```bash
-. /workspace/filesdir/code/search-r1/venvs/searchr1/bin/activate
-cd /workspace/filesdir/code/search-r1/projects/Search-R1
+. /filesdir/code/search-r1/venvs/searchr1/bin/activate
+cd /filesdir/code/search-r1/projects/Search-R1
 bash reproduction/7b_base/prepare_data.sh
 ```
 
@@ -150,8 +170,8 @@ move them into the persistent layout.
 First inspect only:
 
 ```bash
-. /workspace/filesdir/code/search-r1/venvs/searchr1/bin/activate
-cd /workspace/filesdir/code/search-r1/projects/Search-R1
+. /filesdir/code/search-r1/venvs/searchr1/bin/activate
+cd /filesdir/code/search-r1/projects/Search-R1
 bash reproduction/7b_base/organize_online_dev_files.sh --dry-run
 ```
 
@@ -164,16 +184,16 @@ bash reproduction/7b_base/organize_online_dev_files.sh --apply
 The script writes a manifest to:
 
 ```text
-/workspace/filesdir/code/search-r1/outputs/layout_manifests/
+/filesdir/code/search-r1/outputs/layout_manifests/
 ```
 
 Expected files:
 
 ```text
-/workspace/filesdir/code/search-r1/data/nq_hotpotqa_train/train.parquet
-/workspace/filesdir/code/search-r1/data/nq_hotpotqa_train/test.parquet
-/workspace/filesdir/code/search-r1/data/wiki-18/wiki-18.jsonl
-/workspace/filesdir/code/search-r1/data/wiki-18/e5_Flat.index
+/filesdir/code/search-r1/data/nq_hotpotqa_train/train.parquet
+/filesdir/code/search-r1/data/nq_hotpotqa_train/test.parquet
+/filesdir/code/search-r1/data/wiki-18/wiki-18.jsonl
+/filesdir/code/search-r1/data/wiki-18/e5_Flat.index
 ```
 
 ## Run H20 Smoke Training
@@ -181,8 +201,8 @@ Expected files:
 Start the retriever first in one terminal:
 
 ```bash
-. /workspace/filesdir/code/search-r1/venvs/searchr1/bin/activate
-cd /workspace/filesdir/code/search-r1/projects/Search-R1
+. /filesdir/code/search-r1/venvs/searchr1/bin/activate
+cd /filesdir/code/search-r1/projects/Search-R1
 bash reproduction/7b_base/launch_retriever.sh
 ```
 
@@ -191,7 +211,7 @@ instead. It keeps the same `/retrieve` API but loads only a small Wikipedia
 subset, avoiding the 61GB FAISS index resident memory:
 
 ```bash
-cd /workspace/filesdir/code/search-r1/projects/Search-R1
+cd /filesdir/code/search-r1/projects/Search-R1
 RETRIEVER_TOPK=1 LITE_RETRIEVER_MAX_DOCS=20000 bash reproduction/7b_base/launch_lite_retriever.sh
 ```
 
@@ -205,15 +225,15 @@ RETRIEVER_FAISS_GPU=1 bash reproduction/7b_base/launch_retriever.sh
 Run smoke training in another terminal:
 
 ```bash
-. /workspace/filesdir/code/search-r1/venvs/searchr1/bin/activate
-cd /workspace/filesdir/code/search-r1/projects/Search-R1
+. /filesdir/code/search-r1/venvs/searchr1/bin/activate
+cd /filesdir/code/search-r1/projects/Search-R1
 ALGO=grpo RUN_MODE=h20_smoke bash reproduction/7b_base/run_profiled_train.sh
 ```
 
 For a 2-GPU paper-style pilot, keep the full retriever running and use:
 
 ```bash
-cd /workspace/filesdir/code/search-r1/projects/Search-R1
+cd /filesdir/code/search-r1/projects/Search-R1
 ALGO=grpo RUN_MODE=two_gpu_paper bash reproduction/7b_base/run_profiled_train.sh
 ```
 
@@ -260,8 +280,8 @@ for the full reproduction settings.
 Results are written to:
 
 ```text
-/workspace/filesdir/code/search-r1/outputs/runs/<experiment_name>/
-/workspace/filesdir/code/search-r1/outputs/checkpoints/<experiment_name>/
+/filesdir/code/search-r1/outputs/runs/<experiment_name>/
+/filesdir/code/search-r1/outputs/checkpoints/<experiment_name>/
 ```
 
 Open `report.png` in the run directory for the visual training summary.
@@ -274,7 +294,7 @@ This does not touch datasets, wiki index files, or model directories.
 Inspect first:
 
 ```bash
-cd /workspace/filesdir/code/search-r1/projects/Search-R1
+cd /filesdir/code/search-r1/projects/Search-R1
 bash reproduction/7b_base/cleanup_failed_runs.sh
 ```
 

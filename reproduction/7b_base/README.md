@@ -3,7 +3,7 @@
 This directory contains the self-contained launcher set for testing the paper-style 7B base result.
 
 For platform online development with persistent storage under
-`/workspace/filesdir/code/search-r1`, follow `ONLINE_DEV_LAYOUT.md`.
+`/filesdir/code/search-r1`, follow `ONLINE_DEV_LAYOUT.md`.
 
 ## What To Prepare
 
@@ -91,6 +91,50 @@ bash reproduction/7b_base/docker/run_grpo_container.sh
 
 ## Step-By-Step Setup
 
+## xFusion Platform Rebuild
+
+After deleting an xFusion algorithm entry, rebuild the project under the
+file-management mount instead of `/workspace`:
+
+```text
+/filesdir/code/search-r1
+```
+
+Restore the code archive to:
+
+```text
+/filesdir/code/search-r1/projects/Search-R1
+```
+
+Upload local model archives to `/filesdir`:
+
+```text
+/filesdir/llama-7b.tar.gz
+/filesdir/e5-base-v2.tar.gz
+```
+
+Then run this on the platform to create the directory layout, unpack uploaded
+models, download `train.parquet` / `test.parquet`, download `wiki-18.jsonl.gz`,
+merge `e5_Flat.index`, and print the final training command:
+
+```bash
+cd /filesdir/code/search-r1/projects/Search-R1
+bash reproduction/7b_base/rebuild_platform_project.sh
+```
+
+If models are already unpacked, skip model extraction:
+
+```bash
+UNPACK_MODELS=0 bash reproduction/7b_base/rebuild_platform_project.sh
+```
+
+If you only want to create directories and unpack models before downloading
+data later:
+
+```bash
+DOWNLOAD_DATA=0 bash reproduction/7b_base/rebuild_platform_project.sh
+```
+
 Create environments:
 
 ```bash
@@ -166,7 +210,7 @@ Recommended xFusion form values:
 - Max failed restarts: 0 or 1 while validating the pilot.
 - Scheduler queue/node group: select the H20 queue/node group.
 - Algorithm path or file-management mount: make sure this repository is visible
-  as the working path and `/workspace/filesdir/code/search-r1` is mounted.
+  as the working path and `/filesdir/code/search-r1` is mounted.
 
 `two_gpu_paper` keeps the original Search-R1 training design enabled while
 using a limited dataset size for validation:
@@ -246,7 +290,7 @@ bash reproduction/7b_base/prepare_data.sh
 If the dataset is stored in a persistent directory outside the repository, pass it explicitly:
 
 ```bash
-DATA_DIR=/workspace/filesdir/code/search-r1/data/nq_hotpotqa_train \
+DATA_DIR=/filesdir/code/search-r1/data/nq_hotpotqa_train \
 ALGO=grpo \
 RUN_MODE=h20_smoke \
 bash reproduction/7b_base/run_profiled_train.sh
@@ -330,7 +374,7 @@ bash reproduction/7b_base/train_ppo_7b_base.sh
 Useful overrides:
 
 ```bash
-LOCAL_BASE_MODEL=/workspace/filesdir/code/search-r1/models/7b_base/llama-7b \
+LOCAL_BASE_MODEL=/filesdir/code/search-r1/models/7b_base/llama-7b \
 EXPERIMENT_NAME=nq_hotpotqa_train-search-r1-grpo-llama-7b-em \
 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 \
 bash reproduction/7b_base/train_grpo_7b_base.sh
@@ -348,7 +392,7 @@ bash reproduction/7b_base/evaluate_7b_base.sh
 Evaluate a trained checkpoint:
 
 ```bash
-EVAL_MODEL=/workspace/filesdir/code/search-r1/outputs/checkpoints/nq_hotpotqa_train-search-r1-grpo-llama-7b-em/actor/global_step_1000 \
+EVAL_MODEL=/filesdir/code/search-r1/outputs/checkpoints/nq_hotpotqa_train-search-r1-grpo-llama-7b-em/actor/global_step_1000 \
 bash reproduction/7b_base/evaluate_7b_base.sh
 ```
 
