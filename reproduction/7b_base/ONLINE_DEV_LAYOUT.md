@@ -56,17 +56,14 @@ OUTPUT_ROOT=/filesdir/code/search-r1/outputs
 
 Run commands in JupyterLab Terminal, not in a notebook cell.
 
-If you uploaded the restore archives, use the rebuild helper:
+Upload only the local model archives to the file manager:
 
-```bash
-bash /filesdir/rebuild_platform_project.sh \
-  --root /filesdir/code/search-r1 \
-  --code-archive /filesdir/Search-R1-code-llama-7b-run-fbed069.tar.gz \
-  --llama-archive /filesdir/llama-7b.tar.gz \
-  --e5-archive /filesdir/e5-base-v2.tar.gz
+```text
+/filesdir/llama-7b.tar.gz
+/filesdir/e5-base-v2.tar.gz
 ```
 
-Otherwise create the layout manually:
+Create the persistent layout:
 
 ```bash
 mkdir -p /filesdir/code/search-r1/projects
@@ -76,6 +73,9 @@ mkdir -p /filesdir/code/search-r1/models
 mkdir -p /filesdir/code/search-r1/outputs
 mkdir -p /filesdir/code/search-r1/logs
 mkdir -p /filesdir/code/search-r1/cache
+mkdir -p /filesdir/code/search-r1/uploads
+mv /filesdir/llama-7b.tar.gz /filesdir/code/search-r1/uploads/ 2>/dev/null || true
+mv /filesdir/e5-base-v2.tar.gz /filesdir/code/search-r1/uploads/ 2>/dev/null || true
 ```
 
 Create and activate the Python environment:
@@ -93,6 +93,16 @@ cd /filesdir/code/search-r1/projects
 git clone -b llama-7b-run --depth=1 https://github.com/xuetae/Search-R1.git
 cd /filesdir/code/search-r1/projects/Search-R1
 git branch
+```
+
+Unpack uploaded models and download platform-side data:
+
+```bash
+bash reproduction/7b_base/rebuild_platform_project.sh \
+  --skip-code \
+  --llama-archive /filesdir/code/search-r1/uploads/llama-7b.tar.gz \
+  --e5-archive /filesdir/code/search-r1/uploads/e5-base-v2.tar.gz \
+  --download-data
 ```
 
 Install dependencies:

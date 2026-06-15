@@ -100,39 +100,63 @@ file-management mount instead of `/workspace`:
 /filesdir/code/search-r1
 ```
 
-Restore the code archive to:
-
-```text
-/filesdir/code/search-r1/projects/Search-R1
-```
-
-Upload local model archives to `/filesdir`:
+Code and data should be downloaded on the platform. Upload only the local model
+archives:
 
 ```text
 /filesdir/llama-7b.tar.gz
 /filesdir/e5-base-v2.tar.gz
 ```
 
-Then run this on the platform to create the directory layout, unpack uploaded
-models, download `train.parquet` / `test.parquet`, download `wiki-18.jsonl.gz`,
-merge `e5_Flat.index`, and print the final training command:
+Create the clean directory layout and clone this branch on the platform:
 
 ```bash
+mkdir -p /filesdir/code/search-r1/projects
+mkdir -p /filesdir/code/search-r1/uploads
+mv /filesdir/llama-7b.tar.gz /filesdir/code/search-r1/uploads/ 2>/dev/null || true
+mv /filesdir/e5-base-v2.tar.gz /filesdir/code/search-r1/uploads/ 2>/dev/null || true
+
+cd /filesdir/code/search-r1/projects
+git clone -b llama-7b-run https://github.com/xuetae/Search-R1.git
 cd /filesdir/code/search-r1/projects/Search-R1
-bash reproduction/7b_base/rebuild_platform_project.sh
+```
+
+Then unpack uploaded models and download platform-side data:
+
+```bash
+bash reproduction/7b_base/rebuild_platform_project.sh \
+  --skip-code \
+  --llama-archive /filesdir/code/search-r1/uploads/llama-7b.tar.gz \
+  --e5-archive /filesdir/code/search-r1/uploads/e5-base-v2.tar.gz \
+  --download-data
+```
+
+The script creates this final layout:
+
+```text
+/filesdir/code/search-r1/projects/Search-R1
+/filesdir/code/search-r1/data/nq_hotpotqa_train/train.parquet
+/filesdir/code/search-r1/data/nq_hotpotqa_train/test.parquet
+/filesdir/code/search-r1/data/wiki-18/wiki-18.jsonl
+/filesdir/code/search-r1/data/wiki-18/e5_Flat.index
+/filesdir/code/search-r1/models/7b_base/llama-7b
+/filesdir/code/search-r1/models/7b_base/e5-base-v2
+/filesdir/code/search-r1/outputs
+/filesdir/code/search-r1/logs
+/filesdir/code/search-r1/cache
 ```
 
 If models are already unpacked, skip model extraction:
 
 ```bash
-UNPACK_MODELS=0 bash reproduction/7b_base/rebuild_platform_project.sh
+bash reproduction/7b_base/rebuild_platform_project.sh --skip-code --skip-models --download-data
 ```
 
-If you only want to create directories and unpack models before downloading
-data later:
+If you only want to create directories and unpack models before downloading data
+later, omit `--download-data`:
 
 ```bash
-DOWNLOAD_DATA=0 bash reproduction/7b_base/rebuild_platform_project.sh
+bash reproduction/7b_base/rebuild_platform_project.sh --skip-code
 ```
 
 Create environments:

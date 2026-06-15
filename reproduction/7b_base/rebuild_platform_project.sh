@@ -11,7 +11,7 @@ Options:
   --code-archive PATH      Search-R1 code archive with a Search-R1/ top folder.
   --llama-archive PATH     LLaMA-7B model tar.gz archive.
   --e5-archive PATH        e5-base-v2 model tar.gz archive.
-  --skip-code              Do not restore code.
+  --skip-code              Do not restore code. Use this after git clone.
   --skip-models            Do not restore model archives.
   --download-data          Download train/test parquet, wiki-18, and e5 index.
   --preflight              Run preflight_check.sh after restore/download.
