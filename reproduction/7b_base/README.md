@@ -224,6 +224,25 @@ Use this entrypoint so the task starts the retriever and then launches training:
 python reproduction/7b_base/training_task_entry.py --algo grpo --run-mode two_gpu_paper
 ```
 
+When the task is created from File Management, xFusion mounts the selected
+algorithm path under `/workspace/algorithm`. Use the platform path in the run
+command:
+
+```bash
+python3 /workspace/algorithm/reproduction/7b_base/training_task_entry.py --algo grpo --run-mode two_gpu_paper
+```
+
+If the selected file-management path is `Search_R1/projects` instead of
+`Search_R1/projects/Search-R1`, use:
+
+```bash
+python3 /workspace/algorithm/Search-R1/reproduction/7b_base/training_task_entry.py --algo grpo --run-mode two_gpu_paper
+```
+
+The entrypoint reads data and models from `/workspace/filesdir` and writes run
+outputs, checkpoints, logs, and reports under `/workspace/model_out/search-r1`
+when the platform training-task output directory exists.
+
 Recommended xFusion form values:
 
 - Training task type: single-node training.

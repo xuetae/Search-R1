@@ -97,12 +97,23 @@ def main() -> int:
     args = parse_args()
     root = project_dir()
     script_dir = root / "reproduction" / "7b_base"
-    persistent_root = root.parents[1] if root.name == "Search-R1" and root.parent.name == "projects" else root
+    algorithm_root = Path("/workspace/algorithm")
+    if (root == algorithm_root or algorithm_root in root.parents) and Path("/workspace/filesdir").exists():
+        persistent_root = Path("/workspace/filesdir")
+    elif root.name == "Search-R1" and root.parent.name == "projects":
+        persistent_root = root.parents[1]
+    else:
+        persistent_root = root
     local_base_model = args.local_base_model or str(persistent_root / "models" / "7b_base" / "llama-7b")
+    model_out_root = Path("/workspace/model_out/search-r1")
 
     env = os.environ.copy()
     env.setdefault("WORK_DIR", str(root))
     env.setdefault("SEARCH_R1_ROOT", str(persistent_root))
+    if Path("/workspace/model_out").exists():
+        model_out_root.mkdir(parents=True, exist_ok=True)
+        env.setdefault("OUTPUT_ROOT", str(model_out_root / "outputs"))
+        env.setdefault("LOG_ROOT", str(model_out_root / "logs"))
     env.setdefault("BASE_MODEL_NAME", args.base_model_name)
     env.setdefault("LOCAL_BASE_MODEL", local_base_model)
     env.setdefault("ALGO", args.algo)
@@ -113,6 +124,8 @@ def main() -> int:
     env.setdefault("PYTHONUNBUFFERED", "1")
 
     print(f"[entry] project_dir={root}", flush=True)
+    print(f"[entry] persistent_root={env['SEARCH_R1_ROOT']}", flush=True)
+    print(f"[entry] output_root={env.get('OUTPUT_ROOT', '')}", flush=True)
     print(f"[entry] algo={env['ALGO']} run_mode={env['RUN_MODE']}", flush=True)
     print(f"[entry] cuda_visible_devices={env['TWO_GPU_CUDA_VISIBLE_DEVICES']}", flush=True)
     print(f"[entry] retriever_url={env['RETRIEVER_URL']}", flush=True)
