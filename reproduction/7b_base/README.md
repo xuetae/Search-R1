@@ -149,6 +149,25 @@ conda activate searchr1
 ALGO=grpo RUN_MODE=two_gpu_paper bash reproduction/7b_base/run_profiled_train.sh
 ```
 
+On xFusion training tasks, the run command field only accepts a Python command.
+Use this entrypoint so the task starts the retriever and then launches training:
+
+```bash
+python reproduction/7b_base/training_task_entry.py --algo grpo --run-mode two_gpu_paper
+```
+
+Recommended xFusion form values:
+
+- Training task type: single-node training.
+- Image: the Search-R1 image/version validated in online development.
+- Run command: `python reproduction/7b_base/training_task_entry.py --algo grpo --run-mode two_gpu_paper`.
+- Compute type: GPU / full card.
+- GPU specification: one node with 2 H20 GPUs.
+- Max failed restarts: 0 or 1 while validating the pilot.
+- Scheduler queue/node group: select the H20 queue/node group.
+- Algorithm path or file-management mount: make sure this repository is visible
+  as the working path and `/workspace/filesdir/code/search-r1` is mounted.
+
 `two_gpu_paper` keeps the original Search-R1 training design enabled while
 using a limited dataset size for validation:
 
