@@ -111,13 +111,22 @@ def main() -> int:
     else:
         persistent_root = root
     local_base_model = args.local_base_model or str(persistent_root / "models" / "7b_base" / "llama-7b")
-    platform_out_root = Path(args.train_out) if args.train_out else Path("/workspace/model_out")
+    if args.train_out:
+        platform_out_root = Path(args.train_out)
+    elif Path("/workspace/model-out").exists():
+        platform_out_root = Path("/workspace/model-out")
+    else:
+        platform_out_root = Path("/workspace/model_out")
     model_out_root = platform_out_root / "search-r1"
 
     env = os.environ.copy()
     env.setdefault("WORK_DIR", str(root))
     env.setdefault("SEARCH_R1_ROOT", str(persistent_root))
-    if platform_out_root.exists() or str(platform_out_root).startswith("/workspace/model_out"):
+    if (
+        platform_out_root.exists()
+        or str(platform_out_root).startswith("/workspace/model_out")
+        or str(platform_out_root).startswith("/workspace/model-out")
+    ):
         model_out_root.mkdir(parents=True, exist_ok=True)
         env.setdefault("OUTPUT_ROOT", str(model_out_root / "outputs"))
         env.setdefault("LOG_ROOT", str(Path(args.train_log) / "search-r1" if args.train_log else model_out_root / "logs"))

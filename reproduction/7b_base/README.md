@@ -245,6 +245,15 @@ when the platform training-task output directory exists.
 It also accepts xFusion injected arguments such as `--data_url`, `--train_out`,
 and `--train_log`; `--train_out` and `--train_log` are used for persistent task
 outputs when provided by the platform.
+Some xFusion deployments mount the persistent output directory as
+`/workspace/model-out`; the entrypoint detects that path too.
+
+If the algorithm mount contains an unexpected extra directory level, run the
+entrypoint directly from the file-management mount:
+
+```bash
+python3 /workspace/filesdir/projects/Search-R1/reproduction/7b_base/training_task_entry.py --algo grpo --run-mode two_gpu_paper
+```
 
 Recommended xFusion form values:
 
