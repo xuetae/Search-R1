@@ -242,6 +242,9 @@ python3 /workspace/algorithm/Search-R1/reproduction/7b_base/training_task_entry.
 The entrypoint reads data and models from `/workspace/filesdir` and writes run
 outputs, checkpoints, logs, and reports under `/workspace/model_out/search-r1`
 when the platform training-task output directory exists.
+It also accepts xFusion injected arguments such as `--data_url`, `--train_out`,
+and `--train_log`; `--train_out` and `--train_log` are used for persistent task
+outputs when provided by the platform.
 
 Recommended xFusion form values:
 

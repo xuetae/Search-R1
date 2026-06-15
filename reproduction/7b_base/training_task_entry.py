@@ -84,13 +84,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--cuda-visible-devices", default=os.environ.get("TWO_GPU_CUDA_VISIBLE_DEVICES", "0,1"))
     parser.add_argument("--retriever-topk", default=os.environ.get("RETRIEVER_TOPK", "3"))
     parser.add_argument("--retriever-timeout", type=int, default=int(os.environ.get("RETRIEVER_TIMEOUT", "900")))
+    parser.add_argument("--data_url", default=os.environ.get("DATA_URL"), help="xFusion injected dataset path.")
+    parser.add_argument("--train_out", default=os.environ.get("TRAIN_OUT"), help="xFusion injected persistent output path.")
+    parser.add_argument("--train_log", default=os.environ.get("TRAIN_LOG"), help="xFusion injected log output path.")
     parser.add_argument(
         "--skip-retriever",
         action="store_true",
         default=os.environ.get("SKIP_RETRIEVER", "").lower() in {"1", "true", "yes"},
         help="Use this only when another service already provides RETRIEVER_URL.",
     )
-    return parser.parse_args()
+    args, unknown = parser.parse_known_args()
+    if unknown:
+        print(f"[entry] ignoring unknown platform args: {unknown}", flush=True)
+    return args
 
 
 def main() -> int:
@@ -105,15 +111,16 @@ def main() -> int:
     else:
         persistent_root = root
     local_base_model = args.local_base_model or str(persistent_root / "models" / "7b_base" / "llama-7b")
-    model_out_root = Path("/workspace/model_out/search-r1")
+    platform_out_root = Path(args.train_out) if args.train_out else Path("/workspace/model_out")
+    model_out_root = platform_out_root / "search-r1"
 
     env = os.environ.copy()
     env.setdefault("WORK_DIR", str(root))
     env.setdefault("SEARCH_R1_ROOT", str(persistent_root))
-    if Path("/workspace/model_out").exists():
+    if platform_out_root.exists() or str(platform_out_root).startswith("/workspace/model_out"):
         model_out_root.mkdir(parents=True, exist_ok=True)
         env.setdefault("OUTPUT_ROOT", str(model_out_root / "outputs"))
-        env.setdefault("LOG_ROOT", str(model_out_root / "logs"))
+        env.setdefault("LOG_ROOT", str(Path(args.train_log) / "search-r1" if args.train_log else model_out_root / "logs"))
     env.setdefault("BASE_MODEL_NAME", args.base_model_name)
     env.setdefault("LOCAL_BASE_MODEL", local_base_model)
     env.setdefault("ALGO", args.algo)
@@ -126,6 +133,9 @@ def main() -> int:
     print(f"[entry] project_dir={root}", flush=True)
     print(f"[entry] persistent_root={env['SEARCH_R1_ROOT']}", flush=True)
     print(f"[entry] output_root={env.get('OUTPUT_ROOT', '')}", flush=True)
+    print(f"[entry] train_out={args.train_out or ''}", flush=True)
+    print(f"[entry] train_log={args.train_log or ''}", flush=True)
+    print(f"[entry] data_url={args.data_url or ''}", flush=True)
     print(f"[entry] algo={env['ALGO']} run_mode={env['RUN_MODE']}", flush=True)
     print(f"[entry] cuda_visible_devices={env['TWO_GPU_CUDA_VISIBLE_DEVICES']}", flush=True)
     print(f"[entry] retriever_url={env['RETRIEVER_URL']}", flush=True)
