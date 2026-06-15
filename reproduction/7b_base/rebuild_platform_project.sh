@@ -7,7 +7,7 @@ Usage:
   bash reproduction/7b_base/rebuild_platform_project.sh [options]
 
 Options:
-  --root PATH              Persistent project root. Default: /filesdir/code/search-r1
+  --root PATH              Persistent project root. Default: /workspace/filesdir/search-r1
   --code-archive PATH      Search-R1 code archive with a Search-R1/ top folder.
   --llama-archive PATH     LLaMA-7B model tar.gz archive.
   --e5-archive PATH        e5-base-v2 model tar.gz archive.
@@ -27,7 +27,7 @@ The script creates a clean platform layout:
 USAGE
 }
 
-ROOT="/filesdir/code/search-r1"
+ROOT="/workspace/filesdir/search-r1"
 CODE_ARCHIVE=""
 LLAMA_ARCHIVE=""
 E5_ARCHIVE=""

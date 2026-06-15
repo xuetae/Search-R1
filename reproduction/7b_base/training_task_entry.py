@@ -21,6 +21,8 @@ from pathlib import Path
 
 DEFAULT_PROJECT_DIRS = [
     Path("/filesdir/code/search-r1/projects/Search-R1"),
+    Path("/workspace/filesdir/projects/Search-R1"),
+    Path("/workspace/filesdir/search-r1/projects/Search-R1"),
     Path("/workspace/filesdir/code/search-r1/projects/Search-R1"),
 ]
 

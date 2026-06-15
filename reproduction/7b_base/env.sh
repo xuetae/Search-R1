@@ -8,15 +8,20 @@ set -euo pipefail
 export WORK_DIR="${WORK_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 
 # Keep code, environments, data, models, and outputs separated on platforms that
-# mount a persistent filesdir root such as /filesdir/code/search-r1 or
+# mount a persistent filesdir root such as /workspace/filesdir,
+# /workspace/filesdir/search-r1, /filesdir/code/search-r1, or
 # /workspace/filesdir/code/search-r1.
 if [[ -z "${SEARCH_R1_ROOT:-}" ]]; then
   if [[ "$(basename "${WORK_DIR}")" == "Search-R1" && "$(basename "$(dirname "${WORK_DIR}")")" == "projects" ]]; then
     export SEARCH_R1_ROOT="$(dirname "$(dirname "${WORK_DIR}")")"
   elif [[ -d "/filesdir" ]]; then
     export SEARCH_R1_ROOT="/filesdir/code/search-r1"
+  elif [[ -d "/workspace/filesdir/projects/Search-R1" ]]; then
+    export SEARCH_R1_ROOT="/workspace/filesdir"
+  elif [[ -d "/workspace/filesdir/search-r1" ]]; then
+    export SEARCH_R1_ROOT="/workspace/filesdir/search-r1"
   elif [[ -d "/workspace/filesdir" ]]; then
-    export SEARCH_R1_ROOT="/workspace/filesdir/code/search-r1"
+    export SEARCH_R1_ROOT="/workspace/filesdir/search-r1"
   else
     export SEARCH_R1_ROOT="${WORK_DIR}"
   fi
