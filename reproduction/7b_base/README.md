@@ -164,6 +164,8 @@ ALGO=grpo RUN_MODE=h20_smoke bash reproduction/7b_base/run_profiled_train.sh
 - `DO_SEARCH=true`
 - `ROLLOUT_NAME=hf`
 - `ROLLOUT_DTYPE=float16`
+- `ROLLOUT_DO_SAMPLE=false`
+- `ROLLOUT_REMOVE_INVALID_VALUES=true`
 - `ROLLOUT_GPU_MEMORY_UTILIZATION=0.25`
 - `ACTOR_MODEL_DTYPE=float16`
 - `HF_SUMMON_FULL_PARAMS=true`

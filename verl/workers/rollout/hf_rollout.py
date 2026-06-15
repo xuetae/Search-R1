@@ -83,7 +83,13 @@ class HFRollout(BaseRollout):
 
         temperature = prompts.meta_info.get('temperature', self.config.temperature)
 
-        generation_config = GenerationConfig(temperature=temperature, top_p=top_p, top_k=top_k)
+        generation_config = GenerationConfig(
+            do_sample=do_sample,
+            temperature=temperature if do_sample else None,
+            top_p=top_p if do_sample else None,
+            top_k=top_k if do_sample else None,
+            remove_invalid_values=self.config.get('remove_invalid_values', True),
+        )
 
         summon_full_params = self.config.get('hf_summon_full_params', True)
         if isinstance(self.module, FSDP) and summon_full_params:
