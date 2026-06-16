@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Rebuild the current Python environment for a vLLM 0.5.4 compatibility image.
+# Rebuild the current Python environment for a vLLM 0.5.x compatibility image.
 # Run this inside the xFusion online-development terminal, then test vLLM before
 # using "Make Image" in the platform UI.
 
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 PIP_BIN="${PIP_BIN:-${PYTHON_BIN} -m pip}"
-VLLM_VERSION="${VLLM_VERSION:-0.5.4}"
+VLLM_VERSION="${VLLM_VERSION:-0.5.3.post1}"
 TORCH_VERSION="${TORCH_VERSION:-2.3.0}"
 TRANSFORMERS_SPEC="${TRANSFORMERS_SPEC:-transformers<4.48}"
 INSTALL_FLASH_ATTN="${INSTALL_FLASH_ATTN:-1}"
@@ -39,9 +39,9 @@ if [[ "${INSTALL_TORCH}" == "1" ]]; then
   ${PIP_BIN} install --no-cache-dir "torch==${TORCH_VERSION}" --index-url https://download.pytorch.org/whl/cu121
 fi
 
-echo "== Installing vLLM ${VLLM_VERSION} =="
+echo "== Installing vLLM ${VLLM_VERSION} without allowing it to replace torch =="
 ${PIP_BIN} uninstall -y vllm || true
-${PIP_BIN} install --no-cache-dir "vllm==${VLLM_VERSION}"
+${PIP_BIN} install --no-cache-dir --no-deps "vllm==${VLLM_VERSION}"
 
 echo "== Pinning compatible high-level packages =="
 ${PIP_BIN} install --no-cache-dir "${TRANSFORMERS_SPEC}" datasets pyserini uvicorn fastapi huggingface_hub wandb IPython matplotlib pyairports
