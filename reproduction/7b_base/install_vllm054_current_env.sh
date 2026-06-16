@@ -36,7 +36,7 @@ ${PIP_BIN} uninstall -y vllm || true
 ${PIP_BIN} install --no-cache-dir "vllm==${VLLM_VERSION}"
 
 echo "== Pinning compatible high-level packages =="
-${PIP_BIN} install --no-cache-dir "${TRANSFORMERS_SPEC}" datasets pyserini uvicorn fastapi huggingface_hub wandb IPython matplotlib
+${PIP_BIN} install --no-cache-dir "${TRANSFORMERS_SPEC}" datasets pyserini uvicorn fastapi huggingface_hub wandb IPython matplotlib pyairports
 
 if [[ "${INSTALL_FLASH_ATTN}" == "1" ]]; then
   echo "== Reinstalling flash-attn against the current torch/CUDA =="
