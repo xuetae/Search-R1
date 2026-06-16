@@ -88,6 +88,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--tensor-model-parallel-size", default=os.environ.get("TENSOR_MODEL_PARALLEL_SIZE"))
     parser.add_argument("--rollout-do-sample", default=os.environ.get("ROLLOUT_DO_SAMPLE"))
     parser.add_argument("--rollout-dtype", default=os.environ.get("ROLLOUT_DTYPE"))
+    parser.add_argument("--rollout-enforce-eager", default=os.environ.get("ROLLOUT_ENFORCE_EAGER"))
     parser.add_argument("--train-data-num", default=os.environ.get("TRAIN_DATA_NUM"))
     parser.add_argument("--val-data-num", default=os.environ.get("VAL_DATA_NUM"))
     parser.add_argument("--total-training-steps", default=os.environ.get("TOTAL_TRAINING_STEPS"))
@@ -163,6 +164,8 @@ def main() -> int:
         env.setdefault("ROLLOUT_DO_SAMPLE", args.rollout_do_sample)
     if args.rollout_dtype:
         env.setdefault("ROLLOUT_DTYPE", args.rollout_dtype)
+    if args.rollout_enforce_eager:
+        env.setdefault("ROLLOUT_ENFORCE_EAGER", args.rollout_enforce_eager)
     cli_env = {
         "TRAIN_DATA_NUM": args.train_data_num,
         "VAL_DATA_NUM": args.val_data_num,
@@ -196,6 +199,7 @@ def main() -> int:
     print(f"[entry] rollout_name={env.get('ROLLOUT_NAME', '')}", flush=True)
     print(f"[entry] tensor_model_parallel_size={env.get('TENSOR_MODEL_PARALLEL_SIZE', '')}", flush=True)
     print(f"[entry] rollout_dtype={env.get('ROLLOUT_DTYPE', '')}", flush=True)
+    print(f"[entry] rollout_enforce_eager={env.get('ROLLOUT_ENFORCE_EAGER', '')}", flush=True)
     print(f"[entry] train_data_num={env.get('TRAIN_DATA_NUM', '')}", flush=True)
     print(f"[entry] total_training_steps={env.get('TOTAL_TRAINING_STEPS', '')}", flush=True)
     print(f"[entry] train_batch_size={env.get('TRAIN_BATCH_SIZE', '')}", flush=True)
