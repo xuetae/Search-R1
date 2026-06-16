@@ -93,19 +93,18 @@ class ActorRolloutRefWorker(Worker):
             self._is_offload_param = self.config.ref.fsdp_config.get('param_offload', False)
 
         # normalize config
+        dp_divisor = self.device_mesh.shape[0] // self.ulysses_sequence_parallel_size
         if self._is_actor:
-            self.config.actor.ppo_mini_batch_size //= (self.device_mesh.shape[0] // self.ulysses_sequence_parallel_size)
-            self.config.actor.ppo_micro_batch_size //= (self.device_mesh.shape[0] //
-                                                        self.ulysses_sequence_parallel_size)
+            self.config.actor.ppo_mini_batch_size = max(1, self.config.actor.ppo_mini_batch_size // dp_divisor)
+            self.config.actor.ppo_micro_batch_size = max(1, self.config.actor.ppo_micro_batch_size // dp_divisor)
             self.config.actor.ppo_mini_batch_size *= self.config.rollout.n
             self.config.actor.ppo_micro_batch_size *= self.config.rollout.n
         if self._is_rollout:
-            self.config.rollout.log_prob_micro_batch_size //= (self.device_mesh.shape[0] //
-                                                               self.ulysses_sequence_parallel_size)
+            self.config.rollout.log_prob_micro_batch_size = max(
+                1, self.config.rollout.log_prob_micro_batch_size // dp_divisor)
             self.config.rollout.log_prob_micro_batch_size *= self.config.rollout.n
         if self._is_ref:
-            self.config.ref.log_prob_micro_batch_size //= (self.device_mesh.shape[0] //
-                                                           self.ulysses_sequence_parallel_size)
+            self.config.ref.log_prob_micro_batch_size = max(1, self.config.ref.log_prob_micro_batch_size // dp_divisor)
             self.config.ref.log_prob_micro_batch_size *= self.config.rollout.n
 
     def _build_model_optimizer(self,
