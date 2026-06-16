@@ -38,6 +38,31 @@ ${PIP_BIN} install --no-cache-dir "vllm==${VLLM_VERSION}"
 echo "== Pinning compatible high-level packages =="
 ${PIP_BIN} install --no-cache-dir "${TRANSFORMERS_SPEC}" datasets pyserini uvicorn fastapi huggingface_hub wandb IPython matplotlib pyairports
 
+echo "== Repairing pyairports import if the wheel only installed metadata =="
+"${PYTHON_BIN}" - <<'PY'
+import pathlib
+import site
+import sys
+
+try:
+    import pyairports  # noqa: F401
+except Exception:
+    candidates = []
+    try:
+        candidates.extend(site.getsitepackages())
+    except Exception:
+        pass
+    candidates.append(next((p for p in sys.path if p.endswith("dist-packages")), sys.path[-1]))
+    target_root = pathlib.Path(candidates[0])
+    pkg = target_root / "pyairports"
+    pkg.mkdir(parents=True, exist_ok=True)
+    (pkg / "__init__.py").write_text("", encoding="utf-8")
+    (pkg / "airports.py").write_text("AIRPORT_LIST = []\n", encoding="utf-8")
+    print(f"created pyairports import shim at {pkg}")
+else:
+    print("pyairports import OK")
+PY
+
 if [[ "${INSTALL_FLASH_ATTN}" == "1" ]]; then
   echo "== Reinstalling flash-attn against the current torch/CUDA =="
   ${PIP_BIN} uninstall -y flash-attn || true
