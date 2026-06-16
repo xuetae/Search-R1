@@ -89,6 +89,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--rollout-do-sample", default=os.environ.get("ROLLOUT_DO_SAMPLE"))
     parser.add_argument("--rollout-dtype", default=os.environ.get("ROLLOUT_DTYPE"))
     parser.add_argument("--rollout-enforce-eager", default=os.environ.get("ROLLOUT_ENFORCE_EAGER"))
+    parser.add_argument("--actor-model-dtype", default=os.environ.get("ACTOR_MODEL_DTYPE"))
+    parser.add_argument("--model-attn-implementation", default=os.environ.get("MODEL_ATTN_IMPLEMENTATION"))
+    parser.add_argument("--use-remove-padding", default=os.environ.get("USE_REMOVE_PADDING"))
+    parser.add_argument("--hf-summon-full-params", default=os.environ.get("HF_SUMMON_FULL_PARAMS"))
+    parser.add_argument("--hf-use-cache", default=os.environ.get("HF_USE_CACHE"))
     parser.add_argument("--train-data-num", default=os.environ.get("TRAIN_DATA_NUM"))
     parser.add_argument("--val-data-num", default=os.environ.get("VAL_DATA_NUM"))
     parser.add_argument("--total-training-steps", default=os.environ.get("TOTAL_TRAINING_STEPS"))
@@ -166,6 +171,23 @@ def main() -> int:
         env.setdefault("ROLLOUT_DTYPE", args.rollout_dtype)
     if args.rollout_enforce_eager:
         env.setdefault("ROLLOUT_ENFORCE_EAGER", args.rollout_enforce_eager)
+    if args.actor_model_dtype:
+        env.setdefault("ACTOR_MODEL_DTYPE", args.actor_model_dtype)
+    if args.model_attn_implementation:
+        env.setdefault("MODEL_ATTN_IMPLEMENTATION", args.model_attn_implementation)
+    if args.use_remove_padding:
+        env.setdefault("USE_REMOVE_PADDING", args.use_remove_padding)
+    if args.hf_summon_full_params:
+        env.setdefault("HF_SUMMON_FULL_PARAMS", args.hf_summon_full_params)
+    if args.hf_use_cache:
+        env.setdefault("HF_USE_CACHE", args.hf_use_cache)
+
+    if env.get("ROLLOUT_NAME") == "hf":
+        env.setdefault("ROLLOUT_DTYPE", "float16")
+        env.setdefault("ACTOR_MODEL_DTYPE", "float16")
+        env.setdefault("MODEL_ATTN_IMPLEMENTATION", "sdpa")
+        env.setdefault("USE_REMOVE_PADDING", "false")
+        env.setdefault("HF_USE_CACHE", "false")
     cli_env = {
         "TRAIN_DATA_NUM": args.train_data_num,
         "VAL_DATA_NUM": args.val_data_num,
@@ -200,6 +222,10 @@ def main() -> int:
     print(f"[entry] tensor_model_parallel_size={env.get('TENSOR_MODEL_PARALLEL_SIZE', '')}", flush=True)
     print(f"[entry] rollout_dtype={env.get('ROLLOUT_DTYPE', '')}", flush=True)
     print(f"[entry] rollout_enforce_eager={env.get('ROLLOUT_ENFORCE_EAGER', '')}", flush=True)
+    print(f"[entry] actor_model_dtype={env.get('ACTOR_MODEL_DTYPE', '')}", flush=True)
+    print(f"[entry] model_attn_implementation={env.get('MODEL_ATTN_IMPLEMENTATION', '')}", flush=True)
+    print(f"[entry] use_remove_padding={env.get('USE_REMOVE_PADDING', '')}", flush=True)
+    print(f"[entry] hf_use_cache={env.get('HF_USE_CACHE', '')}", flush=True)
     print(f"[entry] train_data_num={env.get('TRAIN_DATA_NUM', '')}", flush=True)
     print(f"[entry] total_training_steps={env.get('TOTAL_TRAINING_STEPS', '')}", flush=True)
     print(f"[entry] train_batch_size={env.get('TRAIN_BATCH_SIZE', '')}", flush=True)
