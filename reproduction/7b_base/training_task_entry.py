@@ -87,6 +87,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--rollout-name", default=os.environ.get("ROLLOUT_NAME"), choices=["vllm", "hf", None])
     parser.add_argument("--tensor-model-parallel-size", default=os.environ.get("TENSOR_MODEL_PARALLEL_SIZE"))
     parser.add_argument("--rollout-do-sample", default=os.environ.get("ROLLOUT_DO_SAMPLE"))
+    parser.add_argument("--rollout-dtype", default=os.environ.get("ROLLOUT_DTYPE"))
     parser.add_argument("--train-data-num", default=os.environ.get("TRAIN_DATA_NUM"))
     parser.add_argument("--val-data-num", default=os.environ.get("VAL_DATA_NUM"))
     parser.add_argument("--total-training-steps", default=os.environ.get("TOTAL_TRAINING_STEPS"))
@@ -131,10 +132,10 @@ def main() -> int:
     local_base_model = args.local_base_model or str(persistent_root / "models" / "7b_base" / "llama-7b")
     if args.train_out:
         platform_out_root = Path(args.train_out)
-    elif Path("/workspace/model-out").exists():
-        platform_out_root = Path("/workspace/model-out")
-    else:
+    elif Path("/workspace/model_out").exists() or Path("/workspace").exists():
         platform_out_root = Path("/workspace/model_out")
+    else:
+        platform_out_root = Path("/workspace/model-out")
     model_out_root = platform_out_root / "search-r1"
 
     env = os.environ.copy()
@@ -160,6 +161,8 @@ def main() -> int:
         env.setdefault("TENSOR_MODEL_PARALLEL_SIZE", args.tensor_model_parallel_size)
     if args.rollout_do_sample:
         env.setdefault("ROLLOUT_DO_SAMPLE", args.rollout_do_sample)
+    if args.rollout_dtype:
+        env.setdefault("ROLLOUT_DTYPE", args.rollout_dtype)
     cli_env = {
         "TRAIN_DATA_NUM": args.train_data_num,
         "VAL_DATA_NUM": args.val_data_num,
@@ -192,6 +195,7 @@ def main() -> int:
     print(f"[entry] algo={env['ALGO']} run_mode={env['RUN_MODE']}", flush=True)
     print(f"[entry] rollout_name={env.get('ROLLOUT_NAME', '')}", flush=True)
     print(f"[entry] tensor_model_parallel_size={env.get('TENSOR_MODEL_PARALLEL_SIZE', '')}", flush=True)
+    print(f"[entry] rollout_dtype={env.get('ROLLOUT_DTYPE', '')}", flush=True)
     print(f"[entry] train_data_num={env.get('TRAIN_DATA_NUM', '')}", flush=True)
     print(f"[entry] total_training_steps={env.get('TOTAL_TRAINING_STEPS', '')}", flush=True)
     print(f"[entry] train_batch_size={env.get('TRAIN_BATCH_SIZE', '')}", flush=True)
