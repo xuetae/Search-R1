@@ -255,6 +255,14 @@ entrypoint directly from the file-management mount:
 python3 /workspace/filesdir/projects/Search-R1/reproduction/7b_base/training_task_entry.py --algo grpo --run-mode two_gpu_paper
 ```
 
+If vLLM crashes on H20 with a `SIGFPE` in `vocab_parallel_embedding.py` during
+generation, keep the same two-GPU/data/retrieval setup but switch rollout to the
+HF backend from the Python command:
+
+```bash
+python3 /workspace/filesdir/projects/Search-R1/reproduction/7b_base/training_task_entry.py --algo grpo --run-mode two_gpu_paper --rollout-name hf --tensor-model-parallel-size 1 --rollout-do-sample false
+```
+
 Recommended xFusion form values:
 
 - Training task type: single-node training.

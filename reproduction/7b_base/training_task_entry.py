@@ -84,6 +84,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--cuda-visible-devices", default=os.environ.get("TWO_GPU_CUDA_VISIBLE_DEVICES", "0,1"))
     parser.add_argument("--retriever-topk", default=os.environ.get("RETRIEVER_TOPK", "3"))
     parser.add_argument("--retriever-timeout", type=int, default=int(os.environ.get("RETRIEVER_TIMEOUT", "900")))
+    parser.add_argument("--rollout-name", default=os.environ.get("ROLLOUT_NAME"), choices=["vllm", "hf", None])
+    parser.add_argument("--tensor-model-parallel-size", default=os.environ.get("TENSOR_MODEL_PARALLEL_SIZE"))
+    parser.add_argument("--rollout-do-sample", default=os.environ.get("ROLLOUT_DO_SAMPLE"))
     parser.add_argument("--data_url", default=os.environ.get("DATA_URL"), help="xFusion injected dataset path.")
     parser.add_argument("--train_out", default=os.environ.get("TRAIN_OUT"), help="xFusion injected persistent output path.")
     parser.add_argument("--train_log", default=os.environ.get("TRAIN_LOG"), help="xFusion injected log output path.")
@@ -136,6 +139,12 @@ def main() -> int:
     env.setdefault("RUN_MODE", args.run_mode)
     env.setdefault("TWO_GPU_CUDA_VISIBLE_DEVICES", args.cuda_visible_devices)
     env.setdefault("RETRIEVER_TOPK", args.retriever_topk)
+    if args.rollout_name:
+        env.setdefault("ROLLOUT_NAME", args.rollout_name)
+    if args.tensor_model_parallel_size:
+        env.setdefault("TENSOR_MODEL_PARALLEL_SIZE", args.tensor_model_parallel_size)
+    if args.rollout_do_sample:
+        env.setdefault("ROLLOUT_DO_SAMPLE", args.rollout_do_sample)
     env.setdefault("RETRIEVER_URL", "http://127.0.0.1:8000/retrieve")
     env.setdefault("PYTHONUNBUFFERED", "1")
 
@@ -146,6 +155,8 @@ def main() -> int:
     print(f"[entry] train_log={args.train_log or ''}", flush=True)
     print(f"[entry] data_url={args.data_url or ''}", flush=True)
     print(f"[entry] algo={env['ALGO']} run_mode={env['RUN_MODE']}", flush=True)
+    print(f"[entry] rollout_name={env.get('ROLLOUT_NAME', '')}", flush=True)
+    print(f"[entry] tensor_model_parallel_size={env.get('TENSOR_MODEL_PARALLEL_SIZE', '')}", flush=True)
     print(f"[entry] cuda_visible_devices={env['TWO_GPU_CUDA_VISIBLE_DEVICES']}", flush=True)
     print(f"[entry] retriever_url={env['RETRIEVER_URL']}", flush=True)
 
