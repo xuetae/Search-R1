@@ -8,9 +8,12 @@ set -euo pipefail
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 PIP_BIN="${PIP_BIN:-${PYTHON_BIN} -m pip}"
 VLLM_VERSION="${VLLM_VERSION:-0.5.3.post1}"
-TORCH_VERSION="${TORCH_VERSION:-2.3.0}"
+TORCH_VERSION="${TORCH_VERSION:-2.3.1}"
+TORCHVISION_VERSION="${TORCHVISION_VERSION:-0.18.1}"
+XFORMERS_VERSION="${XFORMERS_VERSION:-0.0.27}"
+VLLM_FLASH_ATTN_VERSION="${VLLM_FLASH_ATTN_VERSION:-2.5.9.post1}"
 TRANSFORMERS_SPEC="${TRANSFORMERS_SPEC:-transformers<4.48}"
-INSTALL_FLASH_ATTN="${INSTALL_FLASH_ATTN:-1}"
+INSTALL_FLASH_ATTN="${INSTALL_FLASH_ATTN:-0}"
 INSTALL_TORCH="${INSTALL_TORCH:-1}"
 
 echo "== Python =="
@@ -35,16 +38,20 @@ ${PIP_BIN} install --no-cache-dir --upgrade pip setuptools wheel packaging
 
 if [[ "${INSTALL_TORCH}" == "1" ]]; then
   echo "== Installing torch ${TORCH_VERSION}+cu121 for vLLM ${VLLM_VERSION} =="
-  ${PIP_BIN} uninstall -y torch torchvision torchaudio xformers || true
+  ${PIP_BIN} uninstall -y torch torchvision torchaudio xformers vllm-flash-attn || true
   ${PIP_BIN} install --no-cache-dir "torch==${TORCH_VERSION}" --index-url https://download.pytorch.org/whl/cu121
+  ${PIP_BIN} install --no-cache-dir "torchvision==${TORCHVISION_VERSION}" --index-url https://download.pytorch.org/whl/cu121
+  ${PIP_BIN} install --no-cache-dir --no-deps "xformers==${XFORMERS_VERSION}"
 fi
 
 echo "== Installing vLLM ${VLLM_VERSION} without allowing it to replace torch =="
 ${PIP_BIN} uninstall -y vllm || true
 ${PIP_BIN} install --no-cache-dir --no-deps "vllm==${VLLM_VERSION}"
+${PIP_BIN} install --no-cache-dir --no-deps "vllm-flash-attn==${VLLM_FLASH_ATTN_VERSION}"
 
-echo "== Pinning compatible high-level packages =="
-${PIP_BIN} install --no-cache-dir "${TRANSFORMERS_SPEC}" datasets pyserini uvicorn fastapi huggingface_hub wandb IPython matplotlib pyairports
+echo "== Pinning compatible high-level packages without dependency upgrades =="
+${PIP_BIN} install --no-cache-dir --no-deps "${TRANSFORMERS_SPEC}" datasets uvicorn fastapi huggingface_hub wandb IPython matplotlib pyairports
+${PIP_BIN} install --no-cache-dir --no-deps pyserini
 
 echo "== Repairing pyairports import if the wheel only installed metadata =="
 "${PYTHON_BIN}" - <<'PY'
