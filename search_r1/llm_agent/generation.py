@@ -173,6 +173,7 @@ class LLMGenerationManager:
             if active_batch size is not divisible by num_gpus, pad with first sequence
             then remove padding from output
         """
+        active_batch = self._normalize_generation_batch(active_batch)
         num_gpus = self.config.num_gpus
         if num_gpus <= 1:
             return self.actor_rollout_wg.generate_sequences(active_batch)
@@ -194,7 +195,8 @@ class LLMGenerationManager:
             pad_sequence = v[0:1].repeat(padding_size, *[1] * (len(v.shape) - 1))
             padded_batch[k] = torch.cat([v, pad_sequence], dim=0)
 
-        padded_active_batch = DataProto.from_dict(padded_batch)
+        padded_active_batch = DataProto.from_dict(padded_batch, meta_info=active_batch.meta_info)
+        padded_active_batch = self._normalize_generation_batch(padded_active_batch)
         for key in padded_active_batch.batch.keys():
             padded_active_batch.batch[key] = padded_active_batch.batch[key].long()
 
@@ -216,6 +218,32 @@ class LLMGenerationManager:
             
         padded_output.batch = trimmed_batch
         return padded_output
+
+    def _normalize_generation_batch(self, batch: DataProto) -> DataProto:
+        """Keep prompt tensors aligned before HF/vLLM generation.
+
+        The search loop repeatedly trims and pads active trajectories. HF
+        generation is strict about input_ids, attention_mask, and position_ids
+        having the same sequence length, while vLLM is more tolerant because it
+        preprocesses token ids itself.
+        """
+        if not {'input_ids', 'attention_mask', 'position_ids'} <= set(batch.batch.keys()):
+            return batch
+
+        min_len = min(
+            batch.batch['input_ids'].shape[1],
+            batch.batch['attention_mask'].shape[1],
+            batch.batch['position_ids'].shape[1],
+        )
+        input_ids = batch.batch['input_ids'][:, -min_len:].long()
+        attention_mask = self.tensor_fn.create_attention_mask(input_ids).long()
+        position_ids = self.tensor_fn.create_position_ids(attention_mask).long()
+
+        tensors = dict(batch.batch.items())
+        tensors['input_ids'] = input_ids
+        tensors['attention_mask'] = attention_mask
+        tensors['position_ids'] = position_ids
+        return DataProto.from_dict(tensors, meta_info=batch.meta_info)
 
     def run_llm_loop(self, gen_batch, initial_input_ids: torch.Tensor) -> Tuple[Dict, Dict]:
         """Run main LLM generation loop."""
@@ -240,9 +268,10 @@ class LLMGenerationManager:
             )
             
             # gen_output = self.actor_rollout_wg.generate_sequences(rollings)
-            rollings_active = DataProto.from_dict({
-                k: v[active_mask] for k, v in rollings.batch.items()
-            })            
+            rollings_active = DataProto.from_dict(
+                {k: v[active_mask] for k, v in rollings.batch.items()},
+                meta_info=rollings.meta_info,
+            )
             gen_output = self._generate_with_gpu_padding(rollings_active)
 
             meta_info = gen_output.meta_info            
@@ -283,9 +312,10 @@ class LLMGenerationManager:
             )
 
             # gen_output = self.actor_rollout_wg.generate_sequences(rollings)
-            rollings_active = DataProto.from_dict({
-                k: v[active_mask] for k, v in rollings.batch.items()
-            })            
+            rollings_active = DataProto.from_dict(
+                {k: v[active_mask] for k, v in rollings.batch.items()},
+                meta_info=rollings.meta_info,
+            )
             gen_output = self._generate_with_gpu_padding(rollings_active)
 
             meta_info = gen_output.meta_info            
