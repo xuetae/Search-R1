@@ -8,8 +8,10 @@ set -euo pipefail
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 PIP_BIN="${PIP_BIN:-${PYTHON_BIN} -m pip}"
 VLLM_VERSION="${VLLM_VERSION:-0.5.4}"
+TORCH_VERSION="${TORCH_VERSION:-2.3.0}"
 TRANSFORMERS_SPEC="${TRANSFORMERS_SPEC:-transformers<4.48}"
 INSTALL_FLASH_ATTN="${INSTALL_FLASH_ATTN:-1}"
+INSTALL_TORCH="${INSTALL_TORCH:-1}"
 
 echo "== Python =="
 "${PYTHON_BIN}" - <<'PY'
@@ -30,6 +32,12 @@ PY
 
 echo "== Installing packaging tools =="
 ${PIP_BIN} install --no-cache-dir --upgrade pip setuptools wheel packaging
+
+if [[ "${INSTALL_TORCH}" == "1" ]]; then
+  echo "== Installing torch ${TORCH_VERSION}+cu121 for vLLM ${VLLM_VERSION} =="
+  ${PIP_BIN} uninstall -y torch torchvision torchaudio xformers || true
+  ${PIP_BIN} install --no-cache-dir "torch==${TORCH_VERSION}" --index-url https://download.pytorch.org/whl/cu121
+fi
 
 echo "== Installing vLLM ${VLLM_VERSION} =="
 ${PIP_BIN} uninstall -y vllm || true
