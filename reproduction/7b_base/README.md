@@ -255,55 +255,63 @@ entrypoint directly from the file-management mount:
 python3 /workspace/filesdir/projects/Search-R1/reproduction/7b_base/training_task_entry.py --algo grpo --run-mode two_gpu_paper
 ```
 
-If vLLM crashes on H20 with a `SIGFPE` in `vocab_parallel_embedding.py` during
-generation, keep the same two-GPU/data/retrieval setup but switch rollout to the
-HF backend from the Python command:
-
-```bash
-python3 /workspace/filesdir/projects/Search-R1/reproduction/7b_base/training_task_entry.py --algo grpo --run-mode two_gpu_paper --rollout-name hf --tensor-model-parallel-size 1 --rollout-do-sample false
-```
+For the validated 2x H20 setup, `two_gpu_paper` already uses the HF rollout
+backend with `float16` and `sdpa`, because vLLM/FlashAttention can raise
+`SIGFPE` on this platform. Keep the run command short unless a specific
+parameter needs to be overridden.
 
 Recommended xFusion form values:
 
 - Training task type: single-node training.
 - Image: the Search-R1 image/version validated in online development.
-- Run command: `python reproduction/7b_base/training_task_entry.py --algo grpo --run-mode two_gpu_paper`.
+- Run command: `python3 /workspace/filesdir/projects/Search-R1/reproduction/7b_base/training_task_entry.py --algo grpo --run-mode two_gpu_paper`.
 - Compute type: GPU / full card.
 - GPU specification: one node with 2 H20 GPUs.
 - Max failed restarts: 0 or 1 while validating the pilot.
 - Scheduler queue/node group: select the H20 queue/node group.
-- Algorithm path or file-management mount: make sure this repository is visible
-  as the working path and `/filesdir/code/search-r1` is mounted.
+- File-management mount: mount the `Search_R1` file-management directory at
+  `/workspace/filesdir`; the project should be under
+  `/workspace/filesdir/projects/Search-R1`.
 
-`two_gpu_paper` keeps the original Search-R1 training design enabled while
-using a limited dataset size for validation:
+`two_gpu_paper` keeps the original Search-R1 GRPO/search design enabled while
+scaling the throughput-heavy parameters down for 2x H20 and HF rollout:
 
 - `CUDA_VISIBLE_DEVICES=0,1`
 - `N_GPUS_PER_NODE=2`
-- `TRAIN_DATA_NUM=64`
-- `VAL_DATA_NUM=16`
+- `TRAIN_DATA_NUM=2048`
+- `VAL_DATA_NUM=128`
 - `TRAIN_BATCH_SIZE=4`
-- `PPO_MINI_BATCH_SIZE=2`
+- `VAL_BATCH_SIZE=4`
+- `PPO_MINI_BATCH_SIZE=4`
 - `PPO_MICRO_BATCH_SIZE=1`
-- `MAX_PROMPT_LENGTH=1024`
-- `MAX_RESPONSE_LENGTH=128`
-- `ROLLOUT_NAME=vllm`
-- `TENSOR_MODEL_PARALLEL_SIZE=2`
+- `LOG_PROB_MICRO_BATCH_SIZE=8`
+- `MAX_PROMPT_LENGTH=1536`
+- `MAX_RESPONSE_LENGTH=256`
+- `MAX_START_LENGTH=768`
+- `MAX_OBS_LENGTH=256`
+- `ROLLOUT_NAME=hf`
+- `ROLLOUT_DTYPE=float16`
+- `MODEL_ATTN_IMPLEMENTATION=sdpa`
+- `USE_REMOVE_PADDING=false`
+- `HF_USE_CACHE=false`
+- `TENSOR_MODEL_PARALLEL_SIZE=1`
 - `ROLLOUT_GPU_MEMORY_UTILIZATION=0.35`
-- `MAX_NUM_BATCHED_TOKENS=2048`
-- `MAX_NUM_SEQS=8`
+- `MAX_NUM_BATCHED_TOKENS=3072`
+- `MAX_NUM_SEQS=16`
 - `DO_SEARCH=true`
 - `RETRIEVER_TOPK=3`
 - `USE_KL_LOSS=true`
 - `DISABLE_REFERENCE_POLICY=false`
-- `N_AGENT=2`
+- `N_AGENT=3`
 - `MAX_TURNS=2`
-- `TOTAL_TRAINING_STEPS=10`
-- `SAVE_FREQ=5`
+- `TOTAL_TRAINING_STEPS=300`
+- `SAVE_FREQ=50`
+- `TEST_FREQ=-1`
 
 Use this mode for the next method-validating run on a 2-GPU allocation. It is
-closer to the paper setup than `h20_smoke`, but sized conservatively for two H20
-GPUs before increasing data size or sequence length.
+closer to the paper setup than `h20_smoke`: it preserves GRPO, retrieval,
+`topk=3`, multi-agent rollout, and two search turns, while avoiding the upstream
+8-GPU/vLLM/bfloat16 assumptions that are unstable on the current H20 image.
 
 Single-H20 smoke run:
 
