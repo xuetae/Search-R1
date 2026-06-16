@@ -87,6 +87,21 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--rollout-name", default=os.environ.get("ROLLOUT_NAME"), choices=["vllm", "hf", None])
     parser.add_argument("--tensor-model-parallel-size", default=os.environ.get("TENSOR_MODEL_PARALLEL_SIZE"))
     parser.add_argument("--rollout-do-sample", default=os.environ.get("ROLLOUT_DO_SAMPLE"))
+    parser.add_argument("--train-data-num", default=os.environ.get("TRAIN_DATA_NUM"))
+    parser.add_argument("--val-data-num", default=os.environ.get("VAL_DATA_NUM"))
+    parser.add_argument("--total-training-steps", default=os.environ.get("TOTAL_TRAINING_STEPS"))
+    parser.add_argument("--train-batch-size", default=os.environ.get("TRAIN_BATCH_SIZE"))
+    parser.add_argument("--val-batch-size", default=os.environ.get("VAL_BATCH_SIZE"))
+    parser.add_argument("--ppo-mini-batch-size", default=os.environ.get("PPO_MINI_BATCH_SIZE"))
+    parser.add_argument("--ppo-micro-batch-size", default=os.environ.get("PPO_MICRO_BATCH_SIZE"))
+    parser.add_argument("--log-prob-micro-batch-size", default=os.environ.get("LOG_PROB_MICRO_BATCH_SIZE"))
+    parser.add_argument("--n-agent", default=os.environ.get("N_AGENT"))
+    parser.add_argument("--max-turns", default=os.environ.get("MAX_TURNS"))
+    parser.add_argument("--rollout-gpu-memory-utilization", default=os.environ.get("ROLLOUT_GPU_MEMORY_UTILIZATION"))
+    parser.add_argument("--max-num-batched-tokens", default=os.environ.get("MAX_NUM_BATCHED_TOKENS"))
+    parser.add_argument("--max-num-seqs", default=os.environ.get("MAX_NUM_SEQS"))
+    parser.add_argument("--save-freq", default=os.environ.get("SAVE_FREQ"))
+    parser.add_argument("--test-freq", default=os.environ.get("TEST_FREQ"))
     parser.add_argument("--data_url", default=os.environ.get("DATA_URL"), help="xFusion injected dataset path.")
     parser.add_argument("--train_out", default=os.environ.get("TRAIN_OUT"), help="xFusion injected persistent output path.")
     parser.add_argument("--train_log", default=os.environ.get("TRAIN_LOG"), help="xFusion injected log output path.")
@@ -145,6 +160,26 @@ def main() -> int:
         env.setdefault("TENSOR_MODEL_PARALLEL_SIZE", args.tensor_model_parallel_size)
     if args.rollout_do_sample:
         env.setdefault("ROLLOUT_DO_SAMPLE", args.rollout_do_sample)
+    cli_env = {
+        "TRAIN_DATA_NUM": args.train_data_num,
+        "VAL_DATA_NUM": args.val_data_num,
+        "TOTAL_TRAINING_STEPS": args.total_training_steps,
+        "TRAIN_BATCH_SIZE": args.train_batch_size,
+        "VAL_BATCH_SIZE": args.val_batch_size,
+        "PPO_MINI_BATCH_SIZE": args.ppo_mini_batch_size,
+        "PPO_MICRO_BATCH_SIZE": args.ppo_micro_batch_size,
+        "LOG_PROB_MICRO_BATCH_SIZE": args.log_prob_micro_batch_size,
+        "N_AGENT": args.n_agent,
+        "MAX_TURNS": args.max_turns,
+        "ROLLOUT_GPU_MEMORY_UTILIZATION": args.rollout_gpu_memory_utilization,
+        "MAX_NUM_BATCHED_TOKENS": args.max_num_batched_tokens,
+        "MAX_NUM_SEQS": args.max_num_seqs,
+        "SAVE_FREQ": args.save_freq,
+        "TEST_FREQ": args.test_freq,
+    }
+    for key, value in cli_env.items():
+        if value is not None:
+            env.setdefault(key, value)
     env.setdefault("RETRIEVER_URL", "http://127.0.0.1:8000/retrieve")
     env.setdefault("PYTHONUNBUFFERED", "1")
 
@@ -157,6 +192,11 @@ def main() -> int:
     print(f"[entry] algo={env['ALGO']} run_mode={env['RUN_MODE']}", flush=True)
     print(f"[entry] rollout_name={env.get('ROLLOUT_NAME', '')}", flush=True)
     print(f"[entry] tensor_model_parallel_size={env.get('TENSOR_MODEL_PARALLEL_SIZE', '')}", flush=True)
+    print(f"[entry] train_data_num={env.get('TRAIN_DATA_NUM', '')}", flush=True)
+    print(f"[entry] total_training_steps={env.get('TOTAL_TRAINING_STEPS', '')}", flush=True)
+    print(f"[entry] train_batch_size={env.get('TRAIN_BATCH_SIZE', '')}", flush=True)
+    print(f"[entry] n_agent={env.get('N_AGENT', '')}", flush=True)
+    print(f"[entry] max_turns={env.get('MAX_TURNS', '')}", flush=True)
     print(f"[entry] cuda_visible_devices={env['TWO_GPU_CUDA_VISIBLE_DEVICES']}", flush=True)
     print(f"[entry] retriever_url={env['RETRIEVER_URL']}", flush=True)
 
