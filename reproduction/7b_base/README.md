@@ -257,9 +257,16 @@ python3 /workspace/filesdir/projects/Search-R1/reproduction/7b_base/training_tas
 
 For the validated 2x H20 setup, `two_gpu_paper`, `two_gpu_balanced`, and
 `two_gpu_fast` use the HF rollout backend with `float16` and `sdpa`, because
-vLLM/FlashAttention can raise `SIGFPE` on this platform. Use `two_gpu_paper`
-when the goal is to stay as close as possible to the paper while still fitting
-2x H20.
+older vLLM/FlashAttention wheels can raise `SIGFPE` on this platform. Use
+`two_gpu_paper` when the goal is to stay as close as possible to the paper
+while still fitting 2x H20.
+
+If the image has been rebuilt with `torch==2.5.1+cu124` and `vllm==0.7.3`,
+and the standalone LLaMA generation test passes, use the H20 vLLM mode:
+
+```bash
+python3 /workspace/filesdir/projects/Search-R1/reproduction/7b_base/training_task_entry.py --algo grpo --run-mode two_gpu_vllm_h20
+```
 
 Recommended xFusion form values:
 
@@ -319,6 +326,25 @@ the upstream 8-GPU scripts are the unavoidable resource adaptations:
 sequence lengths, and nearly the same step count: 1000 steps versus the
 upstream 1005 steps. Checkpoint saving is relaxed to every 200 steps to reduce
 I/O pressure under `/workspace/model_out`.
+
+`two_gpu_vllm_h20` keeps the same training/data/search settings as
+`two_gpu_paper`, but switches rollout generation to vLLM:
+
+- `ROLLOUT_NAME=vllm`
+- `ROLLOUT_DTYPE=float16`
+- `ROLLOUT_ENFORCE_EAGER=true`
+- `ROLLOUT_DISABLE_CUSTOM_ALL_REDUCE=true`
+- `MODEL_ATTN_IMPLEMENTATION=sdpa`
+- `USE_REMOVE_PADDING=false`
+- `HF_USE_CACHE=false`
+- `MAX_NUM_BATCHED_TOKENS=3072`
+- `MAX_NUM_SEQS=16`
+
+Use this mode only after validating the image with:
+
+```bash
+CUDA_VISIBLE_DEVICES=0 python3 reproduction/7b_base/test_vllm_llama.py
+```
 
 `two_gpu_balanced` remains available as a faster fallback if `two_gpu_paper`
 is too slow: it uses `N_AGENT=3`, `MAX_RESPONSE_LENGTH=192`, and

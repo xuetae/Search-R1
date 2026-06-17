@@ -160,6 +160,54 @@ case "${RUN_MODE}" in
     export RAY_memory_monitor_refresh_ms="${RAY_memory_monitor_refresh_ms:-0}"
     export PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}"
     ;;
+  two_gpu_vllm_h20)
+    export CUDA_VISIBLE_DEVICES="${TWO_GPU_CUDA_VISIBLE_DEVICES:-0,1}"
+    export N_GPUS_PER_NODE="${TWO_GPU_N_GPUS_PER_NODE:-2}"
+    export NNODES="${TWO_GPU_NNODES:-1}"
+    export TRAIN_DATA_NUM="${TRAIN_DATA_NUM:-2048}"
+    export VAL_DATA_NUM="${VAL_DATA_NUM:-128}"
+    export TRAIN_BATCH_SIZE="${TRAIN_BATCH_SIZE:-4}"
+    export VAL_BATCH_SIZE="${VAL_BATCH_SIZE:-4}"
+    export MAX_PROMPT_LENGTH="${MAX_PROMPT_LENGTH:-1536}"
+    export MAX_RESPONSE_LENGTH="${MAX_RESPONSE_LENGTH:-256}"
+    export MAX_START_LENGTH="${MAX_START_LENGTH:-768}"
+    export MAX_OBS_LENGTH="${MAX_OBS_LENGTH:-256}"
+    export PPO_MINI_BATCH_SIZE="${PPO_MINI_BATCH_SIZE:-4}"
+    export PPO_MICRO_BATCH_SIZE="${PPO_MICRO_BATCH_SIZE:-1}"
+    export LOG_PROB_MICRO_BATCH_SIZE="${LOG_PROB_MICRO_BATCH_SIZE:-8}"
+    export CRITIC_PPO_MICRO_BATCH_SIZE="${CRITIC_PPO_MICRO_BATCH_SIZE:-1}"
+    export TENSOR_MODEL_PARALLEL_SIZE="${TENSOR_MODEL_PARALLEL_SIZE:-1}"
+    export ROLLOUT_NAME="${ROLLOUT_NAME:-vllm}"
+    export ROLLOUT_GPU_MEMORY_UTILIZATION="${ROLLOUT_GPU_MEMORY_UTILIZATION:-0.35}"
+    export ROLLOUT_DTYPE="${ROLLOUT_DTYPE:-float16}"
+    export ROLLOUT_DO_SAMPLE="${ROLLOUT_DO_SAMPLE:-true}"
+    export ROLLOUT_TEMPERATURE="${ROLLOUT_TEMPERATURE:-1}"
+    export ROLLOUT_REMOVE_INVALID_VALUES="${ROLLOUT_REMOVE_INVALID_VALUES:-true}"
+    export ROLLOUT_ENFORCE_EAGER="${ROLLOUT_ENFORCE_EAGER:-true}"
+    export ROLLOUT_DISABLE_CUSTOM_ALL_REDUCE="${ROLLOUT_DISABLE_CUSTOM_ALL_REDUCE:-true}"
+    export MAX_NUM_BATCHED_TOKENS="${MAX_NUM_BATCHED_TOKENS:-3072}"
+    export MAX_NUM_SEQS="${MAX_NUM_SEQS:-16}"
+    export N_AGENT="${N_AGENT:-5}"
+    export MAX_TURNS="${MAX_TURNS:-2}"
+    export RETRIEVER_TOPK="${TWO_GPU_RETRIEVER_TOPK:-3}"
+    export TOTAL_TRAINING_STEPS="${TOTAL_TRAINING_STEPS:-1000}"
+    export SAVE_FREQ="${SAVE_FREQ:-200}"
+    export TEST_FREQ="${TEST_FREQ:-50}"
+    export VAL_BEFORE_TRAIN="${VAL_BEFORE_TRAIN:-true}"
+    export TRAIN_LOGGER="${TRAIN_LOGGER:-[]}"
+    export USE_KL_LOSS="${USE_KL_LOSS:-true}"
+    export DISABLE_REFERENCE_POLICY="${DISABLE_REFERENCE_POLICY:-false}"
+    export DO_SEARCH="${DO_SEARCH:-true}"
+    export ACTOR_MODEL_DTYPE="${ACTOR_MODEL_DTYPE:-float16}"
+    export MODEL_ATTN_IMPLEMENTATION="${MODEL_ATTN_IMPLEMENTATION:-sdpa}"
+    export USE_REMOVE_PADDING="${USE_REMOVE_PADDING:-false}"
+    export HF_SUMMON_FULL_PARAMS="${HF_SUMMON_FULL_PARAMS:-true}"
+    export HF_USE_CACHE="${HF_USE_CACHE:-false}"
+    export VLLM_ATTENTION_BACKEND="${VLLM_ATTENTION_BACKEND:-FLASH_ATTN}"
+    export RAY_memory_usage_threshold="${RAY_memory_usage_threshold:-0.99}"
+    export RAY_memory_monitor_refresh_ms="${RAY_memory_monitor_refresh_ms:-0}"
+    export PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}"
+    ;;
   h20_smoke)
     export CUDA_VISIBLE_DEVICES="${H20_CUDA_VISIBLE_DEVICES:-0}"
     export N_GPUS_PER_NODE="${H20_N_GPUS_PER_NODE:-1}"
@@ -236,7 +284,7 @@ case "${RUN_MODE}" in
     export TRAIN_LOGGER="${TRAIN_LOGGER:-['wandb']}"
     ;;
   *)
-    echo "Unsupported RUN_MODE=${RUN_MODE}. Use RUN_MODE=two_gpu_balanced, two_gpu_fast, two_gpu_paper, h20_smoke, smoke, or full." >&2
+    echo "Unsupported RUN_MODE=${RUN_MODE}. Use RUN_MODE=two_gpu_balanced, two_gpu_fast, two_gpu_paper, two_gpu_vllm_h20, h20_smoke, smoke, or full." >&2
     exit 2
     ;;
 esac
@@ -297,6 +345,8 @@ write_env_snapshot() {
     echo "ROLLOUT_DO_SAMPLE=${ROLLOUT_DO_SAMPLE:-}"
     echo "ROLLOUT_TEMPERATURE=${ROLLOUT_TEMPERATURE:-}"
     echo "ROLLOUT_REMOVE_INVALID_VALUES=${ROLLOUT_REMOVE_INVALID_VALUES:-}"
+    echo "ROLLOUT_ENFORCE_EAGER=${ROLLOUT_ENFORCE_EAGER:-}"
+    echo "ROLLOUT_DISABLE_CUSTOM_ALL_REDUCE=${ROLLOUT_DISABLE_CUSTOM_ALL_REDUCE:-}"
     echo "MAX_NUM_BATCHED_TOKENS=${MAX_NUM_BATCHED_TOKENS:-}"
     echo "MAX_NUM_SEQS=${MAX_NUM_SEQS:-}"
     echo "N_AGENT=${N_AGENT:-}"

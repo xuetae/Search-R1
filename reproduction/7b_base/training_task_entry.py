@@ -89,6 +89,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--rollout-do-sample", default=os.environ.get("ROLLOUT_DO_SAMPLE"))
     parser.add_argument("--rollout-dtype", default=os.environ.get("ROLLOUT_DTYPE"))
     parser.add_argument("--rollout-enforce-eager", default=os.environ.get("ROLLOUT_ENFORCE_EAGER"))
+    parser.add_argument("--rollout-disable-custom-all-reduce", default=os.environ.get("ROLLOUT_DISABLE_CUSTOM_ALL_REDUCE"))
     parser.add_argument("--actor-model-dtype", default=os.environ.get("ACTOR_MODEL_DTYPE"))
     parser.add_argument("--model-attn-implementation", default=os.environ.get("MODEL_ATTN_IMPLEMENTATION"))
     parser.add_argument("--use-remove-padding", default=os.environ.get("USE_REMOVE_PADDING"))
@@ -179,6 +180,8 @@ def main() -> int:
         env.setdefault("ROLLOUT_DTYPE", args.rollout_dtype)
     if args.rollout_enforce_eager:
         env.setdefault("ROLLOUT_ENFORCE_EAGER", args.rollout_enforce_eager)
+    if args.rollout_disable_custom_all_reduce:
+        env.setdefault("ROLLOUT_DISABLE_CUSTOM_ALL_REDUCE", args.rollout_disable_custom_all_reduce)
     if args.actor_model_dtype:
         env.setdefault("ACTOR_MODEL_DTYPE", args.actor_model_dtype)
     if args.model_attn_implementation:
@@ -232,6 +235,7 @@ def main() -> int:
     print(f"[entry] tensor_model_parallel_size={env.get('TENSOR_MODEL_PARALLEL_SIZE', '')}", flush=True)
     print(f"[entry] rollout_dtype={env.get('ROLLOUT_DTYPE', '')}", flush=True)
     print(f"[entry] rollout_enforce_eager={env.get('ROLLOUT_ENFORCE_EAGER', '')}", flush=True)
+    print(f"[entry] rollout_disable_custom_all_reduce={env.get('ROLLOUT_DISABLE_CUSTOM_ALL_REDUCE', '')}", flush=True)
     print(f"[entry] actor_model_dtype={env.get('ACTOR_MODEL_DTYPE', '')}", flush=True)
     print(f"[entry] model_attn_implementation={env.get('MODEL_ATTN_IMPLEMENTATION', '')}", flush=True)
     print(f"[entry] use_remove_padding={env.get('USE_REMOVE_PADDING', '')}", flush=True)

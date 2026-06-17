@@ -39,6 +39,8 @@ from verl.third_party.vllm import LLM, vllm_version
 from verl.third_party.vllm import parallel_state as vllm_ps
 from vllm import SamplingParams
 
+SUPPORTED_VLLM_HYBRID_VERSIONS = ('0.4.2', '0.5.4', '0.6.3', '0.7.3')
+
 # TODO
 # 1. support pp in vllm
 # 2. passing tokenizer is not necessary? no encoding/decoding is happending here
@@ -82,7 +84,7 @@ class vLLMRollout(BaseRollout):
             os.environ['MEGATRON_IMPORT_TIMERS'] = '0'
             train_tp = kwargs.get('train_tp', None)
             num_tp_per_train_tp = train_tp // tensor_parallel_size
-            if vllm_version in ('0.4.2', '0.5.4', '0.6.3'):
+            if vllm_version in SUPPORTED_VLLM_HYBRID_VERSIONS:
                 vllm_ps.initialize_parallel_state(tensor_model_parallel_size=tensor_parallel_size,
                                                   num_tp_per_train_tp=num_tp_per_train_tp)
 
@@ -97,6 +99,9 @@ class vLLMRollout(BaseRollout):
                                     gpu_memory_utilization=config.gpu_memory_utilization,
                                     skip_tokenizer_init=False,
                                     max_model_len=config.prompt_length + config.response_length,
+                                    max_num_batched_tokens=config.get('max_num_batched_tokens', None),
+                                    max_num_seqs=config.get('max_num_seqs', 256),
+                                    disable_custom_all_reduce=config.get('disable_custom_all_reduce', False),
                                     load_format=config.load_format)
 
         # Offload vllm model to reduce peak memory usage
@@ -109,7 +114,7 @@ class vLLMRollout(BaseRollout):
         )
 
         # we may detokenize the result all together later
-        if vllm_version in ('0.4.2', '0.5.4', '0.6.3'):
+        if vllm_version in SUPPORTED_VLLM_HYBRID_VERSIONS:
             kwargs['detokenize'] = False
 
         # supporting adding any sampling params from the config file
