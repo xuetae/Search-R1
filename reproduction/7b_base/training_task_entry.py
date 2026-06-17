@@ -155,6 +155,14 @@ def main() -> int:
         model_out_root.mkdir(parents=True, exist_ok=True)
         env.setdefault("OUTPUT_ROOT", str(model_out_root / "outputs"))
         env.setdefault("LOG_ROOT", str(Path(args.train_log) / "search-r1" if args.train_log else model_out_root / "logs"))
+        ray_tmp_dir = model_out_root / "ray_tmp"
+        tmp_dir = model_out_root / "tmp"
+        ray_tmp_dir.mkdir(parents=True, exist_ok=True)
+        tmp_dir.mkdir(parents=True, exist_ok=True)
+        env.setdefault("RAY_TMPDIR", str(ray_tmp_dir))
+        env.setdefault("TMPDIR", str(tmp_dir))
+        env.setdefault("TEMP", str(tmp_dir))
+        env.setdefault("TMP", str(tmp_dir))
     env.setdefault("BASE_MODEL_NAME", args.base_model_name)
     env.setdefault("LOCAL_BASE_MODEL", local_base_model)
     env.setdefault("ALGO", args.algo)
@@ -214,6 +222,8 @@ def main() -> int:
     print(f"[entry] project_dir={root}", flush=True)
     print(f"[entry] persistent_root={env['SEARCH_R1_ROOT']}", flush=True)
     print(f"[entry] output_root={env.get('OUTPUT_ROOT', '')}", flush=True)
+    print(f"[entry] ray_tmpdir={env.get('RAY_TMPDIR', '')}", flush=True)
+    print(f"[entry] tmpdir={env.get('TMPDIR', '')}", flush=True)
     print(f"[entry] train_out={args.train_out or ''}", flush=True)
     print(f"[entry] train_log={args.train_log or ''}", flush=True)
     print(f"[entry] data_url={args.data_url or ''}", flush=True)
