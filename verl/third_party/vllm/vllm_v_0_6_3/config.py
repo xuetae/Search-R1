@@ -14,6 +14,7 @@
 # Adapted from https://github.com/vllm-project/vllm/blob/main/vllm/config.py
 
 import enum
+import inspect
 import json
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, List, Optional, Union
@@ -44,7 +45,16 @@ class LoadFormat(str, enum.Enum):
 class ModelConfig(ModelConfig):
 
     def __init__(self, hf_config: PretrainedConfig, *args, **kwargs) -> None:
-        super().__init__(model=hf_config._name_or_path, tokenizer=hf_config._name_or_path, *args, **kwargs)
+        init_params = inspect.signature(super().__init__).parameters
+        compat_kwargs = {
+            "model": hf_config._name_or_path,
+            "tokenizer": hf_config._name_or_path,
+        }
+        if "task" in init_params:
+            compat_kwargs["task"] = "generate"
+        if "allowed_local_media_path" in init_params:
+            compat_kwargs["allowed_local_media_path"] = ""
+        super().__init__(*args, **compat_kwargs, **kwargs)
         self.hf_config = hf_config
 
 

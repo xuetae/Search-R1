@@ -22,7 +22,6 @@ from vllm.config import (
     CacheConfig,
     DecodingConfig,
     DeviceConfig,
-    EngineConfig,
     LoadConfig,
     LoRAConfig,
     ModelConfig,
@@ -32,6 +31,10 @@ from vllm.config import (
     SchedulerConfig,
     SpeculativeConfig,
 )
+try:
+    from vllm.config import EngineConfig
+except ImportError:
+    from vllm.config import VllmConfig as EngineConfig
 from vllm.core.scheduler import Scheduler
 from vllm.engine.arg_utils import EngineArgs
 from vllm.engine.llm_engine import LLMEngine, SchedulerContext, SchedulerOutputState, _load_generation_config_dict

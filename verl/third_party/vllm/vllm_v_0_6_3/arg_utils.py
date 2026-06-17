@@ -17,7 +17,10 @@ import os
 from dataclasses import dataclass
 
 from transformers import PretrainedConfig
-from vllm.config import EngineConfig
+try:
+    from vllm.config import EngineConfig
+except ImportError:
+    from vllm.config import VllmConfig as EngineConfig
 from vllm.engine.arg_utils import EngineArgs
 
 from .config import LoadConfig, ModelConfig
