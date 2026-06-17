@@ -261,8 +261,10 @@ older vLLM/FlashAttention wheels can raise `SIGFPE` on this platform. Use
 `two_gpu_paper` when the goal is to stay as close as possible to the paper
 while still fitting 2x H20.
 
-If the image has been rebuilt with `torch==2.5.1+cu124` and `vllm==0.7.3`,
-and the standalone LLaMA generation test passes, use the H20 vLLM mode:
+If the image has been rebuilt with `torch==2.4.0+cu121` and `vllm==0.6.3`
+or the local `vllm` package reports `dev` while
+`verl.third_party.vllm.vllm_version == 0.6.3`, first run the standalone LLaMA
+generation test. If it passes, use the H20 vLLM mode:
 
 ```bash
 python3 /workspace/filesdir/projects/Search-R1/reproduction/7b_base/training_task_entry.py --algo grpo --run-mode two_gpu_vllm_h20
@@ -327,9 +329,9 @@ sequence lengths, and nearly the same step count: 1000 steps versus the
 upstream 1005 steps. Checkpoint saving is relaxed to every 200 steps to reduce
 I/O pressure under `/workspace/model_out`.
 
-`two_gpu_vllm_h20` is the recommended vLLM run for the rebuilt H20 image. It
-keeps the same Search-R1 method settings as `two_gpu_paper`, but uses a larger
-2-GPU vLLM configuration:
+`two_gpu_vllm_h20` is the recommended vLLM run for the rebuilt H20 image with
+the vLLM 0.6.3-compatible veRL wrapper. It keeps the same Search-R1 method
+settings as `two_gpu_paper`, but uses a larger 2-GPU vLLM configuration:
 
 - `TRAIN_DATA_NUM=4096`
 - `VAL_DATA_NUM=256`
@@ -370,6 +372,11 @@ Use this mode only after validating the image with:
 ```bash
 CUDA_VISIBLE_DEVICES=0 python3 reproduction/7b_base/test_vllm_llama.py
 ```
+
+Do not use `vllm==0.7.3` for this mode unless the veRL hybrid rollout wrapper
+has been ported to the 0.7 internal API. Standalone `from vllm import LLM`
+generation can work on 0.7.3, but Search-R1 training synchronizes FSDP weights
+through veRL's vendored vLLM wrapper, which is aligned with 0.6.3.
 
 `two_gpu_balanced` remains available as a faster fallback if `two_gpu_paper`
 is too slow: it uses `N_AGENT=3`, `MAX_RESPONSE_LENGTH=192`, and

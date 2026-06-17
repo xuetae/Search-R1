@@ -40,12 +40,18 @@ elif package_version == '0.5.4':
     from .vllm_v_0_5_4.llm import LLM
     from .vllm_v_0_5_4.llm import LLMEngine
     from .vllm_v_0_5_4 import parallel_state
-elif package_version in ('0.6.3', '0.7.3'):
-    vllm_version = package_version
+elif package_version == '0.6.3':
+    vllm_version = '0.6.3'
     from .vllm_v_0_6_3.llm import LLM
     from .vllm_v_0_6_3.llm import LLMEngine
     from .vllm_v_0_6_3 import parallel_state
+elif package_version == '0.7.3':
+    raise ValueError(
+        'vllm version 0.7.3 can run standalone generation on H20, but this veRL '
+        'hybrid rollout wrapper is pinned to the vLLM 0.6.3 internal API. '
+        'Install vllm==0.6.3 for ROLLOUT_NAME=vllm, or use ROLLOUT_NAME=hf.'
+    )
 else:
     raise ValueError(
-        f'vllm version {package_version} not supported. Currently supported versions are 0.3.1, 0.4.2, 0.5.4, 0.6.3 and 0.7.3.'
+        f'vllm version {package_version} not supported. Currently supported versions are 0.3.1, 0.4.2, 0.5.4 and 0.6.3.'
     )
