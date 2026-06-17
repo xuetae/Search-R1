@@ -252,20 +252,20 @@ If the algorithm mount contains an unexpected extra directory level, run the
 entrypoint directly from the file-management mount:
 
 ```bash
-python3 /workspace/filesdir/projects/Search-R1/reproduction/7b_base/training_task_entry.py --algo grpo --run-mode two_gpu_fast
+python3 /workspace/filesdir/projects/Search-R1/reproduction/7b_base/training_task_entry.py --algo grpo --run-mode two_gpu_balanced
 ```
 
-For the validated 2x H20 setup, `two_gpu_fast` and `two_gpu_paper` use the HF rollout
-backend with `float16` and `sdpa`, because vLLM/FlashAttention can raise
-`SIGFPE` on this platform. Start with `two_gpu_fast`; switch to
-`two_gpu_paper` only after the faster run shows improving reward or valid
-search/action behavior.
+For the validated 2x H20 setup, `two_gpu_balanced`, `two_gpu_fast`, and
+`two_gpu_paper` use the HF rollout backend with `float16` and `sdpa`, because
+vLLM/FlashAttention can raise `SIGFPE` on this platform. Use
+`two_gpu_balanced` for the main GRPO pilot because it stays closer to the paper
+configuration while avoiding the slowest rollout lengths.
 
 Recommended xFusion form values:
 
 - Training task type: single-node training.
 - Image: the Search-R1 image/version validated in online development.
-- Run command: `python3 /workspace/filesdir/projects/Search-R1/reproduction/7b_base/training_task_entry.py --algo grpo --run-mode two_gpu_fast`.
+- Run command: `python3 /workspace/filesdir/projects/Search-R1/reproduction/7b_base/training_task_entry.py --algo grpo --run-mode two_gpu_balanced`.
 - Compute type: GPU / full card.
 - GPU specification: one node with 2 H20 GPUs.
 - Max failed restarts: 0 or 1 while validating the pilot.
@@ -274,25 +274,25 @@ Recommended xFusion form values:
   `/workspace/filesdir`; the project should be under
   `/workspace/filesdir/projects/Search-R1`.
 
-`two_gpu_fast` is the recommended first GRPO run on 2x H20. It keeps the
-Search-R1 GRPO/search design enabled while reducing rollout cost:
+`two_gpu_balanced` is the recommended GRPO run on 2x H20 when you need useful
+metrics and a closer match to the paper setup:
 
 - `CUDA_VISIBLE_DEVICES=0,1`
 - `N_GPUS_PER_NODE=2`
-- `TRAIN_DATA_NUM=1024`
-- `VAL_DATA_NUM=64`
+- `TRAIN_DATA_NUM=2048`
+- `VAL_DATA_NUM=128`
 - `TRAIN_BATCH_SIZE=4`
 - `VAL_BATCH_SIZE=4`
 - `PPO_MINI_BATCH_SIZE=4`
 - `PPO_MICRO_BATCH_SIZE=1`
 - `LOG_PROB_MICRO_BATCH_SIZE=8`
-- `MAX_PROMPT_LENGTH=1024`
-- `MAX_RESPONSE_LENGTH=128`
-- `MAX_START_LENGTH=512`
-- `MAX_OBS_LENGTH=128`
+- `MAX_PROMPT_LENGTH=1280`
+- `MAX_RESPONSE_LENGTH=192`
+- `MAX_START_LENGTH=640`
+- `MAX_OBS_LENGTH=192`
 - `ROLLOUT_NAME=hf`
 - `ROLLOUT_DTYPE=float16`
-- `ROLLOUT_TEMPERATURE=0.7`
+- `ROLLOUT_TEMPERATURE=0.8`
 - `MODEL_ATTN_IMPLEMENTATION=sdpa`
 - `USE_REMOVE_PADDING=false`
 - `HF_USE_CACHE=false`
@@ -304,20 +304,26 @@ Search-R1 GRPO/search design enabled while reducing rollout cost:
 - `RETRIEVER_TOPK=3`
 - `USE_KL_LOSS=true`
 - `DISABLE_REFERENCE_POLICY=false`
-- `N_AGENT=2`
+- `N_AGENT=3`
 - `MAX_TURNS=2`
-- `TOTAL_TRAINING_STEPS=120`
-- `SAVE_FREQ=20`
-- `TEST_FREQ=-1`
+- `TOTAL_TRAINING_STEPS=200`
+- `SAVE_FREQ=25`
+- `TEST_FREQ=25`
 
-This mode should be much faster than `two_gpu_paper`: it reduces each batch from
-12 trajectories to 8 trajectories and halves the response/search observation
-lengths. It still preserves GRPO, retrieval, `topk=3`, multi-agent rollout, and
-two search turns.
+This mode keeps the paper-critical parts: GRPO, retrieval, `topk=3`,
+multi-agent rollout with `n_agent=3`, two search turns, KL loss, state masking,
+checkpoints, and periodic validation metrics. Compared with `two_gpu_paper`, it
+mainly reduces the response/observation lengths from 256 to 192 and total steps
+from 300 to 200, which is a smaller methodological change than reducing
+`n_agent` or disabling validation.
 
 `two_gpu_paper` remains available as a slower, closer-to-paper 2x H20 setting:
 `TRAIN_DATA_NUM=2048`, `VAL_DATA_NUM=128`, `MAX_RESPONSE_LENGTH=256`,
 `N_AGENT=3`, `TOTAL_TRAINING_STEPS=300`, and `SAVE_FREQ=50`.
+
+`two_gpu_fast` remains available for debugging only. It uses `N_AGENT=2`,
+`MAX_RESPONSE_LENGTH=128`, and disables validation by default, so it is faster
+but less suitable for reporting experiment quality.
 
 Single-H20 smoke run:
 
