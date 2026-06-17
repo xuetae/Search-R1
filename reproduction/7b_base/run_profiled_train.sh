@@ -179,7 +179,9 @@ case "${RUN_MODE}" in
     export TENSOR_MODEL_PARALLEL_SIZE="${TENSOR_MODEL_PARALLEL_SIZE:-1}"
     export ROLLOUT_NAME="${ROLLOUT_NAME:-vllm}"
     export ROLLOUT_GPU_MEMORY_UTILIZATION="${ROLLOUT_GPU_MEMORY_UTILIZATION:-0.45}"
-    export ROLLOUT_DTYPE="${ROLLOUT_DTYPE:-float16}"
+    # H20 has shown SIGFPEs in vLLM's float16 generation path. Prefer bf16 for
+    # rollout/actor compute while keeping CLI/env overrides for compatibility.
+    export ROLLOUT_DTYPE="${ROLLOUT_DTYPE:-bfloat16}"
     export ROLLOUT_DO_SAMPLE="${ROLLOUT_DO_SAMPLE:-true}"
     export ROLLOUT_TEMPERATURE="${ROLLOUT_TEMPERATURE:-1}"
     export ROLLOUT_REMOVE_INVALID_VALUES="${ROLLOUT_REMOVE_INVALID_VALUES:-true}"
@@ -198,7 +200,7 @@ case "${RUN_MODE}" in
     export USE_KL_LOSS="${USE_KL_LOSS:-true}"
     export DISABLE_REFERENCE_POLICY="${DISABLE_REFERENCE_POLICY:-false}"
     export DO_SEARCH="${DO_SEARCH:-true}"
-    export ACTOR_MODEL_DTYPE="${ACTOR_MODEL_DTYPE:-float16}"
+    export ACTOR_MODEL_DTYPE="${ACTOR_MODEL_DTYPE:-bfloat16}"
     export MODEL_ATTN_IMPLEMENTATION="${MODEL_ATTN_IMPLEMENTATION:-sdpa}"
     export USE_REMOVE_PADDING="${USE_REMOVE_PADDING:-false}"
     export HF_SUMMON_FULL_PARAMS="${HF_SUMMON_FULL_PARAMS:-true}"
@@ -227,7 +229,9 @@ case "${RUN_MODE}" in
     export TENSOR_MODEL_PARALLEL_SIZE="${TENSOR_MODEL_PARALLEL_SIZE:-1}"
     export ROLLOUT_NAME="${ROLLOUT_NAME:-vllm}"
     export ROLLOUT_GPU_MEMORY_UTILIZATION="${ROLLOUT_GPU_MEMORY_UTILIZATION:-0.50}"
-    export ROLLOUT_DTYPE="${ROLLOUT_DTYPE:-float16}"
+    # H20 has shown SIGFPEs in vLLM's float16 generation path. Prefer bf16 for
+    # rollout/actor compute while keeping CLI/env overrides for compatibility.
+    export ROLLOUT_DTYPE="${ROLLOUT_DTYPE:-bfloat16}"
     export ROLLOUT_DO_SAMPLE="${ROLLOUT_DO_SAMPLE:-true}"
     export ROLLOUT_TEMPERATURE="${ROLLOUT_TEMPERATURE:-1}"
     export ROLLOUT_REMOVE_INVALID_VALUES="${ROLLOUT_REMOVE_INVALID_VALUES:-true}"
@@ -246,7 +250,7 @@ case "${RUN_MODE}" in
     export USE_KL_LOSS="${USE_KL_LOSS:-true}"
     export DISABLE_REFERENCE_POLICY="${DISABLE_REFERENCE_POLICY:-false}"
     export DO_SEARCH="${DO_SEARCH:-true}"
-    export ACTOR_MODEL_DTYPE="${ACTOR_MODEL_DTYPE:-float16}"
+    export ACTOR_MODEL_DTYPE="${ACTOR_MODEL_DTYPE:-bfloat16}"
     export MODEL_ATTN_IMPLEMENTATION="${MODEL_ATTN_IMPLEMENTATION:-flash_attention_2}"
     export USE_REMOVE_PADDING="${USE_REMOVE_PADDING:-true}"
     export HF_SUMMON_FULL_PARAMS="${HF_SUMMON_FULL_PARAMS:-true}"
