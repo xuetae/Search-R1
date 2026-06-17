@@ -327,18 +327,42 @@ sequence lengths, and nearly the same step count: 1000 steps versus the
 upstream 1005 steps. Checkpoint saving is relaxed to every 200 steps to reduce
 I/O pressure under `/workspace/model_out`.
 
-`two_gpu_vllm_h20` keeps the same training/data/search settings as
-`two_gpu_paper`, but switches rollout generation to vLLM:
+`two_gpu_vllm_h20` is the recommended vLLM run for the rebuilt H20 image. It
+keeps the same Search-R1 method settings as `two_gpu_paper`, but uses a larger
+2-GPU vLLM configuration:
 
+- `TRAIN_DATA_NUM=4096`
+- `VAL_DATA_NUM=256`
+- `TRAIN_BATCH_SIZE=8`
+- `VAL_BATCH_SIZE=8`
+- `PPO_MINI_BATCH_SIZE=8`
+- `PPO_MICRO_BATCH_SIZE=1`
+- `LOG_PROB_MICRO_BATCH_SIZE=8`
+- `MAX_PROMPT_LENGTH=2048`
+- `MAX_RESPONSE_LENGTH=384`
+- `MAX_START_LENGTH=1024`
+- `MAX_OBS_LENGTH=384`
 - `ROLLOUT_NAME=vllm`
 - `ROLLOUT_DTYPE=float16`
 - `ROLLOUT_ENFORCE_EAGER=true`
 - `ROLLOUT_DISABLE_CUSTOM_ALL_REDUCE=true`
+- `ROLLOUT_GPU_MEMORY_UTILIZATION=0.45`
 - `MODEL_ATTN_IMPLEMENTATION=sdpa`
 - `USE_REMOVE_PADDING=false`
 - `HF_USE_CACHE=false`
-- `MAX_NUM_BATCHED_TOKENS=3072`
-- `MAX_NUM_SEQS=16`
+- `MAX_NUM_BATCHED_TOKENS=4096`
+- `MAX_NUM_SEQS=32`
+- `N_AGENT=5`
+- `MAX_TURNS=2`
+- `RETRIEVER_TOPK=3`
+- `TOTAL_TRAINING_STEPS=1000`
+- `SAVE_FREQ=200`
+- `TEST_FREQ=50`
+
+This gives about 512 steps per epoch, so 1000 training steps covers roughly
+two passes over the selected 4096 training examples. The effective rollout per
+step is `8 x 5 = 40` trajectories, which is still far below the upstream
+8-GPU throughput but is materially closer than the HF fallback setting.
 
 Use this mode only after validating the image with:
 
