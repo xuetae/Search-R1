@@ -178,7 +178,7 @@ case "${RUN_MODE}" in
     export CRITIC_PPO_MICRO_BATCH_SIZE="${CRITIC_PPO_MICRO_BATCH_SIZE:-1}"
     export TENSOR_MODEL_PARALLEL_SIZE="${TENSOR_MODEL_PARALLEL_SIZE:-1}"
     export ROLLOUT_NAME="${ROLLOUT_NAME:-vllm}"
-    export ROLLOUT_GPU_MEMORY_UTILIZATION="${ROLLOUT_GPU_MEMORY_UTILIZATION:-0.45}"
+    export ROLLOUT_GPU_MEMORY_UTILIZATION="${ROLLOUT_GPU_MEMORY_UTILIZATION:-0.35}"
     # H20 has shown SIGFPEs in vLLM's float16 generation path. Prefer bf16 for
     # rollout/actor compute while keeping CLI/env overrides for compatibility.
     export ROLLOUT_DTYPE="${ROLLOUT_DTYPE:-bfloat16}"
@@ -187,8 +187,10 @@ case "${RUN_MODE}" in
     export ROLLOUT_REMOVE_INVALID_VALUES="${ROLLOUT_REMOVE_INVALID_VALUES:-true}"
     export ROLLOUT_ENFORCE_EAGER="${ROLLOUT_ENFORCE_EAGER:-true}"
     export ROLLOUT_DISABLE_CUSTOM_ALL_REDUCE="${ROLLOUT_DISABLE_CUSTOM_ALL_REDUCE:-true}"
-    export MAX_NUM_BATCHED_TOKENS="${MAX_NUM_BATCHED_TOKENS:-4096}"
-    export MAX_NUM_SEQS="${MAX_NUM_SEQS:-64}"
+    # max_model_len is MAX_PROMPT_LENGTH + MAX_RESPONSE_LENGTH = 2432 here.
+    # Keep batched tokens above that floor while limiting H20 rollout concurrency.
+    export MAX_NUM_BATCHED_TOKENS="${MAX_NUM_BATCHED_TOKENS:-3072}"
+    export MAX_NUM_SEQS="${MAX_NUM_SEQS:-16}"
     export N_AGENT="${N_AGENT:-5}"
     export MAX_TURNS="${MAX_TURNS:-2}"
     export RETRIEVER_TOPK="${TWO_GPU_RETRIEVER_TOPK:-3}"
@@ -228,7 +230,7 @@ case "${RUN_MODE}" in
     export CRITIC_PPO_MICRO_BATCH_SIZE="${CRITIC_PPO_MICRO_BATCH_SIZE:-1}"
     export TENSOR_MODEL_PARALLEL_SIZE="${TENSOR_MODEL_PARALLEL_SIZE:-1}"
     export ROLLOUT_NAME="${ROLLOUT_NAME:-vllm}"
-    export ROLLOUT_GPU_MEMORY_UTILIZATION="${ROLLOUT_GPU_MEMORY_UTILIZATION:-0.50}"
+    export ROLLOUT_GPU_MEMORY_UTILIZATION="${ROLLOUT_GPU_MEMORY_UTILIZATION:-0.35}"
     # H20 has shown SIGFPEs in vLLM's float16 generation path. Prefer bf16 for
     # rollout/actor compute while keeping CLI/env overrides for compatibility.
     export ROLLOUT_DTYPE="${ROLLOUT_DTYPE:-bfloat16}"
@@ -237,8 +239,10 @@ case "${RUN_MODE}" in
     export ROLLOUT_REMOVE_INVALID_VALUES="${ROLLOUT_REMOVE_INVALID_VALUES:-true}"
     export ROLLOUT_ENFORCE_EAGER="${ROLLOUT_ENFORCE_EAGER:-true}"
     export ROLLOUT_DISABLE_CUSTOM_ALL_REDUCE="${ROLLOUT_DISABLE_CUSTOM_ALL_REDUCE:-true}"
-    export MAX_NUM_BATCHED_TOKENS="${MAX_NUM_BATCHED_TOKENS:-4096}"
-    export MAX_NUM_SEQS="${MAX_NUM_SEQS:-64}"
+    # max_model_len is MAX_PROMPT_LENGTH + MAX_RESPONSE_LENGTH = 2432 here.
+    # Keep batched tokens above that floor while limiting H20 rollout concurrency.
+    export MAX_NUM_BATCHED_TOKENS="${MAX_NUM_BATCHED_TOKENS:-3072}"
+    export MAX_NUM_SEQS="${MAX_NUM_SEQS:-16}"
     export N_AGENT="${N_AGENT:-5}"
     export MAX_TURNS="${MAX_TURNS:-2}"
     export RETRIEVER_TOPK="${TWO_GPU_RETRIEVER_TOPK:-3}"
