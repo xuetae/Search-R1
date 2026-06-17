@@ -378,6 +378,24 @@ has been ported to the 0.7 internal API. Standalone `from vllm import LLM`
 generation can work on 0.7.3, but Search-R1 training synchronizes FSDP weights
 through veRL's vendored vLLM wrapper, which is aligned with 0.6.3.
 
+After installing `flash_attn`, use `two_gpu_vllm_h20_flash` for the closest
+2-GPU H20 match to the upstream vLLM/FlashAttention path:
+
+```bash
+python3 /workspace/filesdir/projects/Search-R1/reproduction/7b_base/training_task_entry.py --algo grpo --run-mode two_gpu_vllm_h20_flash
+```
+
+It keeps the same batch, data, rollout, retrieval, and checkpoint settings as
+`two_gpu_vllm_h20`, but changes:
+
+- `MODEL_ATTN_IMPLEMENTATION=flash_attention_2`
+- `USE_REMOVE_PADDING=true`
+- `ROLLOUT_GPU_MEMORY_UTILIZATION=0.50`
+
+If this mode hits a FlashAttention/H20 kernel error or `SIGFPE`, rerun the
+same image with `--run-mode two_gpu_vllm_h20` to keep vLLM while disabling
+FlashAttention-dependent padding removal.
+
 `two_gpu_balanced` remains available as a faster fallback if `two_gpu_paper`
 is too slow: it uses `N_AGENT=3`, `MAX_RESPONSE_LENGTH=192`, and
 `TOTAL_TRAINING_STEPS=200`.
