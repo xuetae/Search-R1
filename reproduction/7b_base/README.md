@@ -252,20 +252,20 @@ If the algorithm mount contains an unexpected extra directory level, run the
 entrypoint directly from the file-management mount:
 
 ```bash
-python3 /workspace/filesdir/projects/Search-R1/reproduction/7b_base/training_task_entry.py --algo grpo --run-mode two_gpu_balanced
+python3 /workspace/filesdir/projects/Search-R1/reproduction/7b_base/training_task_entry.py --algo grpo --run-mode two_gpu_paper
 ```
 
-For the validated 2x H20 setup, `two_gpu_balanced`, `two_gpu_fast`, and
-`two_gpu_paper` use the HF rollout backend with `float16` and `sdpa`, because
-vLLM/FlashAttention can raise `SIGFPE` on this platform. Use
-`two_gpu_balanced` for the main GRPO pilot because it stays closer to the paper
-configuration while avoiding the slowest rollout lengths.
+For the validated 2x H20 setup, `two_gpu_paper`, `two_gpu_balanced`, and
+`two_gpu_fast` use the HF rollout backend with `float16` and `sdpa`, because
+vLLM/FlashAttention can raise `SIGFPE` on this platform. Use `two_gpu_paper`
+when the goal is to stay as close as possible to the paper while still fitting
+2x H20.
 
 Recommended xFusion form values:
 
 - Training task type: single-node training.
 - Image: the Search-R1 image/version validated in online development.
-- Run command: `python3 /workspace/filesdir/projects/Search-R1/reproduction/7b_base/training_task_entry.py --algo grpo --run-mode two_gpu_balanced`.
+- Run command: `python3 /workspace/filesdir/projects/Search-R1/reproduction/7b_base/training_task_entry.py --algo grpo --run-mode two_gpu_paper`.
 - Compute type: GPU / full card.
 - GPU specification: one node with 2 H20 GPUs.
 - Max failed restarts: 0 or 1 while validating the pilot.
@@ -274,8 +274,8 @@ Recommended xFusion form values:
   `/workspace/filesdir`; the project should be under
   `/workspace/filesdir/projects/Search-R1`.
 
-`two_gpu_balanced` is the recommended GRPO run on 2x H20 when you need useful
-metrics and a closer match to the paper setup:
+`two_gpu_paper` is the recommended GRPO run on 2x H20 when you need the closest
+practical match to the paper setup:
 
 - `CUDA_VISIBLE_DEVICES=0,1`
 - `N_GPUS_PER_NODE=2`
@@ -286,13 +286,13 @@ metrics and a closer match to the paper setup:
 - `PPO_MINI_BATCH_SIZE=4`
 - `PPO_MICRO_BATCH_SIZE=1`
 - `LOG_PROB_MICRO_BATCH_SIZE=8`
-- `MAX_PROMPT_LENGTH=1280`
-- `MAX_RESPONSE_LENGTH=192`
-- `MAX_START_LENGTH=640`
-- `MAX_OBS_LENGTH=192`
+- `MAX_PROMPT_LENGTH=1536`
+- `MAX_RESPONSE_LENGTH=256`
+- `MAX_START_LENGTH=768`
+- `MAX_OBS_LENGTH=256`
 - `ROLLOUT_NAME=hf`
 - `ROLLOUT_DTYPE=float16`
-- `ROLLOUT_TEMPERATURE=0.8`
+- `ROLLOUT_TEMPERATURE=1`
 - `MODEL_ATTN_IMPLEMENTATION=sdpa`
 - `USE_REMOVE_PADDING=false`
 - `HF_USE_CACHE=false`
@@ -304,22 +304,24 @@ metrics and a closer match to the paper setup:
 - `RETRIEVER_TOPK=3`
 - `USE_KL_LOSS=true`
 - `DISABLE_REFERENCE_POLICY=false`
-- `N_AGENT=3`
+- `N_AGENT=5`
 - `MAX_TURNS=2`
-- `TOTAL_TRAINING_STEPS=200`
-- `SAVE_FREQ=25`
-- `TEST_FREQ=25`
+- `TOTAL_TRAINING_STEPS=500`
+- `SAVE_FREQ=100`
+- `TEST_FREQ=50`
+- `VAL_BEFORE_TRAIN=true`
 
 This mode keeps the paper-critical parts: GRPO, retrieval, `topk=3`,
-multi-agent rollout with `n_agent=3`, two search turns, KL loss, state masking,
-checkpoints, and periodic validation metrics. Compared with `two_gpu_paper`, it
-mainly reduces the response/observation lengths from 256 to 192 and total steps
-from 300 to 200, which is a smaller methodological change than reducing
-`n_agent` or disabling validation.
+multi-agent rollout with `n_agent=5`, two search turns, KL loss, state masking,
+periodic validation, and a longer training horizon. The main differences from
+the upstream 8-GPU scripts are the unavoidable resource adaptations:
+`TRAIN_BATCH_SIZE=4` instead of 512, HF rollout instead of vLLM, shorter
+sequence lengths, and fewer total steps. Checkpoint saving is relaxed to every
+100 steps to reduce I/O pressure under `/workspace/model_out`.
 
-`two_gpu_paper` remains available as a slower, closer-to-paper 2x H20 setting:
-`TRAIN_DATA_NUM=2048`, `VAL_DATA_NUM=128`, `MAX_RESPONSE_LENGTH=256`,
-`N_AGENT=3`, `TOTAL_TRAINING_STEPS=300`, and `SAVE_FREQ=50`.
+`two_gpu_balanced` remains available as a faster fallback if `two_gpu_paper`
+is too slow: it uses `N_AGENT=3`, `MAX_RESPONSE_LENGTH=192`, and
+`TOTAL_TRAINING_STEPS=200`.
 
 `two_gpu_fast` remains available for debugging only. It uses `N_AGENT=2`,
 `MAX_RESPONSE_LENGTH=128`, and disables validation by default, so it is faster
