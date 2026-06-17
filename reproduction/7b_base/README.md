@@ -333,9 +333,9 @@ keeps the same Search-R1 method settings as `two_gpu_paper`, but uses a larger
 
 - `TRAIN_DATA_NUM=4096`
 - `VAL_DATA_NUM=256`
-- `TRAIN_BATCH_SIZE=8`
-- `VAL_BATCH_SIZE=8`
-- `PPO_MINI_BATCH_SIZE=8`
+- `TRAIN_BATCH_SIZE=32`
+- `VAL_BATCH_SIZE=16`
+- `PPO_MINI_BATCH_SIZE=32`
 - `PPO_MICRO_BATCH_SIZE=1`
 - `LOG_PROB_MICRO_BATCH_SIZE=8`
 - `MAX_PROMPT_LENGTH=2048`
@@ -351,7 +351,7 @@ keeps the same Search-R1 method settings as `two_gpu_paper`, but uses a larger
 - `USE_REMOVE_PADDING=false`
 - `HF_USE_CACHE=false`
 - `MAX_NUM_BATCHED_TOKENS=4096`
-- `MAX_NUM_SEQS=32`
+- `MAX_NUM_SEQS=64`
 - `N_AGENT=5`
 - `MAX_TURNS=2`
 - `RETRIEVER_TOPK=3`
@@ -361,8 +361,9 @@ keeps the same Search-R1 method settings as `two_gpu_paper`, but uses a larger
 
 This gives about 512 steps per epoch, so 1000 training steps covers roughly
 two passes over the selected 4096 training examples. The effective rollout per
-step is `8 x 5 = 40` trajectories, which is still far below the upstream
-8-GPU throughput but is materially closer than the HF fallback setting.
+step is `32 x 5 = 160` trajectories, which is still below the upstream
+8-GPU throughput but is materially closer to the paper setting than the HF
+fallback setting.
 
 Use this mode only after validating the image with:
 
