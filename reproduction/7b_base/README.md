@@ -306,8 +306,8 @@ practical match to the paper setup:
 - `DISABLE_REFERENCE_POLICY=false`
 - `N_AGENT=5`
 - `MAX_TURNS=2`
-- `TOTAL_TRAINING_STEPS=500`
-- `SAVE_FREQ=100`
+- `TOTAL_TRAINING_STEPS=1000`
+- `SAVE_FREQ=200`
 - `TEST_FREQ=50`
 - `VAL_BEFORE_TRAIN=true`
 
@@ -316,8 +316,9 @@ multi-agent rollout with `n_agent=5`, two search turns, KL loss, state masking,
 periodic validation, and a longer training horizon. The main differences from
 the upstream 8-GPU scripts are the unavoidable resource adaptations:
 `TRAIN_BATCH_SIZE=4` instead of 512, HF rollout instead of vLLM, shorter
-sequence lengths, and fewer total steps. Checkpoint saving is relaxed to every
-100 steps to reduce I/O pressure under `/workspace/model_out`.
+sequence lengths, and nearly the same step count: 1000 steps versus the
+upstream 1005 steps. Checkpoint saving is relaxed to every 200 steps to reduce
+I/O pressure under `/workspace/model_out`.
 
 `two_gpu_balanced` remains available as a faster fallback if `two_gpu_paper`
 is too slow: it uses `N_AGENT=3`, `MAX_RESPONSE_LENGTH=192`, and
