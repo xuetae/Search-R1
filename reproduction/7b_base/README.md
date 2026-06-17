@@ -252,19 +252,20 @@ If the algorithm mount contains an unexpected extra directory level, run the
 entrypoint directly from the file-management mount:
 
 ```bash
-python3 /workspace/filesdir/projects/Search-R1/reproduction/7b_base/training_task_entry.py --algo grpo --run-mode two_gpu_paper
+python3 /workspace/filesdir/projects/Search-R1/reproduction/7b_base/training_task_entry.py --algo grpo --run-mode two_gpu_fast
 ```
 
-For the validated 2x H20 setup, `two_gpu_paper` already uses the HF rollout
+For the validated 2x H20 setup, `two_gpu_fast` and `two_gpu_paper` use the HF rollout
 backend with `float16` and `sdpa`, because vLLM/FlashAttention can raise
-`SIGFPE` on this platform. Keep the run command short unless a specific
-parameter needs to be overridden.
+`SIGFPE` on this platform. Start with `two_gpu_fast`; switch to
+`two_gpu_paper` only after the faster run shows improving reward or valid
+search/action behavior.
 
 Recommended xFusion form values:
 
 - Training task type: single-node training.
 - Image: the Search-R1 image/version validated in online development.
-- Run command: `python3 /workspace/filesdir/projects/Search-R1/reproduction/7b_base/training_task_entry.py --algo grpo --run-mode two_gpu_paper`.
+- Run command: `python3 /workspace/filesdir/projects/Search-R1/reproduction/7b_base/training_task_entry.py --algo grpo --run-mode two_gpu_fast`.
 - Compute type: GPU / full card.
 - GPU specification: one node with 2 H20 GPUs.
 - Max failed restarts: 0 or 1 while validating the pilot.
@@ -273,24 +274,25 @@ Recommended xFusion form values:
   `/workspace/filesdir`; the project should be under
   `/workspace/filesdir/projects/Search-R1`.
 
-`two_gpu_paper` keeps the original Search-R1 GRPO/search design enabled while
-scaling the throughput-heavy parameters down for 2x H20 and HF rollout:
+`two_gpu_fast` is the recommended first GRPO run on 2x H20. It keeps the
+Search-R1 GRPO/search design enabled while reducing rollout cost:
 
 - `CUDA_VISIBLE_DEVICES=0,1`
 - `N_GPUS_PER_NODE=2`
-- `TRAIN_DATA_NUM=2048`
-- `VAL_DATA_NUM=128`
+- `TRAIN_DATA_NUM=1024`
+- `VAL_DATA_NUM=64`
 - `TRAIN_BATCH_SIZE=4`
 - `VAL_BATCH_SIZE=4`
 - `PPO_MINI_BATCH_SIZE=4`
 - `PPO_MICRO_BATCH_SIZE=1`
 - `LOG_PROB_MICRO_BATCH_SIZE=8`
-- `MAX_PROMPT_LENGTH=1536`
-- `MAX_RESPONSE_LENGTH=256`
-- `MAX_START_LENGTH=768`
-- `MAX_OBS_LENGTH=256`
+- `MAX_PROMPT_LENGTH=1024`
+- `MAX_RESPONSE_LENGTH=128`
+- `MAX_START_LENGTH=512`
+- `MAX_OBS_LENGTH=128`
 - `ROLLOUT_NAME=hf`
 - `ROLLOUT_DTYPE=float16`
+- `ROLLOUT_TEMPERATURE=0.7`
 - `MODEL_ATTN_IMPLEMENTATION=sdpa`
 - `USE_REMOVE_PADDING=false`
 - `HF_USE_CACHE=false`
@@ -302,16 +304,20 @@ scaling the throughput-heavy parameters down for 2x H20 and HF rollout:
 - `RETRIEVER_TOPK=3`
 - `USE_KL_LOSS=true`
 - `DISABLE_REFERENCE_POLICY=false`
-- `N_AGENT=3`
+- `N_AGENT=2`
 - `MAX_TURNS=2`
-- `TOTAL_TRAINING_STEPS=300`
-- `SAVE_FREQ=50`
+- `TOTAL_TRAINING_STEPS=120`
+- `SAVE_FREQ=20`
 - `TEST_FREQ=-1`
 
-Use this mode for the next method-validating run on a 2-GPU allocation. It is
-closer to the paper setup than `h20_smoke`: it preserves GRPO, retrieval,
-`topk=3`, multi-agent rollout, and two search turns, while avoiding the upstream
-8-GPU/vLLM/bfloat16 assumptions that are unstable on the current H20 image.
+This mode should be much faster than `two_gpu_paper`: it reduces each batch from
+12 trajectories to 8 trajectories and halves the response/search observation
+lengths. It still preserves GRPO, retrieval, `topk=3`, multi-agent rollout, and
+two search turns.
+
+`two_gpu_paper` remains available as a slower, closer-to-paper 2x H20 setting:
+`TRAIN_DATA_NUM=2048`, `VAL_DATA_NUM=128`, `MAX_RESPONSE_LENGTH=256`,
+`N_AGENT=3`, `TOTAL_TRAINING_STEPS=300`, and `SAVE_FREQ=50`.
 
 Single-H20 smoke run:
 
