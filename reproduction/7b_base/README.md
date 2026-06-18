@@ -406,7 +406,8 @@ FlashAttention-dependent padding removal.
 full train/validation splits, batch size 512, PPO mini batch 256, micro batch
 64, prompt length 4096, response length 500, five agents, four search turns,
 top-3 retrieval, vLLM memory utilization 0.6, 1,005 steps, and eight GPUs.
-This reproduction changes only the backbone from Qwen2.5-7B to Llama-2-7B:
+This reproduction changes the backbone from Qwen2.5-7B to Llama-2-7B and runs
+on two H20 GPUs. All other paper parameters remain unchanged:
 
 ```bash
 BASE_MODEL_NAME=llama-7b \
@@ -416,10 +417,12 @@ python3 /workspace/filesdir/projects/Search-R1/reproduction/7b_base/training_tas
   --run-mode full
 ```
 
-This is a controlled backbone substitution, not an exact reproduction of the
-paper's Qwen2.5-7B result. It still requires an eight-GPU training task because
-the paper's GPU count, global/micro batches, sequence lengths, and rollout
-settings are unchanged. For two H20 GPUs, use `two_gpu_vllm_h20_flash`.
+This is not an exact reproduction of the paper's Qwen2.5-7B result because the
+backbone and GPU count differ. The original global batch 512, micro batch 64,
+sequence lengths, rollout concurrency, and retrieval settings are intentionally
+unchanged. Those values may exceed two-H20 memory even though each H20 has
+about 96 GiB; use `two_gpu_vllm_h20_flash` only if an adapted fallback is
+required.
 
 `two_gpu_balanced` remains available as a faster fallback if `two_gpu_paper`
 is too slow: it uses `N_AGENT=3`, `MAX_RESPONSE_LENGTH=192`, and

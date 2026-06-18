@@ -329,11 +329,11 @@ case "${RUN_MODE}" in
     ;;
   full)
     # Search-R1 v0.2 GRPO paper configuration with only the backbone replaced
-    # by the selected local model (Llama-2-7B for this reproduction).
-    # All original resource and training parameters, including eight GPUs,
+    # by Llama-2-7B and the GPU allocation reduced to two H20 GPUs. All other
+    # original data, batch, sequence, rollout, retrieval, and step parameters
     # remain unchanged.
-    export CUDA_VISIBLE_DEVICES="${PAPER_CUDA_VISIBLE_DEVICES:-0,1,2,3,4,5,6,7}"
-    export N_GPUS_PER_NODE="${PAPER_N_GPUS_PER_NODE:-8}"
+    export CUDA_VISIBLE_DEVICES="${TWO_GPU_CUDA_VISIBLE_DEVICES:-0,1}"
+    export N_GPUS_PER_NODE="${TWO_GPU_N_GPUS_PER_NODE:-2}"
     export NNODES="${PAPER_NNODES:-1}"
     export TRAIN_DATA_NUM="${TRAIN_DATA_NUM:-null}"
     export VAL_DATA_NUM="${VAL_DATA_NUM:-null}"
