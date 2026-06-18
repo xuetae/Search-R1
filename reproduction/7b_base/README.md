@@ -400,6 +400,28 @@ If this mode hits a FlashAttention/H20 kernel error or `SIGFPE`, rerun the
 same image with `--run-mode two_gpu_vllm_h20` to keep vLLM while disabling
 FlashAttention-dependent padding removal.
 
+### Exact v0.2 paper profile
+
+`full` now records the upstream v0.2 GRPO settings without two-GPU
+adaptations: full train/validation splits, batch size 512, PPO mini batch 256,
+micro batch 64, prompt length 4096, response length 500, five agents, four
+search turns, top-3 retrieval, vLLM memory utilization 0.6, 1,005 steps, and
+eight GPUs. Use the Qwen2.5-7B base checkpoint to match the paper:
+
+```bash
+BASE_MODEL_NAME=qwen2.5-7b \
+LOCAL_BASE_MODEL=/workspace/filesdir/models/7b_base/qwen2.5-7b \
+python3 /workspace/filesdir/projects/Search-R1/reproduction/7b_base/training_task_entry.py \
+  --algo grpo \
+  --run-mode full \
+  --cuda-visible-devices 0,1,2,3,4,5,6,7
+```
+
+This exact profile is expected to require an eight-GPU training task. For two
+H20 GPUs, use `two_gpu_vllm_h20_flash`; it preserves the full datasets and
+core GRPO/retrieval behavior while reducing batch, sequence lengths, search
+turns, rollout concurrency, and validation/checkpoint frequency.
+
 `two_gpu_balanced` remains available as a faster fallback if `two_gpu_paper`
 is too slow: it uses `N_AGENT=3`, `MAX_RESPONSE_LENGTH=192`, and
 `TOTAL_TRAINING_STEPS=200`.

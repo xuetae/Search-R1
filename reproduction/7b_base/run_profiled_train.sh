@@ -328,18 +328,43 @@ case "${RUN_MODE}" in
     export TRAIN_LOGGER="${TRAIN_LOGGER:-[]}"
     ;;
   full)
+    # Search-R1 v0.2 GRPO paper configuration. This profile requires eight
+    # GPUs and a Qwen2.5-7B base checkpoint; it is not a two-H20 profile.
+    export CUDA_VISIBLE_DEVICES="${PAPER_CUDA_VISIBLE_DEVICES:-0,1,2,3,4,5,6,7}"
+    export N_GPUS_PER_NODE="${PAPER_N_GPUS_PER_NODE:-8}"
+    export NNODES="${PAPER_NNODES:-1}"
     export TRAIN_DATA_NUM="${TRAIN_DATA_NUM:-null}"
     export VAL_DATA_NUM="${VAL_DATA_NUM:-null}"
     export TRAIN_BATCH_SIZE="${TRAIN_BATCH_SIZE:-512}"
     export VAL_BATCH_SIZE="${VAL_BATCH_SIZE:-256}"
+    export MAX_PROMPT_LENGTH="${MAX_PROMPT_LENGTH:-4096}"
+    export MAX_RESPONSE_LENGTH="${MAX_RESPONSE_LENGTH:-500}"
+    export MAX_START_LENGTH="${MAX_START_LENGTH:-2048}"
+    export MAX_OBS_LENGTH="${MAX_OBS_LENGTH:-500}"
     export PPO_MINI_BATCH_SIZE="${PPO_MINI_BATCH_SIZE:-256}"
     export PPO_MICRO_BATCH_SIZE="${PPO_MICRO_BATCH_SIZE:-64}"
     export LOG_PROB_MICRO_BATCH_SIZE="${LOG_PROB_MICRO_BATCH_SIZE:-128}"
+    export CRITIC_PPO_MICRO_BATCH_SIZE="${CRITIC_PPO_MICRO_BATCH_SIZE:-8}"
+    export TENSOR_MODEL_PARALLEL_SIZE="${TENSOR_MODEL_PARALLEL_SIZE:-1}"
+    export ROLLOUT_NAME="${ROLLOUT_NAME:-vllm}"
+    export ROLLOUT_GPU_MEMORY_UTILIZATION="${ROLLOUT_GPU_MEMORY_UTILIZATION:-0.6}"
+    export ROLLOUT_DO_SAMPLE="${ROLLOUT_DO_SAMPLE:-true}"
+    export ROLLOUT_TEMPERATURE="${ROLLOUT_TEMPERATURE:-1}"
+    export N_AGENT="${N_AGENT:-5}"
+    export MAX_TURNS="${MAX_TURNS:-4}"
+    export RETRIEVER_TOPK="${RETRIEVER_TOPK:-3}"
+    export TOTAL_EPOCHS="${TOTAL_EPOCHS:-15}"
     export TOTAL_TRAINING_STEPS="${TOTAL_TRAINING_STEPS:-1005}"
     export SAVE_FREQ="${SAVE_FREQ:-100}"
     export TEST_FREQ="${TEST_FREQ:-100}"
     export VAL_BEFORE_TRAIN="${VAL_BEFORE_TRAIN:-true}"
     export TRAIN_LOGGER="${TRAIN_LOGGER:-['wandb']}"
+    export USE_KL_LOSS="${USE_KL_LOSS:-true}"
+    export DISABLE_REFERENCE_POLICY="${DISABLE_REFERENCE_POLICY:-false}"
+    export DO_SEARCH="${DO_SEARCH:-true}"
+    export MODEL_ATTN_IMPLEMENTATION="${MODEL_ATTN_IMPLEMENTATION:-flash_attention_2}"
+    export USE_REMOVE_PADDING="${USE_REMOVE_PADDING:-true}"
+    export VLLM_ATTENTION_BACKEND="${VLLM_ATTENTION_BACKEND:-XFORMERS}"
     ;;
   *)
     echo "Unsupported RUN_MODE=${RUN_MODE}. Use RUN_MODE=two_gpu_balanced, two_gpu_fast, two_gpu_paper, two_gpu_vllm_h20, two_gpu_vllm_h20_flash, h20_smoke, smoke, or full." >&2
