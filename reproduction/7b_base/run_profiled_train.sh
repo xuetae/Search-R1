@@ -219,7 +219,7 @@ case "${RUN_MODE}" in
     # Use the complete 169,615-example training split. With batch size 32,
     # 5,301 steps cover approximately one full pass over the dataset.
     export TRAIN_DATA_NUM="${TRAIN_DATA_NUM:-null}"
-    export VAL_DATA_NUM="${VAL_DATA_NUM:-1024}"
+    export VAL_DATA_NUM="${VAL_DATA_NUM:-null}"
     export TRAIN_BATCH_SIZE="${TRAIN_BATCH_SIZE:-32}"
     export VAL_BATCH_SIZE="${VAL_BATCH_SIZE:-16}"
     export MAX_PROMPT_LENGTH="${MAX_PROMPT_LENGTH:-2048}"

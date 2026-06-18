@@ -358,15 +358,16 @@ settings as `two_gpu_paper`, but uses a larger 2-GPU vLLM configuration:
 - `MAX_TURNS=2`
 - `RETRIEVER_TOPK=3`
 - `TRAIN_DATA_NUM=null` (all 169,615 training examples)
-- `VAL_DATA_NUM=1024`
+- `VAL_DATA_NUM=null` (all 51,713 validation examples)
 - `TOTAL_TRAINING_STEPS=5301`
 - `SAVE_FREQ=500`
 - `TEST_FREQ=500`
 
 At batch size 32, 5,301 steps consume about 169,632 training examples, which
 is approximately one complete pass over the full training split. The effective
-rollout per step is `32 x 5 = 160` trajectories. Validation is limited to 1,024
-examples so periodic evaluation remains practical on two H20 GPUs.
+rollout per step is `32 x 5 = 160` trajectories. Validation uses the complete
+51,713-example test split, so validation before training and every 500 steps
+can take substantial time on two H20 GPUs.
 
 Use this mode only after validating the image with:
 
