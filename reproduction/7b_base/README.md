@@ -433,6 +433,11 @@ Every profiled run writes persistent telemetry under
 - `summary.txt`: status, duration, peak memory, and artifact paths
 - `checkpoints.txt`: saved checkpoint list
 - `report.png`: GPU, reward, loss, KL, utilization, and configuration charts
+- `wandb/`: offline W&B run files; no API key is required by default
+
+The `full` profile keeps the paper's W&B logger but defaults to
+`WANDB_MODE=offline` for non-interactive xFusion jobs. Set `WANDB_MODE=online`
+and provide `WANDB_API_KEY` only when cloud synchronization is required.
 
 `two_gpu_balanced` remains available as a faster fallback if `two_gpu_paper`
 is too slow: it uses `N_AGENT=3`, `MAX_RESPONSE_LENGTH=192`, and

@@ -361,6 +361,10 @@ case "${RUN_MODE}" in
     export TEST_FREQ="${TEST_FREQ:-100}"
     export VAL_BEFORE_TRAIN="${VAL_BEFORE_TRAIN:-true}"
     export TRAIN_LOGGER="${TRAIN_LOGGER:-['wandb']}"
+    # Preserve the paper's W&B logger without requiring an API key inside the
+    # non-interactive training task. Offline files are stored with run outputs.
+    export WANDB_MODE="${WANDB_MODE:-offline}"
+    export WANDB_SILENT="${WANDB_SILENT:-true}"
     export USE_KL_LOSS="${USE_KL_LOSS:-true}"
     export DISABLE_REFERENCE_POLICY="${DISABLE_REFERENCE_POLICY:-false}"
     export DO_SEARCH="${DO_SEARCH:-true}"
@@ -379,6 +383,8 @@ esac
 export EXPERIMENT_NAME="${EXPERIMENT_NAME:-${DATA_NAME}-search-r1-${ALGO}-${BASE_MODEL_NAME}-${RUN_MODE}-${RUN_ID}}"
 RUN_DIR="${RUN_ROOT}/${EXPERIMENT_NAME}"
 mkdir -p "${RUN_DIR}"
+export WANDB_DIR="${WANDB_DIR:-${RUN_DIR}/wandb}"
+mkdir -p "${WANDB_DIR}"
 
 export CKPT_DIR="${CKPT_DIR:-${OUTPUT_ROOT}/checkpoints/${EXPERIMENT_NAME}}"
 export TRAIN_LOG_FILE="${TRAIN_LOG_FILE:-${RUN_DIR}/train.log}"
@@ -459,6 +465,8 @@ write_env_snapshot() {
     echo "TEST_FREQ=${TEST_FREQ}"
     echo "VAL_BEFORE_TRAIN=${VAL_BEFORE_TRAIN}"
     echo "TRAIN_LOGGER=${TRAIN_LOGGER}"
+    echo "WANDB_MODE=${WANDB_MODE:-}"
+    echo "WANDB_DIR=${WANDB_DIR:-}"
     echo "CKPT_DIR=${CKPT_DIR}"
     echo "TRAIN_LOG_FILE=${TRAIN_LOG_FILE}"
     echo "GPU_SAMPLE_INTERVAL=${GPU_SAMPLE_INTERVAL}"
