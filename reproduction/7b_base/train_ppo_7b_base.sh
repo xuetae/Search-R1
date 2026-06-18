@@ -49,6 +49,18 @@ export TRAIN_LOG_FILE="${TRAIN_LOG_FILE:-${EXPERIMENT_NAME}.log}"
 
 cd "${WORK_DIR}"
 
+MODEL_OVERRIDE_ARGS=()
+if [[ -n "${MODEL_MAX_POSITION_EMBEDDINGS:-}" && "${MODEL_MAX_POSITION_EMBEDDINGS}" != "null" ]]; then
+  MODEL_OVERRIDE_ARGS+=(
+    "+actor_rollout_ref.model.override_config.max_position_embeddings=${MODEL_MAX_POSITION_EMBEDDINGS}"
+  )
+fi
+if [[ -n "${MODEL_ROPE_SCALING_FACTOR:-}" && "${MODEL_ROPE_SCALING_FACTOR}" != "null" ]]; then
+  MODEL_OVERRIDE_ARGS+=(
+    "+actor_rollout_ref.model.override_config.rope_scaling={type:linear,factor:${MODEL_ROPE_SCALING_FACTOR}}"
+  )
+fi
+
 PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
   data.train_files="${DATA_DIR}/train.parquet" \
   data.val_files="${DATA_DIR}/test.parquet" \
@@ -67,6 +79,7 @@ PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
   actor_rollout_ref.model.enable_gradient_checkpointing=true \
   actor_rollout_ref.model.use_remove_padding="${USE_REMOVE_PADDING}" \
   +actor_rollout_ref.model.attn_implementation="${MODEL_ATTN_IMPLEMENTATION}" \
+  "${MODEL_OVERRIDE_ARGS[@]}" \
   actor_rollout_ref.actor.optim.lr_warmup_steps_ratio=0.285 \
   actor_rollout_ref.actor.ppo_mini_batch_size="${PPO_MINI_BATCH_SIZE}" \
   actor_rollout_ref.actor.ppo_micro_batch_size="${PPO_MICRO_BATCH_SIZE}" \

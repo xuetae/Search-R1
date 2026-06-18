@@ -368,6 +368,11 @@ case "${RUN_MODE}" in
     export USE_KL_LOSS="${USE_KL_LOSS:-true}"
     export DISABLE_REFERENCE_POLICY="${DISABLE_REFERENCE_POLICY:-false}"
     export DO_SEARCH="${DO_SEARCH:-true}"
+    # Llama-2-7B has a native 4,096-token context, while the paper profile
+    # requests 4,096 prompt tokens plus 500 response tokens. Extend Llama's
+    # RoPE context without changing the paper's sequence-length parameters.
+    export MODEL_MAX_POSITION_EMBEDDINGS="${MODEL_MAX_POSITION_EMBEDDINGS:-8192}"
+    export MODEL_ROPE_SCALING_FACTOR="${MODEL_ROPE_SCALING_FACTOR:-2.0}"
     # The upstream script does not force a Transformers attention
     # implementation; null leaves model loading at its library default.
     export MODEL_ATTN_IMPLEMENTATION="${MODEL_ATTN_IMPLEMENTATION:-null}"
@@ -450,6 +455,8 @@ write_env_snapshot() {
     echo "DO_SEARCH=${DO_SEARCH:-}"
     echo "ACTOR_MODEL_DTYPE=${ACTOR_MODEL_DTYPE:-}"
     echo "MODEL_ATTN_IMPLEMENTATION=${MODEL_ATTN_IMPLEMENTATION:-}"
+    echo "MODEL_MAX_POSITION_EMBEDDINGS=${MODEL_MAX_POSITION_EMBEDDINGS:-}"
+    echo "MODEL_ROPE_SCALING_FACTOR=${MODEL_ROPE_SCALING_FACTOR:-}"
     echo "USE_REMOVE_PADDING=${USE_REMOVE_PADDING:-}"
     echo "HF_SUMMON_FULL_PARAMS=${HF_SUMMON_FULL_PARAMS:-}"
     echo "HF_USE_CACHE=${HF_USE_CACHE:-}"

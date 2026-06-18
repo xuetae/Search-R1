@@ -439,6 +439,12 @@ The `full` profile keeps the paper's W&B logger but defaults to
 `WANDB_MODE=offline` for non-interactive xFusion jobs. Set `WANDB_MODE=online`
 and provide `WANDB_API_KEY` only when cloud synchronization is required.
 
+Because Llama-2-7B has a native context length of 4,096 but the paper profile
+uses `4096 + 500` prompt/response tokens, `full` applies linear RoPE scaling
+with factor 2 and sets `max_position_embeddings=8192`. This is a
+backbone-compatibility adjustment; the paper's prompt and response limits stay
+unchanged.
+
 `two_gpu_balanced` remains available as a faster fallback if `two_gpu_paper`
 is too slow: it uses `N_AGENT=3`, `MAX_RESPONSE_LENGTH=192`, and
 `TOTAL_TRAINING_STEPS=200`.
