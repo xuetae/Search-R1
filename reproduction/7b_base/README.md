@@ -402,25 +402,24 @@ FlashAttention-dependent padding removal.
 
 ### Exact v0.2 paper profile
 
-`full` now records the upstream v0.2 GRPO settings without two-GPU
-adaptations: full train/validation splits, batch size 512, PPO mini batch 256,
-micro batch 64, prompt length 4096, response length 500, five agents, four
-search turns, top-3 retrieval, vLLM memory utilization 0.6, 1,005 steps, and
-eight GPUs. Use the Qwen2.5-7B base checkpoint to match the paper:
+`full` records the upstream v0.2 GRPO settings without two-GPU adaptations:
+full train/validation splits, batch size 512, PPO mini batch 256, micro batch
+64, prompt length 4096, response length 500, five agents, four search turns,
+top-3 retrieval, vLLM memory utilization 0.6, 1,005 steps, and eight GPUs.
+This reproduction changes only the backbone from Qwen2.5-7B to Llama-2-7B:
 
 ```bash
-BASE_MODEL_NAME=qwen2.5-7b \
-LOCAL_BASE_MODEL=/workspace/filesdir/models/7b_base/qwen2.5-7b \
+BASE_MODEL_NAME=llama-7b \
+LOCAL_BASE_MODEL=/workspace/filesdir/models/7b_base/llama-7b \
 python3 /workspace/filesdir/projects/Search-R1/reproduction/7b_base/training_task_entry.py \
   --algo grpo \
-  --run-mode full \
-  --cuda-visible-devices 0,1,2,3,4,5,6,7
+  --run-mode full
 ```
 
-This exact profile is expected to require an eight-GPU training task. For two
-H20 GPUs, use `two_gpu_vllm_h20_flash`; it preserves the full datasets and
-core GRPO/retrieval behavior while reducing batch, sequence lengths, search
-turns, rollout concurrency, and validation/checkpoint frequency.
+This is a controlled backbone substitution, not an exact reproduction of the
+paper's Qwen2.5-7B result. It still requires an eight-GPU training task because
+the paper's GPU count, global/micro batches, sequence lengths, and rollout
+settings are unchanged. For two H20 GPUs, use `two_gpu_vllm_h20_flash`.
 
 `two_gpu_balanced` remains available as a faster fallback if `two_gpu_paper`
 is too slow: it uses `N_AGENT=3`, `MAX_RESPONSE_LENGTH=192`, and

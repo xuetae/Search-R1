@@ -328,8 +328,10 @@ case "${RUN_MODE}" in
     export TRAIN_LOGGER="${TRAIN_LOGGER:-[]}"
     ;;
   full)
-    # Search-R1 v0.2 GRPO paper configuration. This profile requires eight
-    # GPUs and a Qwen2.5-7B base checkpoint; it is not a two-H20 profile.
+    # Search-R1 v0.2 GRPO paper configuration with only the backbone replaced
+    # by the selected local model (Llama-2-7B for this reproduction).
+    # All original resource and training parameters, including eight GPUs,
+    # remain unchanged.
     export CUDA_VISIBLE_DEVICES="${PAPER_CUDA_VISIBLE_DEVICES:-0,1,2,3,4,5,6,7}"
     export N_GPUS_PER_NODE="${PAPER_N_GPUS_PER_NODE:-8}"
     export NNODES="${PAPER_NNODES:-1}"
@@ -362,7 +364,9 @@ case "${RUN_MODE}" in
     export USE_KL_LOSS="${USE_KL_LOSS:-true}"
     export DISABLE_REFERENCE_POLICY="${DISABLE_REFERENCE_POLICY:-false}"
     export DO_SEARCH="${DO_SEARCH:-true}"
-    export MODEL_ATTN_IMPLEMENTATION="${MODEL_ATTN_IMPLEMENTATION:-flash_attention_2}"
+    # The upstream script does not force a Transformers attention
+    # implementation; null leaves model loading at its library default.
+    export MODEL_ATTN_IMPLEMENTATION="${MODEL_ATTN_IMPLEMENTATION:-null}"
     export USE_REMOVE_PADDING="${USE_REMOVE_PADDING:-true}"
     export VLLM_ATTENTION_BACKEND="${VLLM_ATTENTION_BACKEND:-XFORMERS}"
     ;;
