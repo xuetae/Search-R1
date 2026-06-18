@@ -357,15 +357,16 @@ settings as `two_gpu_paper`, but uses a larger 2-GPU vLLM configuration:
 - `N_AGENT=5`
 - `MAX_TURNS=2`
 - `RETRIEVER_TOPK=3`
-- `TOTAL_TRAINING_STEPS=1000`
-- `SAVE_FREQ=200`
-- `TEST_FREQ=50`
+- `TRAIN_DATA_NUM=null` (all 169,615 training examples)
+- `VAL_DATA_NUM=1024`
+- `TOTAL_TRAINING_STEPS=5301`
+- `SAVE_FREQ=500`
+- `TEST_FREQ=500`
 
-This gives about 512 steps per epoch, so 1000 training steps covers roughly
-two passes over the selected 4096 training examples. The effective rollout per
-step is `32 x 5 = 160` trajectories, which is still below the upstream
-8-GPU throughput but is materially closer to the paper setting than the HF
-fallback setting.
+At batch size 32, 5,301 steps consume about 169,632 training examples, which
+is approximately one complete pass over the full training split. The effective
+rollout per step is `32 x 5 = 160` trajectories. Validation is limited to 1,024
+examples so periodic evaluation remains practical on two H20 GPUs.
 
 Use this mode only after validating the image with:
 
@@ -385,12 +386,14 @@ After installing `flash_attn`, use `two_gpu_vllm_h20_flash` for the closest
 python3 /workspace/filesdir/projects/Search-R1/reproduction/7b_base/training_task_entry.py --algo grpo --run-mode two_gpu_vllm_h20_flash
 ```
 
-It keeps the same batch, data, rollout, retrieval, and checkpoint settings as
-`two_gpu_vllm_h20`, but changes:
+It uses the full training split with the two-H20 batch and rollout settings,
+and enables:
 
 - `MODEL_ATTN_IMPLEMENTATION=flash_attention_2`
 - `USE_REMOVE_PADDING=true`
-- `ROLLOUT_GPU_MEMORY_UTILIZATION=0.50`
+- `ROLLOUT_GPU_MEMORY_UTILIZATION=0.35`
+- `ROLLOUT_DTYPE=bfloat16`
+- `ACTOR_MODEL_DTYPE=bfloat16`
 
 If this mode hits a FlashAttention/H20 kernel error or `SIGFPE`, rerun the
 same image with `--run-mode two_gpu_vllm_h20` to keep vLLM while disabling
