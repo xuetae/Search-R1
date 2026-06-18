@@ -424,6 +424,16 @@ unchanged. Those values may exceed two-H20 memory even though each H20 has
 about 96 GiB; use `two_gpu_vllm_h20_flash` only if an adapted fallback is
 required.
 
+Every profiled run writes persistent telemetry under
+`/workspace/model_out/search-r1/outputs/runs/<experiment_name>/`:
+
+- `train.log`: complete training process output
+- `gpu_memory.csv`: per-GPU memory and utilization samples
+- `training_metrics.csv`: parsed step, reward, loss, and KL metrics
+- `summary.txt`: status, duration, peak memory, and artifact paths
+- `checkpoints.txt`: saved checkpoint list
+- `report.png`: GPU, reward, loss, KL, utilization, and configuration charts
+
 `two_gpu_balanced` remains available as a faster fallback if `two_gpu_paper`
 is too slow: it uses `N_AGENT=3`, `MAX_RESPONSE_LENGTH=192`, and
 `TOTAL_TRAINING_STEPS=200`.

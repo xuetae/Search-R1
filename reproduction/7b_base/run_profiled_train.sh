@@ -393,6 +393,7 @@ SUMMARY_FILE="${RUN_DIR}/summary.txt"
 CKPT_LIST="${RUN_DIR}/checkpoints.txt"
 ENV_FILE="${RUN_DIR}/env.txt"
 REPORT_IMAGE="${RUN_DIR}/report.png"
+METRICS_FILE="${RUN_DIR}/training_metrics.csv"
 
 write_env_snapshot() {
   {
@@ -461,6 +462,7 @@ write_env_snapshot() {
     echo "CKPT_DIR=${CKPT_DIR}"
     echo "TRAIN_LOG_FILE=${TRAIN_LOG_FILE}"
     echo "GPU_SAMPLE_INTERVAL=${GPU_SAMPLE_INTERVAL}"
+    echo "METRICS_FILE=${METRICS_FILE}"
   } > "${ENV_FILE}"
 }
 
@@ -513,6 +515,7 @@ summarize_run() {
     echo "peak_gpu_memory=${peak_mem}"
     echo "train_log=${TRAIN_LOG_FILE}"
     echo "gpu_memory_log=${GPU_LOG}"
+    echo "training_metrics=${METRICS_FILE}"
     echo "checkpoint_dir=${CKPT_DIR}"
     echo "checkpoint_list=${CKPT_LIST}"
   } > "${SUMMARY_FILE}"
@@ -575,6 +578,10 @@ trap - EXIT
 
 summarize_run "${EXIT_CODE}" "${START_EPOCH}" "${END_EPOCH}"
 
+if ! python3 "${SCRIPT_DIR}/extract_training_metrics.py" "${TRAIN_LOG_FILE}" "${METRICS_FILE}" >/dev/null 2>&1; then
+  echo "Training metric extraction failed; report will contain GPU telemetry only." >&2
+fi
+
 if python3 "${SCRIPT_DIR}/render_training_report.py" "${RUN_DIR}" --output "${REPORT_IMAGE}" >/dev/null 2>&1; then
   echo "Training report: ${REPORT_IMAGE}"
 else
@@ -583,5 +590,6 @@ fi
 
 echo "Run summary: ${SUMMARY_FILE}"
 echo "GPU memory log: ${GPU_LOG}"
+echo "Training metrics: ${METRICS_FILE}"
 echo "Checkpoint list: ${CKPT_LIST}"
 exit "${EXIT_CODE}"

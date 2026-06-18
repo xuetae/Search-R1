@@ -85,10 +85,37 @@ def count_checkpoints(path: Path) -> int:
     return sum(1 for line in path.read_text(encoding="utf-8").splitlines() if line.strip())
 
 
+def read_training_metrics(path: Path) -> dict[str, list[tuple[int, float]]]:
+    series: dict[str, list[tuple[int, float]]] = defaultdict(list)
+    if not path.exists():
+        return series
+    with path.open(newline="", encoding="utf-8") as handle:
+        for row in csv.DictReader(handle):
+            try:
+                step = int(row["step"])
+                value = float(row["value"])
+            except (KeyError, TypeError, ValueError):
+                continue
+            series[row.get("metric", "unknown")].append((step, value))
+    return series
+
+
+def select_metrics(
+    series: dict[str, list[tuple[int, float]]], patterns: tuple[str, ...], limit: int = 4
+) -> list[str]:
+    selected: list[str] = []
+    for metric in series:
+        lower = metric.lower()
+        if any(pattern in lower for pattern in patterns):
+            selected.append(metric)
+    return sorted(selected, key=lambda name: (-len(series[name]), name))[:limit]
+
+
 def render_report(run_dir: Path, output: Path) -> None:
     summary = read_key_values(run_dir / "summary.txt")
     env = read_key_values(run_dir / "env.txt")
     gpu_series = read_gpu_rows(run_dir / "gpu_memory.csv")
+    training_metrics = read_training_metrics(run_dir / "training_metrics.csv")
     ckpt_count = count_checkpoints(run_dir / "checkpoints.txt")
 
     experiment = summary.get("experiment_name") or env.get("EXPERIMENT_NAME") or run_dir.name
@@ -110,8 +137,8 @@ def render_report(run_dir: Path, output: Path) -> None:
         }
     )
 
-    fig = plt.figure(figsize=(14, 9), constrained_layout=True)
-    gs = fig.add_gridspec(3, 4, height_ratios=[0.9, 2.2, 1.6])
+    fig = plt.figure(figsize=(14, 12), constrained_layout=True)
+    gs = fig.add_gridspec(4, 4, height_ratios=[0.9, 2.1, 1.8, 1.6])
 
     title_ax = fig.add_subplot(gs[0, :])
     title_ax.axis("off")
@@ -148,7 +175,35 @@ def render_report(run_dir: Path, output: Path) -> None:
         mem_ax.text(0.5, 0.5, "No GPU samples found", ha="center", va="center", fontsize=13, color="#667085")
         mem_ax.set_axis_off()
 
-    util_ax = fig.add_subplot(gs[2, :2])
+    reward_ax = fig.add_subplot(gs[2, :2])
+    reward_names = select_metrics(training_metrics, ("reward", "score", "accuracy", "em"))
+    if reward_names:
+        for metric in reward_names:
+            points = training_metrics[metric]
+            reward_ax.plot([p[0] for p in points], [p[1] for p in points], label=metric, linewidth=1.4)
+        reward_ax.set_title("Reward and Evaluation Metrics")
+        reward_ax.set_xlabel("Training step")
+        reward_ax.grid(True)
+        reward_ax.legend(fontsize=7, frameon=False)
+    else:
+        reward_ax.text(0.5, 0.5, "No reward metrics parsed", ha="center", va="center", color="#667085")
+        reward_ax.set_axis_off()
+
+    loss_ax = fig.add_subplot(gs[2, 2:])
+    loss_names = select_metrics(training_metrics, ("loss", "kl", "entropy"))
+    if loss_names:
+        for metric in loss_names:
+            points = training_metrics[metric]
+            loss_ax.plot([p[0] for p in points], [p[1] for p in points], label=metric, linewidth=1.4)
+        loss_ax.set_title("Optimization Metrics")
+        loss_ax.set_xlabel("Training step")
+        loss_ax.grid(True)
+        loss_ax.legend(fontsize=7, frameon=False)
+    else:
+        loss_ax.text(0.5, 0.5, "No optimization metrics parsed", ha="center", va="center", color="#667085")
+        loss_ax.set_axis_off()
+
+    util_ax = fig.add_subplot(gs[3, :2])
     if gpu_series:
         for gpu_index in sorted(gpu_series, key=lambda x: int(x) if x.isdigit() else x):
             points = gpu_series[gpu_index]
@@ -167,7 +222,7 @@ def render_report(run_dir: Path, output: Path) -> None:
         util_ax.text(0.5, 0.5, "No utilization samples", ha="center", va="center", color="#667085")
         util_ax.set_axis_off()
 
-    details_ax = fig.add_subplot(gs[2, 2:])
+    details_ax = fig.add_subplot(gs[3, 2:])
     details_ax.axis("off")
     details = [
         ("Run mode", summary.get("run_mode", env.get("RUN_MODE", "n/a"))),
