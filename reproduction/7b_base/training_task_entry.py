@@ -164,34 +164,37 @@ def main() -> int:
         env.setdefault("TMPDIR", str(tmp_dir))
         env.setdefault("TEMP", str(tmp_dir))
         env.setdefault("TMP", str(tmp_dir))
-    env.setdefault("BASE_MODEL_NAME", args.base_model_name)
-    env.setdefault("LOCAL_BASE_MODEL", local_base_model)
-    env.setdefault("ALGO", args.algo)
-    env.setdefault("RUN_MODE", args.run_mode)
-    env.setdefault("TWO_GPU_CUDA_VISIBLE_DEVICES", args.cuda_visible_devices)
-    env.setdefault("RETRIEVER_TOPK", args.retriever_topk)
+    # argparse defaults already read from the environment, so assigning here
+    # preserves env-based configuration while allowing explicit CLI flags to
+    # override platform-injected values.
+    env["BASE_MODEL_NAME"] = args.base_model_name
+    env["LOCAL_BASE_MODEL"] = local_base_model
+    env["ALGO"] = args.algo
+    env["RUN_MODE"] = args.run_mode
+    env["TWO_GPU_CUDA_VISIBLE_DEVICES"] = args.cuda_visible_devices
+    env["RETRIEVER_TOPK"] = args.retriever_topk
     if args.rollout_name:
-        env.setdefault("ROLLOUT_NAME", args.rollout_name)
+        env["ROLLOUT_NAME"] = args.rollout_name
     if args.tensor_model_parallel_size:
-        env.setdefault("TENSOR_MODEL_PARALLEL_SIZE", args.tensor_model_parallel_size)
+        env["TENSOR_MODEL_PARALLEL_SIZE"] = args.tensor_model_parallel_size
     if args.rollout_do_sample:
-        env.setdefault("ROLLOUT_DO_SAMPLE", args.rollout_do_sample)
+        env["ROLLOUT_DO_SAMPLE"] = args.rollout_do_sample
     if args.rollout_dtype:
-        env.setdefault("ROLLOUT_DTYPE", args.rollout_dtype)
+        env["ROLLOUT_DTYPE"] = args.rollout_dtype
     if args.rollout_enforce_eager:
-        env.setdefault("ROLLOUT_ENFORCE_EAGER", args.rollout_enforce_eager)
+        env["ROLLOUT_ENFORCE_EAGER"] = args.rollout_enforce_eager
     if args.rollout_disable_custom_all_reduce:
-        env.setdefault("ROLLOUT_DISABLE_CUSTOM_ALL_REDUCE", args.rollout_disable_custom_all_reduce)
+        env["ROLLOUT_DISABLE_CUSTOM_ALL_REDUCE"] = args.rollout_disable_custom_all_reduce
     if args.actor_model_dtype:
-        env.setdefault("ACTOR_MODEL_DTYPE", args.actor_model_dtype)
+        env["ACTOR_MODEL_DTYPE"] = args.actor_model_dtype
     if args.model_attn_implementation:
-        env.setdefault("MODEL_ATTN_IMPLEMENTATION", args.model_attn_implementation)
+        env["MODEL_ATTN_IMPLEMENTATION"] = args.model_attn_implementation
     if args.use_remove_padding:
-        env.setdefault("USE_REMOVE_PADDING", args.use_remove_padding)
+        env["USE_REMOVE_PADDING"] = args.use_remove_padding
     if args.hf_summon_full_params:
-        env.setdefault("HF_SUMMON_FULL_PARAMS", args.hf_summon_full_params)
+        env["HF_SUMMON_FULL_PARAMS"] = args.hf_summon_full_params
     if args.hf_use_cache:
-        env.setdefault("HF_USE_CACHE", args.hf_use_cache)
+        env["HF_USE_CACHE"] = args.hf_use_cache
 
     if env.get("ROLLOUT_NAME") == "hf":
         env.setdefault("ROLLOUT_DTYPE", "float16")
@@ -218,7 +221,7 @@ def main() -> int:
     }
     for key, value in cli_env.items():
         if value is not None:
-            env.setdefault(key, value)
+            env[key] = value
     env.setdefault("RETRIEVER_URL", "http://127.0.0.1:8000/retrieve")
     env.setdefault("PYTHONUNBUFFERED", "1")
 
@@ -243,6 +246,8 @@ def main() -> int:
     print(f"[entry] train_data_num={env.get('TRAIN_DATA_NUM', '')}", flush=True)
     print(f"[entry] total_training_steps={env.get('TOTAL_TRAINING_STEPS', '')}", flush=True)
     print(f"[entry] train_batch_size={env.get('TRAIN_BATCH_SIZE', '')}", flush=True)
+    print(f"[entry] val_batch_size={env.get('VAL_BATCH_SIZE', '')}", flush=True)
+    print(f"[entry] max_num_seqs={env.get('MAX_NUM_SEQS', '')}", flush=True)
     print(f"[entry] n_agent={env.get('N_AGENT', '')}", flush=True)
     print(f"[entry] max_turns={env.get('MAX_TURNS', '')}", flush=True)
     print(f"[entry] cuda_visible_devices={env['TWO_GPU_CUDA_VISIBLE_DEVICES']}", flush=True)

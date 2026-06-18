@@ -328,17 +328,17 @@ case "${RUN_MODE}" in
     export TRAIN_LOGGER="${TRAIN_LOGGER:-[]}"
     ;;
   full)
-    # Search-R1 v0.2 GRPO paper configuration with only the backbone replaced
-    # by Llama-2-7B and the GPU allocation reduced to two H20 GPUs. All other
-    # original data, batch, sequence, rollout, retrieval, and step parameters
-    # remain unchanged.
+    # Search-R1 v0.2 GRPO paper configuration with the backbone replaced by
+    # Llama-2-7B and the GPU allocation reduced to two H20 GPUs. Validation
+    # batching and vLLM scheduler concurrency are reduced to avoid sustained
+    # KV-cache recomputation; training/reward semantics remain unchanged.
     export CUDA_VISIBLE_DEVICES="${TWO_GPU_CUDA_VISIBLE_DEVICES:-0,1}"
     export N_GPUS_PER_NODE="${TWO_GPU_N_GPUS_PER_NODE:-2}"
     export NNODES="${PAPER_NNODES:-1}"
     export TRAIN_DATA_NUM="${TRAIN_DATA_NUM:-null}"
     export VAL_DATA_NUM="${VAL_DATA_NUM:-null}"
     export TRAIN_BATCH_SIZE="${TRAIN_BATCH_SIZE:-512}"
-    export VAL_BATCH_SIZE="${VAL_BATCH_SIZE:-256}"
+    export VAL_BATCH_SIZE="${VAL_BATCH_SIZE:-128}"
     export MAX_PROMPT_LENGTH="${MAX_PROMPT_LENGTH:-4096}"
     export MAX_RESPONSE_LENGTH="${MAX_RESPONSE_LENGTH:-500}"
     export MAX_START_LENGTH="${MAX_START_LENGTH:-2048}"
@@ -350,6 +350,7 @@ case "${RUN_MODE}" in
     export TENSOR_MODEL_PARALLEL_SIZE="${TENSOR_MODEL_PARALLEL_SIZE:-1}"
     export ROLLOUT_NAME="${ROLLOUT_NAME:-vllm}"
     export ROLLOUT_GPU_MEMORY_UTILIZATION="${ROLLOUT_GPU_MEMORY_UTILIZATION:-0.6}"
+    export MAX_NUM_SEQS="${MAX_NUM_SEQS:-512}"
     export ROLLOUT_DO_SAMPLE="${ROLLOUT_DO_SAMPLE:-true}"
     export ROLLOUT_TEMPERATURE="${ROLLOUT_TEMPERATURE:-1}"
     export N_AGENT="${N_AGENT:-5}"
@@ -387,6 +388,9 @@ case "${RUN_MODE}" in
     exit 2
     ;;
 esac
+
+echo "[profile] run_mode=${RUN_MODE} train_batch_size=${TRAIN_BATCH_SIZE} val_batch_size=${VAL_BATCH_SIZE}" >&2
+echo "[profile] max_num_seqs=${MAX_NUM_SEQS:-} max_num_batched_tokens=${MAX_NUM_BATCHED_TOKENS:-} rollout_gpu_memory_utilization=${ROLLOUT_GPU_MEMORY_UTILIZATION:-}" >&2
 
 export EXPERIMENT_NAME="${EXPERIMENT_NAME:-${DATA_NAME}-search-r1-${ALGO}-${BASE_MODEL_NAME}-${RUN_MODE}-${RUN_ID}}"
 RUN_DIR="${RUN_ROOT}/${EXPERIMENT_NAME}"

@@ -402,14 +402,17 @@ FlashAttention-dependent padding removal.
 
 ### Exact v0.2 paper profile
 
-`full` records the upstream v0.2 GRPO settings without two-GPU adaptations:
-full train/validation splits, batch size 512, PPO mini batch 256, micro batch
-64, prompt length 4096, response length 500, five agents, four search turns,
-top-3 retrieval, vLLM memory utilization 0.6, 1,005 steps, and eight GPUs.
-This reproduction changes the backbone from Qwen2.5-7B to Llama-2-7B and runs
-on two H20 GPUs. All other paper parameters remain unchanged:
+`full` keeps the upstream v0.2 GRPO training and reward settings: full
+train/validation splits, training batch size 512, PPO mini batch 256, micro
+batch 64, prompt length 4096, response length 500, five agents, four search
+turns, top-3 retrieval, vLLM memory utilization 0.6, and 1,005 steps. This
+reproduction changes the backbone from Qwen2.5-7B to Llama-2-7B, runs on two
+H20 GPUs, uses validation batch size 128, and caps vLLM scheduler concurrency
+at 512 sequences to reduce KV-cache recomputation:
 
 ```bash
+VAL_BATCH_SIZE=128 \
+MAX_NUM_SEQS=512 \
 BASE_MODEL_NAME=llama-7b \
 LOCAL_BASE_MODEL=/workspace/filesdir/models/7b_base/llama-7b \
 python3 /workspace/filesdir/projects/Search-R1/reproduction/7b_base/training_task_entry.py \
@@ -418,11 +421,11 @@ python3 /workspace/filesdir/projects/Search-R1/reproduction/7b_base/training_tas
 ```
 
 This is not an exact reproduction of the paper's Qwen2.5-7B result because the
-backbone and GPU count differ. The original global batch 512, micro batch 64,
-sequence lengths, rollout concurrency, and retrieval settings are intentionally
-unchanged. Those values may exceed two-H20 memory even though each H20 has
-about 96 GiB; use `two_gpu_vllm_h20_flash` only if an adapted fallback is
-required.
+backbone and GPU count differ. Reducing validation batching and scheduler
+concurrency changes throughput, but not the training batch, sampled-agent
+count, search behavior, reward calculation, sequence limits, or optimizer
+updates. The earlier `VAL_BATCH_SIZE=192` and `MAX_NUM_SEQS=768` profile was
+not stable on the target two-GPU environment.
 
 Every profiled run writes persistent telemetry under
 `/workspace/model_out/search-r1/outputs/runs/<experiment_name>/`:
