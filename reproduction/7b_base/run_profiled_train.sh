@@ -373,6 +373,9 @@ case "${RUN_MODE}" in
     # RoPE context without changing the paper's sequence-length parameters.
     export MODEL_MAX_POSITION_EMBEDDINGS="${MODEL_MAX_POSITION_EMBEDDINGS:-8192}"
     export MODEL_ROPE_SCALING_FACTOR="${MODEL_ROPE_SCALING_FACTOR:-2.0}"
+    # vLLM separately reads the checkpoint's original 4,096-token config.json.
+    # Explicitly allow the 4,596-token rollout after applying RoPE scaling.
+    export VLLM_ALLOW_LONG_MAX_MODEL_LEN="${VLLM_ALLOW_LONG_MAX_MODEL_LEN:-1}"
     # The upstream script does not force a Transformers attention
     # implementation; null leaves model loading at its library default.
     export MODEL_ATTN_IMPLEMENTATION="${MODEL_ATTN_IMPLEMENTATION:-null}"
@@ -457,6 +460,7 @@ write_env_snapshot() {
     echo "MODEL_ATTN_IMPLEMENTATION=${MODEL_ATTN_IMPLEMENTATION:-}"
     echo "MODEL_MAX_POSITION_EMBEDDINGS=${MODEL_MAX_POSITION_EMBEDDINGS:-}"
     echo "MODEL_ROPE_SCALING_FACTOR=${MODEL_ROPE_SCALING_FACTOR:-}"
+    echo "VLLM_ALLOW_LONG_MAX_MODEL_LEN=${VLLM_ALLOW_LONG_MAX_MODEL_LEN:-}"
     echo "USE_REMOVE_PADDING=${USE_REMOVE_PADDING:-}"
     echo "HF_SUMMON_FULL_PARAMS=${HF_SUMMON_FULL_PARAMS:-}"
     echo "HF_USE_CACHE=${HF_USE_CACHE:-}"

@@ -443,7 +443,9 @@ Because Llama-2-7B has a native context length of 4,096 but the paper profile
 uses `4096 + 500` prompt/response tokens, `full` applies linear RoPE scaling
 with factor 2 and sets `max_position_embeddings=8192`. This is a
 backbone-compatibility adjustment; the paper's prompt and response limits stay
-unchanged.
+unchanged. It also sets `VLLM_ALLOW_LONG_MAX_MODEL_LEN=1` because vLLM 0.6.3
+validates against the checkpoint's original 4,096-token `config.json` before
+constructing the hybrid rollout engine.
 
 `two_gpu_balanced` remains available as a faster fallback if `two_gpu_paper`
 is too slow: it uses `N_AGENT=3`, `MAX_RESPONSE_LENGTH=192`, and
