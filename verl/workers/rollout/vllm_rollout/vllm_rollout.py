@@ -117,6 +117,16 @@ class vLLMRollout(BaseRollout):
         if vllm_version in SUPPORTED_VLLM_HYBRID_VERSIONS:
             kwargs['detokenize'] = False
 
+        stop_strings = config.get('stop_strings', None)
+        if stop_strings:
+            if isinstance(stop_strings, str):
+                stop_strings = [value for value in stop_strings.split('|') if value]
+            kwargs['stop'] = list(stop_strings)
+            kwargs['include_stop_str_in_output'] = True
+            # vLLM needs decoded text to match multi-token stop strings. Token
+            # IDs are still returned and used by the rollout worker.
+            kwargs['detokenize'] = True
+
         # supporting adding any sampling params from the config file
         for k in config.keys():
             if hasattr(SamplingParams(), str(k)):

@@ -514,6 +514,11 @@ RETRIEVER_MAX_RETURN_TOKENS=400
 Use `--retriever-device cuda` only when retrieval has a dedicated GPU that is
 not shared with the training workers.
 
+GRPO rollout also stops natively at `</search>` or `</answer>`. The previous
+implementation generated up to the full response limit and discarded
+everything after the first closing action tag; native stop strings avoid that
+wasted generation without changing the retained action text.
+
 Because Llama-2-7B has a native context length of 4,096 but the paper profile
 uses `4096 + 500` prompt/response tokens, `full` applies linear RoPE scaling
 with factor 2 and sets `max_position_embeddings=8192`. This is a
