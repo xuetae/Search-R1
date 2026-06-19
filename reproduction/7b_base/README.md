@@ -502,6 +502,17 @@ Compared with `full_stable`, this avoids position extrapolation and the vLLM
 4,596-versus-4,096 context warning. The tradeoff is that long multi-turn
 histories have 500 fewer prompt tokens and may be truncated earlier.
 
+The training entrypoint defaults the E5 query encoder and FAISS index to CPU
+for two-GPU training, leaving GPU 0 and GPU 1 to FSDP and vLLM:
+
+```text
+RETRIEVER_DEVICE=cpu
+RETRIEVER_FAISS_GPU=0
+```
+
+Use `--retriever-device cuda` only when retrieval has a dedicated GPU that is
+not shared with the training workers.
+
 Because Llama-2-7B has a native context length of 4,096 but the paper profile
 uses `4096 + 500` prompt/response tokens, `full` applies linear RoPE scaling
 with factor 2 and sets `max_position_embeddings=8192`. This is a

@@ -83,6 +83,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--cuda-visible-devices", default=os.environ.get("TWO_GPU_CUDA_VISIBLE_DEVICES", "0,1"))
     parser.add_argument("--retriever-topk", default=os.environ.get("RETRIEVER_TOPK", "3"))
+    parser.add_argument("--retriever-device", default=os.environ.get("RETRIEVER_DEVICE", "cpu"), choices=["cpu", "cuda"])
     parser.add_argument("--retriever-timeout", type=int, default=int(os.environ.get("RETRIEVER_TIMEOUT", "900")))
     parser.add_argument("--rollout-name", default=os.environ.get("ROLLOUT_NAME"), choices=["vllm", "hf", None])
     parser.add_argument("--tensor-model-parallel-size", default=os.environ.get("TENSOR_MODEL_PARALLEL_SIZE"))
@@ -174,6 +175,7 @@ def main() -> int:
     env["RUN_MODE"] = args.run_mode
     env["TWO_GPU_CUDA_VISIBLE_DEVICES"] = args.cuda_visible_devices
     env["RETRIEVER_TOPK"] = args.retriever_topk
+    env["RETRIEVER_DEVICE"] = args.retriever_device
     if args.rollout_name:
         env["ROLLOUT_NAME"] = args.rollout_name
     if args.tensor_model_parallel_size:
@@ -258,6 +260,7 @@ def main() -> int:
     print(f"[entry] max_turns={env.get('MAX_TURNS', '')}", flush=True)
     print(f"[entry] cuda_visible_devices={env['TWO_GPU_CUDA_VISIBLE_DEVICES']}", flush=True)
     print(f"[entry] retriever_url={env['RETRIEVER_URL']}", flush=True)
+    print(f"[entry] retriever_device={env['RETRIEVER_DEVICE']}", flush=True)
 
     retriever_proc: subprocess.Popen[str] | None = None
     try:

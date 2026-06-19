@@ -35,12 +35,12 @@ def load_docs(corpus, doc_idxs):
     results = [corpus[int(idx)] for idx in doc_idxs]
     return results
 
-def load_model(model_path: str, use_fp16: bool = False):
+def load_model(model_path: str, use_fp16: bool = False, device: str = "cuda"):
     model_config = AutoConfig.from_pretrained(model_path, trust_remote_code=True)
     model = AutoModel.from_pretrained(model_path, trust_remote_code=True)
     model.eval()
-    model.cuda()
-    if use_fp16: 
+    model.to(device)
+    if use_fp16 and device.startswith("cuda"):
         model = model.half()
     tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True, trust_remote_code=True)
     return model, tokenizer
@@ -62,14 +62,19 @@ def pooling(
         raise NotImplementedError("Pooling method not implemented!")
 
 class Encoder:
-    def __init__(self, model_name, model_path, pooling_method, max_length, use_fp16):
+    def __init__(self, model_name, model_path, pooling_method, max_length, use_fp16, device):
         self.model_name = model_name
         self.model_path = model_path
         self.pooling_method = pooling_method
         self.max_length = max_length
-        self.use_fp16 = use_fp16
+        self.device = torch.device(device)
+        self.use_fp16 = use_fp16 and self.device.type == "cuda"
 
-        self.model, self.tokenizer = load_model(model_path=model_path, use_fp16=use_fp16)
+        self.model, self.tokenizer = load_model(
+            model_path=model_path,
+            use_fp16=self.use_fp16,
+            device=str(self.device),
+        )
         self.model.eval()
 
     @torch.no_grad()
@@ -94,7 +99,7 @@ class Encoder:
                                 truncation=True,
                                 return_tensors="pt"
                                 )
-        inputs = {k: v.cuda() for k, v in inputs.items()}
+        inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
         if "T5" in type(self.model).__name__:
             # T5-based retrieval model
@@ -118,7 +123,6 @@ class Encoder:
         query_emb = query_emb.astype(np.float32, order="C")
         
         del inputs, output
-        torch.cuda.empty_cache()
 
         return query_emb
 
@@ -220,8 +224,9 @@ class DenseRetriever(BaseRetriever):
             model_path = config.retrieval_model_path,
             pooling_method = config.retrieval_pooling_method,
             max_length = config.retrieval_query_max_length,
-            use_fp16 = config.retrieval_use_fp16
-        )
+            use_fp16 = config.retrieval_use_fp16,
+            device = config.retrieval_device,
+            )
         self.topk = config.retrieval_topk
         self.batch_size = config.retrieval_batch_size
 
@@ -263,7 +268,6 @@ class DenseRetriever(BaseRetriever):
             scores.extend(batch_scores)
             
             del batch_emb, batch_scores, batch_idxs, query_batch, flat_idxs, batch_results
-            torch.cuda.empty_cache()
             
         if return_score:
             return results, scores
@@ -299,7 +303,8 @@ class Config:
         retrieval_pooling_method: str = "mean",
         retrieval_query_max_length: int = 256,
         retrieval_use_fp16: bool = False,
-        retrieval_batch_size: int = 128
+        retrieval_batch_size: int = 128,
+        retrieval_device: str = "cuda",
     ):
         self.retrieval_method = retrieval_method
         self.retrieval_topk = retrieval_topk
@@ -313,6 +318,7 @@ class Config:
         self.retrieval_query_max_length = retrieval_query_max_length
         self.retrieval_use_fp16 = retrieval_use_fp16
         self.retrieval_batch_size = retrieval_batch_size
+        self.retrieval_device = retrieval_device
 
 
 class QueryRequest(BaseModel):
@@ -366,6 +372,7 @@ if __name__ == "__main__":
     parser.add_argument("--topk", type=int, default=3, help="Number of retrieved passages for one query.")
     parser.add_argument("--retriever_name", type=str, default="e5", help="Name of the retriever model.")
     parser.add_argument("--retriever_model", type=str, default="intfloat/e5-base-v2", help="Path of the retriever model.")
+    parser.add_argument("--retriever_device", type=str, default="cuda", choices=["cpu", "cuda"], help="Device for query encoding.")
     parser.add_argument('--faiss_gpu', action='store_true', help='Use GPU for computation')
 
     args = parser.parse_args()
@@ -381,8 +388,9 @@ if __name__ == "__main__":
         retrieval_model_path=args.retriever_model,
         retrieval_pooling_method="mean",
         retrieval_query_max_length=256,
-        retrieval_use_fp16=True,
+        retrieval_use_fp16=args.retriever_device == "cuda",
         retrieval_batch_size=512,
+        retrieval_device=args.retriever_device,
     )
 
     # 2) Instantiate a global retriever so it is loaded once and reused.

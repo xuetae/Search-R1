@@ -9,6 +9,7 @@ INDEX_FILE="${INDEX_FILE:-${WIKI18_DIR}/e5_Flat.index}"
 CORPUS_FILE="${CORPUS_FILE:-${WIKI18_DIR}/wiki-18.jsonl}"
 RETRIEVER_NAME="${RETRIEVER_NAME:-e5}"
 RETRIEVER_FAISS_GPU="${RETRIEVER_FAISS_GPU:-0}"
+RETRIEVER_DEVICE="${RETRIEVER_DEVICE:-cpu}"
 PYTHON_BIN="${PYTHON_BIN:-}"
 
 # CPU FAISS can trigger OpenBLAS "too many memory regions" crashes when the
@@ -54,4 +55,5 @@ cd "${WORK_DIR}"
   --topk "${RETRIEVER_TOPK}" \
   --retriever_name "${RETRIEVER_NAME}" \
   --retriever_model "${RETRIEVER_MODEL}" \
+  --retriever_device "${RETRIEVER_DEVICE}" \
   "${FAISS_ARGS[@]}"
