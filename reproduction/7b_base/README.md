@@ -442,6 +442,35 @@ The `full` profile keeps the paper's W&B logger but defaults to
 `WANDB_MODE=offline` for non-interactive xFusion jobs. Set `WANDB_MODE=online`
 and provide `WANDB_API_KEY` only when cloud synchronization is required.
 
+### Stable full-data profile for two H20 GPUs
+
+Use `full_stable` to keep the complete 169,615-example training split and the
+paper's GRPO update, five-agent rollout, four search turns, sequence lengths,
+retrieval, and 1,005-step schedule while avoiding a complete 51,713-example
+rollout before training step 1:
+
+```bash
+BASE_MODEL_NAME=llama-7b \
+LOCAL_BASE_MODEL=/workspace/filesdir/models/7b_base/llama-7b \
+python3 /workspace/filesdir/projects/Search-R1/reproduction/7b_base/training_task_entry.py \
+  --algo grpo \
+  --run-mode full_stable
+```
+
+The two-GPU execution defaults are:
+
+- `TRAIN_DATA_NUM=null`: complete training split
+- `VAL_DATA_NUM=1024`: fixed-size periodic validation subset
+- `VAL_BEFORE_TRAIN=false`: start GRPO updates without blocking on full validation
+- `VAL_BATCH_SIZE=32`
+- `MAX_NUM_SEQS=128`
+- `ROLLOUT_GPU_MEMORY_UTILIZATION=0.6`
+
+These settings change validation cost and rollout scheduling, not the training
+batch, optimizer, reward, agent count, search depth, token limits, or number
+of training steps. Run a separate full validation after training for the final
+comparison with the paper profile.
+
 Because Llama-2-7B has a native context length of 4,096 but the paper profile
 uses `4096 + 500` prompt/response tokens, `full` applies linear RoPE scaling
 with factor 2 and sets `max_position_embeddings=8192`. This is a
