@@ -735,9 +735,10 @@ class RayPPOTrainer(object):
                         for key in final_gen_batch_output.batch.keys():
                             final_gen_batch_output.batch[key] = final_gen_batch_output.batch[key].long()
 
-                        with torch.no_grad():
-                            output = self.actor_rollout_wg.compute_log_prob(final_gen_batch_output)
-                            final_gen_batch_output = final_gen_batch_output.union(output)
+                        with _timer('old_log_prob', timing_raw):
+                            with torch.no_grad():
+                                output = self.actor_rollout_wg.compute_log_prob(final_gen_batch_output)
+                                final_gen_batch_output = final_gen_batch_output.union(output)
 
                         # batch.non_tensor_batch['uid'] = np.array([str(uuid.uuid4()) for _ in range(len(batch.batch))],
                         #                                         dtype=object)
@@ -836,6 +837,10 @@ class RayPPOTrainer(object):
                 # collect metrics
                 metrics.update(compute_data_metrics(batch=batch, use_critic=self.use_critic))
                 metrics.update(compute_timing_metrics(batch=batch, timing_raw=timing_raw))
+                timing_summary = " ".join(
+                    f"{name}={elapsed:.2f}s" for name, elapsed in sorted(timing_raw.items())
+                )
+                print(f"[timing] step={self.global_steps} {timing_summary}", flush=True)
 
                 # TODO: make a canonical logger that supports various backend
                 logger.log(data=metrics, step=self.global_steps)

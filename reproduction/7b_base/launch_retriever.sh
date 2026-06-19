@@ -10,15 +10,17 @@ CORPUS_FILE="${CORPUS_FILE:-${WIKI18_DIR}/wiki-18.jsonl}"
 RETRIEVER_NAME="${RETRIEVER_NAME:-e5}"
 RETRIEVER_FAISS_GPU="${RETRIEVER_FAISS_GPU:-0}"
 RETRIEVER_DEVICE="${RETRIEVER_DEVICE:-cpu}"
+RETRIEVER_MAX_RETURN_TOKENS="${RETRIEVER_MAX_RETURN_TOKENS:-400}"
+RETRIEVER_CPU_THREADS="${RETRIEVER_CPU_THREADS:-16}"
 PYTHON_BIN="${PYTHON_BIN:-}"
 
 # CPU FAISS can trigger OpenBLAS "too many memory regions" crashes when the
 # runtime creates one BLAS thread per visible CPU. Keep defaults conservative;
 # override these env vars explicitly when the host has been validated.
-export OMP_NUM_THREADS="${OMP_NUM_THREADS:-4}"
+export OMP_NUM_THREADS="${OMP_NUM_THREADS:-${RETRIEVER_CPU_THREADS}}"
 export OPENBLAS_NUM_THREADS="${OPENBLAS_NUM_THREADS:-1}"
-export MKL_NUM_THREADS="${MKL_NUM_THREADS:-1}"
-export NUMEXPR_NUM_THREADS="${NUMEXPR_NUM_THREADS:-1}"
+export MKL_NUM_THREADS="${MKL_NUM_THREADS:-${RETRIEVER_CPU_THREADS}}"
+export NUMEXPR_NUM_THREADS="${NUMEXPR_NUM_THREADS:-${RETRIEVER_CPU_THREADS}}"
 
 if [[ -z "${PYTHON_BIN}" ]]; then
   if command -v python >/dev/null 2>&1; then
@@ -56,4 +58,5 @@ cd "${WORK_DIR}"
   --retriever_name "${RETRIEVER_NAME}" \
   --retriever_model "${RETRIEVER_MODEL}" \
   --retriever_device "${RETRIEVER_DEVICE}" \
+  --max_return_tokens "${RETRIEVER_MAX_RETURN_TOKENS}" \
   "${FAISS_ARGS[@]}"

@@ -9,6 +9,7 @@ from verl import DataProto
 from verl.utils.tracking import Tracking
 import shutil
 import requests
+import time
 
 @dataclass
 class GenerationConfig:
@@ -34,6 +35,8 @@ class LLMGenerationManager:
         self.actor_rollout_wg = actor_rollout_wg
         self.config = config
         self.is_validation = is_validation
+        self.timing_raw = {}
+        self._search_session = requests.Session()
 
         self.tensor_fn = TensorHelper(TensorConfig(
             pad_token_id=tokenizer.pad_token_id,
@@ -41,6 +44,9 @@ class LLMGenerationManager:
             max_obs_length=config.max_obs_length,
             max_start_length=config.max_start_length
         ))
+
+    def _record_timing(self, name: str, elapsed: float) -> None:
+        self.timing_raw[name] = self.timing_raw.get(name, 0.0) + elapsed
 
     def _batch_tokenize(self, responses: List[str]) -> torch.Tensor:
         """Tokenize a batch of responses."""
@@ -272,7 +278,9 @@ class LLMGenerationManager:
                 {k: v[active_mask] for k, v in rollings.batch.items()},
                 meta_info=rollings.meta_info,
             )
+            started_at = time.perf_counter()
             gen_output = self._generate_with_gpu_padding(rollings_active)
+            self._record_timing("generation", time.perf_counter() - started_at)
 
             meta_info = gen_output.meta_info            
             responses_ids, responses_str = self._postprocess_responses(gen_output.batch['responses'])
@@ -290,7 +298,9 @@ class LLMGenerationManager:
             valid_action_stats += torch.tensor(valid_action, dtype=torch.int)
             valid_search_stats += torch.tensor(is_search, dtype=torch.int)
 
+            started_at = time.perf_counter()
             next_obs_ids = self._process_next_obs(next_obs)
+            self._record_timing("observation_tokenize", time.perf_counter() - started_at)
             
             # Update states
             rollings = self._update_rolling_state(
@@ -316,7 +326,9 @@ class LLMGenerationManager:
                 {k: v[active_mask] for k, v in rollings.batch.items()},
                 meta_info=rollings.meta_info,
             )
+            started_at = time.perf_counter()
             gen_output = self._generate_with_gpu_padding(rollings_active)
+            self._record_timing("generation", time.perf_counter() - started_at)
 
             meta_info = gen_output.meta_info            
             responses_ids, responses_str = self._postprocess_responses(gen_output.batch['responses'])
@@ -399,7 +411,9 @@ class LLMGenerationManager:
         
         search_queries = [content for action, content in zip(cur_actions, contents) if action == 'search']
         if do_search:
+            started_at = time.perf_counter()
             search_results = self.batch_search(search_queries)
+            self._record_timing("retrieval", time.perf_counter() - started_at)
             assert len(search_results) == sum([1 for action in cur_actions if action == 'search'])
         else:
             search_results = [''] * sum([1 for action in cur_actions if action == 'search'])
@@ -454,6 +468,8 @@ If I want to give the final answer, I should put the answer between <answer> and
                 if match:
                     content = match.group(2).strip()  # Return only the content inside the tags
                     action = match.group(1)
+                    if action == "search" and not content:
+                        action = None
                 else:
                     content = ''
                     action = None
@@ -473,9 +489,16 @@ If I want to give the final answer, I should put the answer between <answer> and
         Returns:
             search results which is concatenated into a string
         """
-        results = self._batch_search(queries)['result']
-        
-        return [self._passages2string(result) for result in results]
+        if not queries:
+            return []
+
+        unique_queries = list(dict.fromkeys(queries))
+        unique_results = self._batch_search(unique_queries)['result']
+        result_by_query = {
+            query: self._passages2string(result)
+            for query, result in zip(unique_queries, unique_results)
+        }
+        return [result_by_query[query] for query in queries]
 
     def _batch_search(self, queries):
         
@@ -485,7 +508,9 @@ If I want to give the final answer, I should put the answer between <answer> and
             "return_scores": True
         }
         
-        return requests.post(self.config.search_url, json=payload).json()
+        response = self._search_session.post(self.config.search_url, json=payload, timeout=900)
+        response.raise_for_status()
+        return response.json()
 
     def _passages2string(self, retrieval_result):
         format_reference = ''

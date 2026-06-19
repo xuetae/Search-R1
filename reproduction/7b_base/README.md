@@ -508,6 +508,7 @@ for two-GPU training, leaving GPU 0 and GPU 1 to FSDP and vLLM:
 ```text
 RETRIEVER_DEVICE=cpu
 RETRIEVER_FAISS_GPU=0
+RETRIEVER_MAX_RETURN_TOKENS=400
 ```
 
 Use `--retriever-device cuda` only when retrieval has a dedicated GPU that is

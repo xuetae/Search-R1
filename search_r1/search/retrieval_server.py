@@ -1,5 +1,6 @@
 import json
 import os
+import time
 import warnings
 from typing import List, Dict, Optional
 import argparse
@@ -251,16 +252,25 @@ class DenseRetriever(BaseRetriever):
         
         results = []
         scores = []
+        encode_seconds = 0.0
+        search_seconds = 0.0
+        load_seconds = 0.0
         for start_idx in tqdm(range(0, len(query_list), self.batch_size), desc='Retrieval process: '):
             query_batch = query_list[start_idx:start_idx + self.batch_size]
+            started_at = time.perf_counter()
             batch_emb = self.encoder.encode(query_batch)
+            encode_seconds += time.perf_counter() - started_at
+            started_at = time.perf_counter()
             batch_scores, batch_idxs = self.index.search(batch_emb, k=num)
+            search_seconds += time.perf_counter() - started_at
             batch_scores = batch_scores.tolist()
             batch_idxs = batch_idxs.tolist()
 
             # load_docs is not vectorized, but is a python list approach
             flat_idxs = sum(batch_idxs, [])
+            started_at = time.perf_counter()
             batch_results = load_docs(self.corpus, flat_idxs)
+            load_seconds += time.perf_counter() - started_at
             # chunk them back
             batch_results = [batch_results[i*num : (i+1)*num] for i in range(len(batch_idxs))]
             
@@ -268,6 +278,13 @@ class DenseRetriever(BaseRetriever):
             scores.extend(batch_scores)
             
             del batch_emb, batch_scores, batch_idxs, query_batch, flat_idxs, batch_results
+
+        print(
+            f"[retriever-breakdown] queries={len(query_list)} "
+            f"encode_s={encode_seconds:.3f} faiss_s={search_seconds:.3f} "
+            f"load_docs_s={load_seconds:.3f}",
+            flush=True,
+        )
             
         if return_score:
             return results, scores
@@ -305,6 +322,7 @@ class Config:
         retrieval_use_fp16: bool = False,
         retrieval_batch_size: int = 128,
         retrieval_device: str = "cuda",
+        retrieval_max_return_tokens: int = 400,
     ):
         self.retrieval_method = retrieval_method
         self.retrieval_topk = retrieval_topk
@@ -319,6 +337,7 @@ class Config:
         self.retrieval_use_fp16 = retrieval_use_fp16
         self.retrieval_batch_size = retrieval_batch_size
         self.retrieval_device = retrieval_device
+        self.retrieval_max_return_tokens = retrieval_max_return_tokens
 
 
 class QueryRequest(BaseModel):
@@ -328,6 +347,31 @@ class QueryRequest(BaseModel):
 
 
 app = FastAPI()
+
+def truncate_documents(documents, tokenizer, max_total_tokens):
+    """Bound the total returned passage payload before HTTP serialization."""
+    if max_total_tokens <= 0 or not documents:
+        return documents
+
+    per_document_budget = max(1, max_total_tokens // len(documents))
+    truncated = []
+    for document in documents:
+        document = dict(document)
+        contents = document.get("contents", "")
+        contents_for_tokenize = contents[:per_document_budget * 8]
+        token_ids = tokenizer.encode(contents_for_tokenize, add_special_tokens=False)
+        if len(token_ids) > per_document_budget:
+            contents = tokenizer.decode(
+                token_ids[:per_document_budget],
+                skip_special_tokens=True,
+                clean_up_tokenization_spaces=True,
+            )
+            document["contents"] = contents
+            lines = contents.split("\n", 1)
+            document["title"] = lines[0].strip('"')
+            document["text"] = lines[1] if len(lines) > 1 else ""
+        truncated.append(document)
+    return truncated
 
 @app.post("/retrieve")
 def retrieve_endpoint(request: QueryRequest):
@@ -343,12 +387,22 @@ def retrieve_endpoint(request: QueryRequest):
     if not request.topk:
         request.topk = config.retrieval_topk  # fallback to default
 
-    # Perform batch retrieval
-    results, scores = retriever.batch_search(
+    started_at = time.perf_counter()
+    search_output = retriever.batch_search(
         query_list=request.queries,
         num=request.topk,
         return_score=request.return_scores
     )
+    if request.return_scores:
+        results, scores = search_output
+    else:
+        results, scores = search_output, None
+    tokenizer = getattr(getattr(retriever, "encoder", None), "tokenizer", None)
+    if tokenizer is not None:
+        results = [
+            truncate_documents(single_result, tokenizer, config.retrieval_max_return_tokens)
+            for single_result in results
+        ]
     
     # Format response
     resp = []
@@ -361,6 +415,12 @@ def retrieve_endpoint(request: QueryRequest):
             resp.append(combined)
         else:
             resp.append(single_result)
+    elapsed = time.perf_counter() - started_at
+    print(
+        f"[retriever] queries={len(request.queries)} topk={request.topk} "
+        f"return_token_budget={config.retrieval_max_return_tokens} elapsed_s={elapsed:.3f}",
+        flush=True,
+    )
     return {"result": resp}
 
 
@@ -373,6 +433,7 @@ if __name__ == "__main__":
     parser.add_argument("--retriever_name", type=str, default="e5", help="Name of the retriever model.")
     parser.add_argument("--retriever_model", type=str, default="intfloat/e5-base-v2", help="Path of the retriever model.")
     parser.add_argument("--retriever_device", type=str, default="cuda", choices=["cpu", "cuda"], help="Device for query encoding.")
+    parser.add_argument("--max_return_tokens", type=int, default=400, help="Maximum total returned passage tokens per query.")
     parser.add_argument('--faiss_gpu', action='store_true', help='Use GPU for computation')
 
     args = parser.parse_args()
@@ -391,6 +452,7 @@ if __name__ == "__main__":
         retrieval_use_fp16=args.retriever_device == "cuda",
         retrieval_batch_size=512,
         retrieval_device=args.retriever_device,
+        retrieval_max_return_tokens=args.max_return_tokens,
     )
 
     # 2) Instantiate a global retriever so it is loaded once and reused.
