@@ -471,6 +471,37 @@ batch, optimizer, reward, agent count, search depth, token limits, or number
 of training steps. Run a separate full validation after training for the final
 comparison with the paper profile.
 
+### Recommended native-context Llama profile
+
+`full_stable_native_4k` is the recommended Llama-2-7B profile when avoiding
+RoPE extrapolation is more important than preserving the paper's 4,096-token
+prompt cap. It uses the checkpoint's native 4,096-token context and keeps the
+paper's 500-token response budget:
+
+```text
+MAX_PROMPT_LENGTH=3596
+MAX_RESPONSE_LENGTH=500
+MODEL_MAX_POSITION_EMBEDDINGS=null
+MODEL_ROPE_SCALING_FACTOR=null
+VLLM_ALLOW_LONG_MAX_MODEL_LEN=0
+```
+
+The combined vLLM model length is therefore exactly 4,096 tokens. Other
+`full_stable` training, rollout, search, validation, and scheduling defaults
+remain unchanged.
+
+```bash
+BASE_MODEL_NAME=llama-7b \
+LOCAL_BASE_MODEL=/workspace/filesdir/models/7b_base/llama-7b \
+python3 /workspace/filesdir/projects/Search-R1/reproduction/7b_base/training_task_entry.py \
+  --algo grpo \
+  --run-mode full_stable_native_4k
+```
+
+Compared with `full_stable`, this avoids position extrapolation and the vLLM
+4,596-versus-4,096 context warning. The tradeoff is that long multi-turn
+histories have 500 fewer prompt tokens and may be truncated earlier.
+
 Because Llama-2-7B has a native context length of 4,096 but the paper profile
 uses `4096 + 500` prompt/response tokens, `full` applies linear RoPE scaling
 with factor 2 and sets `max_position_embeddings=8192`. This is a

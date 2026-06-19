@@ -327,6 +327,52 @@ case "${RUN_MODE}" in
     export VAL_BEFORE_TRAIN="${VAL_BEFORE_TRAIN:-false}"
     export TRAIN_LOGGER="${TRAIN_LOGGER:-[]}"
     ;;
+  full_stable_native_4k)
+    # Full-data GRPO profile using Llama-2-7B's native 4,096-token context.
+    # Preserve the paper's 500-token response budget and reduce only the
+    # maximum prompt budget so prompt + response never exceeds 4,096 tokens.
+    export CUDA_VISIBLE_DEVICES="${TWO_GPU_CUDA_VISIBLE_DEVICES:-0,1}"
+    export N_GPUS_PER_NODE="${TWO_GPU_N_GPUS_PER_NODE:-2}"
+    export NNODES="${PAPER_NNODES:-1}"
+    export TRAIN_DATA_NUM="${TRAIN_DATA_NUM:-null}"
+    export VAL_DATA_NUM="${VAL_DATA_NUM:-1024}"
+    export TRAIN_BATCH_SIZE="${TRAIN_BATCH_SIZE:-512}"
+    export VAL_BATCH_SIZE="${VAL_BATCH_SIZE:-32}"
+    export MAX_PROMPT_LENGTH="${MAX_PROMPT_LENGTH:-3596}"
+    export MAX_RESPONSE_LENGTH="${MAX_RESPONSE_LENGTH:-500}"
+    export MAX_START_LENGTH="${MAX_START_LENGTH:-2048}"
+    export MAX_OBS_LENGTH="${MAX_OBS_LENGTH:-500}"
+    export PPO_MINI_BATCH_SIZE="${PPO_MINI_BATCH_SIZE:-256}"
+    export PPO_MICRO_BATCH_SIZE="${PPO_MICRO_BATCH_SIZE:-64}"
+    export LOG_PROB_MICRO_BATCH_SIZE="${LOG_PROB_MICRO_BATCH_SIZE:-128}"
+    export CRITIC_PPO_MICRO_BATCH_SIZE="${CRITIC_PPO_MICRO_BATCH_SIZE:-8}"
+    export TENSOR_MODEL_PARALLEL_SIZE="${TENSOR_MODEL_PARALLEL_SIZE:-1}"
+    export ROLLOUT_NAME="${ROLLOUT_NAME:-vllm}"
+    export ROLLOUT_GPU_MEMORY_UTILIZATION="${ROLLOUT_GPU_MEMORY_UTILIZATION:-0.6}"
+    export MAX_NUM_SEQS="${MAX_NUM_SEQS:-128}"
+    export ROLLOUT_DO_SAMPLE="${ROLLOUT_DO_SAMPLE:-true}"
+    export ROLLOUT_TEMPERATURE="${ROLLOUT_TEMPERATURE:-1}"
+    export N_AGENT="${N_AGENT:-5}"
+    export MAX_TURNS="${MAX_TURNS:-4}"
+    export RETRIEVER_TOPK="${RETRIEVER_TOPK:-3}"
+    export TOTAL_EPOCHS="${TOTAL_EPOCHS:-15}"
+    export TOTAL_TRAINING_STEPS="${TOTAL_TRAINING_STEPS:-1005}"
+    export SAVE_FREQ="${SAVE_FREQ:-100}"
+    export TEST_FREQ="${TEST_FREQ:-100}"
+    export VAL_BEFORE_TRAIN="${VAL_BEFORE_TRAIN:-false}"
+    export TRAIN_LOGGER="${TRAIN_LOGGER:-['wandb']}"
+    export WANDB_MODE="${WANDB_MODE:-offline}"
+    export WANDB_SILENT="${WANDB_SILENT:-true}"
+    export USE_KL_LOSS="${USE_KL_LOSS:-true}"
+    export DISABLE_REFERENCE_POLICY="${DISABLE_REFERENCE_POLICY:-false}"
+    export DO_SEARCH="${DO_SEARCH:-true}"
+    export MODEL_MAX_POSITION_EMBEDDINGS="${MODEL_MAX_POSITION_EMBEDDINGS:-null}"
+    export MODEL_ROPE_SCALING_FACTOR="${MODEL_ROPE_SCALING_FACTOR:-null}"
+    export VLLM_ALLOW_LONG_MAX_MODEL_LEN="${VLLM_ALLOW_LONG_MAX_MODEL_LEN:-0}"
+    export MODEL_ATTN_IMPLEMENTATION="${MODEL_ATTN_IMPLEMENTATION:-null}"
+    export USE_REMOVE_PADDING="${USE_REMOVE_PADDING:-true}"
+    export VLLM_ATTENTION_BACKEND="${VLLM_ATTENTION_BACKEND:-XFORMERS}"
+    ;;
   full_stable)
     # Full-data GRPO profile for two H20 GPUs. Keep the paper's training,
     # rollout, search, and optimizer semantics, but remove the blocking
@@ -431,7 +477,7 @@ case "${RUN_MODE}" in
     export VLLM_ATTENTION_BACKEND="${VLLM_ATTENTION_BACKEND:-XFORMERS}"
     ;;
   *)
-    echo "Unsupported RUN_MODE=${RUN_MODE}. Use RUN_MODE=two_gpu_balanced, two_gpu_fast, two_gpu_paper, two_gpu_vllm_h20, two_gpu_vllm_h20_flash, h20_smoke, smoke, full_stable, or full." >&2
+    echo "Unsupported RUN_MODE=${RUN_MODE}. Use RUN_MODE=two_gpu_balanced, two_gpu_fast, two_gpu_paper, two_gpu_vllm_h20, two_gpu_vllm_h20_flash, h20_smoke, smoke, full_stable_native_4k, full_stable, or full." >&2
     exit 2
     ;;
 esac
