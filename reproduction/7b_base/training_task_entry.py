@@ -82,6 +82,16 @@ def parse_args() -> argparse.Namespace:
         default=os.environ.get("LOCAL_BASE_MODEL"),
     )
     parser.add_argument("--cuda-visible-devices", default=os.environ.get("TWO_GPU_CUDA_VISIBLE_DEVICES", "0,1"))
+    parser.add_argument(
+        "--train-cuda-visible-devices",
+        default=os.environ.get("TRAIN_CUDA_VISIBLE_DEVICES"),
+        help="Physical GPUs exposed only to the training process.",
+    )
+    parser.add_argument(
+        "--retriever-cuda-visible-devices",
+        default=os.environ.get("RETRIEVER_CUDA_VISIBLE_DEVICES"),
+        help="Physical GPUs exposed only to the retriever process.",
+    )
     parser.add_argument("--retriever-topk", default=os.environ.get("RETRIEVER_TOPK", "3"))
     parser.add_argument("--retriever-device", default=os.environ.get("RETRIEVER_DEVICE", "cpu"), choices=["cpu", "cuda"])
     parser.add_argument("--retriever-max-return-tokens", default=os.environ.get("RETRIEVER_MAX_RETURN_TOKENS", "400"))
@@ -175,6 +185,10 @@ def main() -> int:
     env["ALGO"] = args.algo
     env["RUN_MODE"] = args.run_mode
     env["TWO_GPU_CUDA_VISIBLE_DEVICES"] = args.cuda_visible_devices
+    if args.train_cuda_visible_devices:
+        env["TRAIN_CUDA_VISIBLE_DEVICES"] = args.train_cuda_visible_devices
+    if args.retriever_cuda_visible_devices:
+        env["RETRIEVER_CUDA_VISIBLE_DEVICES"] = args.retriever_cuda_visible_devices
     env["RETRIEVER_TOPK"] = args.retriever_topk
     env["RETRIEVER_DEVICE"] = args.retriever_device
     env["RETRIEVER_MAX_RETURN_TOKENS"] = args.retriever_max_return_tokens
@@ -261,22 +275,40 @@ def main() -> int:
     print(f"[entry] n_agent={env.get('N_AGENT', '')}", flush=True)
     print(f"[entry] max_turns={env.get('MAX_TURNS', '')}", flush=True)
     print(f"[entry] cuda_visible_devices={env['TWO_GPU_CUDA_VISIBLE_DEVICES']}", flush=True)
+    print(f"[entry] train_cuda_visible_devices={env.get('TRAIN_CUDA_VISIBLE_DEVICES', '')}", flush=True)
+    print(f"[entry] retriever_cuda_visible_devices={env.get('RETRIEVER_CUDA_VISIBLE_DEVICES', '')}", flush=True)
     print(f"[entry] retriever_url={env['RETRIEVER_URL']}", flush=True)
     print(f"[entry] retriever_device={env['RETRIEVER_DEVICE']}", flush=True)
+    print(f"[entry] retriever_faiss_gpu={env.get('RETRIEVER_FAISS_GPU', '')}", flush=True)
+    print(f"[entry] index_file={env.get('INDEX_FILE', '')}", flush=True)
     print(f"[entry] retriever_max_return_tokens={env['RETRIEVER_MAX_RETURN_TOKENS']}", flush=True)
 
     retriever_proc: subprocess.Popen[str] | None = None
     try:
         if not args.skip_retriever:
             retriever_cmd = ["bash", str(script_dir / "launch_retriever.sh")]
+            retriever_env = env.copy()
+            if env.get("RETRIEVER_CUDA_VISIBLE_DEVICES"):
+                retriever_env["CUDA_VISIBLE_DEVICES"] = env["RETRIEVER_CUDA_VISIBLE_DEVICES"]
             print(f"[entry] starting retriever: {' '.join(retriever_cmd)}", flush=True)
-            retriever_proc = subprocess.Popen(retriever_cmd, cwd=root, env=env)
+            print(
+                f"[entry] retriever CUDA_VISIBLE_DEVICES={retriever_env.get('CUDA_VISIBLE_DEVICES', '')}",
+                flush=True,
+            )
+            retriever_proc = subprocess.Popen(retriever_cmd, cwd=root, env=retriever_env)
             wait_for_retriever(env["RETRIEVER_URL"], retriever_proc, args.retriever_timeout)
             print("[entry] retriever is ready", flush=True)
 
         train_cmd = ["bash", str(script_dir / "run_profiled_train.sh")]
+        train_env = env.copy()
+        if env.get("TRAIN_CUDA_VISIBLE_DEVICES"):
+            train_env["CUDA_VISIBLE_DEVICES"] = env["TRAIN_CUDA_VISIBLE_DEVICES"]
         print(f"[entry] starting training: {' '.join(train_cmd)}", flush=True)
-        return stream_process(train_cmd, env=env, cwd=root)
+        print(
+            f"[entry] training CUDA_VISIBLE_DEVICES={train_env.get('CUDA_VISIBLE_DEVICES', '')}",
+            flush=True,
+        )
+        return stream_process(train_cmd, env=train_env, cwd=root)
     finally:
         if retriever_proc is not None:
             print("[entry] stopping retriever", flush=True)

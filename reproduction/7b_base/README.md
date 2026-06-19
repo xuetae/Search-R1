@@ -502,6 +502,22 @@ Compared with `full_stable`, this avoids position extrapolation and the vLLM
 4,596-versus-4,096 context warning. The tradeoff is that long multi-turn
 histories have 500 fewer prompt tokens and may be truncated earlier.
 
+### One training GPU with exact E5 Flat retrieval
+
+Use `one_gpu_exact_flat` when two physical GPUs are available but exact E5
+Flat retrieval must be preserved:
+
+- physical GPU 0 runs one-GPU training and vLLM rollout;
+- physical GPU 1 runs the E5 query encoder and GPU Flat FAISS;
+- the processes receive separate `CUDA_VISIBLE_DEVICES` values, so FAISS
+  cannot allocate memory on the training GPU;
+- the default medium budget is 300 steps with train batch size 32, while
+  retaining 5 agents, 4 search turns, top-k 3, the EM reward, KL loss, and the
+  native 4,096-token Llama context.
+
+Always benchmark with `TOTAL_TRAINING_STEPS=3` first. Exact retrieval is kept,
+but one-GPU training throughput depends on the generated trajectory lengths.
+
 The training entrypoint defaults the E5 query encoder and FAISS index to CPU
 for two-GPU training, leaving GPU 0 and GPU 1 to FSDP and vLLM:
 

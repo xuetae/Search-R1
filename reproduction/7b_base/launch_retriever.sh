@@ -14,6 +14,9 @@ RETRIEVER_MAX_RETURN_TOKENS="${RETRIEVER_MAX_RETURN_TOKENS:-400}"
 RETRIEVER_CPU_THREADS="${RETRIEVER_CPU_THREADS:-16}"
 PYTHON_BIN="${PYTHON_BIN:-}"
 
+echo "[retriever-launch] CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-}" >&2
+echo "[retriever-launch] device=${RETRIEVER_DEVICE} faiss_gpu=${RETRIEVER_FAISS_GPU} index=${INDEX_FILE}" >&2
+
 # CPU FAISS can trigger OpenBLAS "too many memory regions" crashes when the
 # runtime creates one BLAS thread per visible CPU. Keep defaults conservative;
 # override these env vars explicitly when the host has been validated.
