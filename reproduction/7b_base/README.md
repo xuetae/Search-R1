@@ -518,6 +518,29 @@ Flat retrieval must be preserved:
 Always benchmark with `TOTAL_TRAINING_STEPS=3` first. Exact retrieval is kept,
 but one-GPU training throughput depends on the generated trajectory lengths.
 
+### Recommended two-H20 full-data profile
+
+`two_gpu_hnsw_full_epoch` follows the low-GPU path documented on `main`:
+
+- both H20 GPUs are reserved for FSDP and vLLM;
+- E5-base-v2 query encoding and HNSW64 ANN search run on CPU;
+- the full 169,615-example training split remains available;
+- train batch size 64 and `TOTAL_TRAINING_STEPS=2652` execute 2,651 updates,
+  covering approximately one complete pass over the split;
+- 5 agents, 4 turns, top-k 3, EM reward, KL loss, 500-token responses and
+  500-token observations remain unchanged.
+
+The profile automatically selects `e5_HNSW64.index`, disables GPU FAISS, and
+rejects an accidental CPU Flat index. Prepare the ANN index with:
+
+```bash
+bash reproduction/7b_base/prepare_hnsw_index.sh
+```
+
+Run three measured steps before committing to the full epoch. Loading the
+complete data split does not guarantee that 2,651 updates will fit a fixed
+wall-clock budget.
+
 The training entrypoint defaults the E5 query encoder and FAISS index to CPU
 for two-GPU training, leaving GPU 0 and GPU 1 to FSDP and vLLM:
 

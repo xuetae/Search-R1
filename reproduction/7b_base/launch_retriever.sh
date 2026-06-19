@@ -42,6 +42,12 @@ if [[ ! -f "${INDEX_FILE}" ]]; then
   exit 1
 fi
 
+if [[ "${EXPECTED_RETRIEVER_INDEX:-}" == "hnsw" && "$(basename "${INDEX_FILE}")" != *HNSW* ]]; then
+  echo "Expected an HNSW index for this run mode, got: ${INDEX_FILE}" >&2
+  echo "Use e5_HNSW64.index; CPU Flat search is not practical for online RL." >&2
+  exit 2
+fi
+
 if [[ ! -f "${CORPUS_FILE}" ]]; then
   echo "Missing corpus file: ${CORPUS_FILE}" >&2
   echo "Run reproduction/7b_base/prepare_data.sh first." >&2

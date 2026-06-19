@@ -192,6 +192,15 @@ def main() -> int:
     env["RETRIEVER_TOPK"] = args.retriever_topk
     env["RETRIEVER_DEVICE"] = args.retriever_device
     env["RETRIEVER_MAX_RETURN_TOKENS"] = args.retriever_max_return_tokens
+    if args.run_mode == "two_gpu_hnsw_full_epoch":
+        env.setdefault("INDEX_FILE", str(persistent_root / "data" / "wiki-18" / "e5_HNSW64.index"))
+        env.setdefault("CORPUS_FILE", str(persistent_root / "data" / "wiki-18" / "wiki-18.jsonl"))
+        env["RETRIEVER_FAISS_GPU"] = "0"
+        env["EXPECTED_RETRIEVER_INDEX"] = "hnsw"
+        env["RETRIEVER_DEVICE"] = "cpu"
+        # Match main: return complete top-k passages and let MAX_OBS_LENGTH
+        # perform the final truncation with the policy tokenizer.
+        env["RETRIEVER_MAX_RETURN_TOKENS"] = "0"
     if args.rollout_name:
         env["ROLLOUT_NAME"] = args.rollout_name
     if args.tensor_model_parallel_size:
@@ -280,6 +289,7 @@ def main() -> int:
     print(f"[entry] retriever_url={env['RETRIEVER_URL']}", flush=True)
     print(f"[entry] retriever_device={env['RETRIEVER_DEVICE']}", flush=True)
     print(f"[entry] retriever_faiss_gpu={env.get('RETRIEVER_FAISS_GPU', '')}", flush=True)
+    print(f"[entry] expected_retriever_index={env.get('EXPECTED_RETRIEVER_INDEX', '')}", flush=True)
     print(f"[entry] index_file={env.get('INDEX_FILE', '')}", flush=True)
     print(f"[entry] retriever_max_return_tokens={env['RETRIEVER_MAX_RETURN_TOKENS']}", flush=True)
 
