@@ -159,6 +159,11 @@ def main() -> int:
         local_base_model = args.local_base_model or str(
             persistent_root / "models" / "7b_base" / "llama-7b"
         )
+    elif args.run_mode == "two_gpu_llama_instruct_time_budget":
+        base_model_name = "llama-7b-instruct"
+        local_base_model = args.local_base_model or str(
+            persistent_root / "models" / "7b_base" / "llama-7b-instruct"
+        )
     else:
         base_model_name = args.base_model_name
         local_base_model = args.local_base_model or str(
@@ -211,6 +216,7 @@ def main() -> int:
         "two_gpu_qwen_hnsw_full_epoch",
         "two_gpu_qwen_main_v02",
         "two_gpu_llama_time_budget",
+        "two_gpu_llama_instruct_time_budget",
     }:
         env.setdefault("INDEX_FILE", str(persistent_root / "data" / "wiki-18" / "e5_HNSW64.index"))
         env.setdefault("CORPUS_FILE", str(persistent_root / "data" / "wiki-18" / "wiki-18.jsonl"))
