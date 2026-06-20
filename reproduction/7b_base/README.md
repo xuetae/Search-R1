@@ -569,6 +569,27 @@ still uses CPU HNSW64 because both GPUs are assigned to training. This profile
 is expected to exert severe KV-cache and memory pressure and should be tested
 before a full run.
 
+### Llama two-H20 time-budget profile
+
+`two_gpu_llama_time_budget` is a backbone-adaptation profile for Llama-2-7B:
+
+```text
+train/mini/micro batch = 16/16/4
+log-prob micro batch = 8
+prompt/response/start/observation = 3596/256/1792/384
+n_agent = 4
+max_turns = 2
+max_num_seqs = 24
+max_num_batched_tokens = 4096
+gpu_memory_utilization = 0.55
+steps = 500
+```
+
+The complete training split remains the shuffled data pool, while validation
+before and during training is disabled. This is not a strict reproduction of
+the Qwen paper configuration; it addresses Llama's observed long, invalid
+rollouts on two GPUs.
+
 The training entrypoint defaults the E5 query encoder and FAISS index to CPU
 for two-GPU training, leaving GPU 0 and GPU 1 to FSDP and vLLM:
 
