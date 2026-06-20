@@ -591,9 +591,10 @@ the Qwen paper configuration; it addresses Llama's observed long, invalid
 rollouts on two GPUs.
 
 Use `two_gpu_llama_instruct_time_budget` for the instruction-tuned
-`meta-llama/Llama-2-7b-chat-hf` checkpoint. It uses the same compute-bounded
-Llama parameters, defaults to 300 actual updates, and saves at steps 100, 200,
-and 300. Download it with:
+`meta-llama/Llama-2-7b-chat-hf` checkpoint. It uses the original main v0.2
+batch, sequence, rollout, optimizer, and validation parameters. The deliberate
+differences are the instruction-tuned Llama backbone, two training GPUs instead
+of eight, CPU HNSW64 retrieval, and 400 actual updates. Download it with:
 
 ```bash
 LLAMA_INSTRUCT_LOCAL_MODEL=/workspace/filesdir/models/7b_base/llama-7b-instruct \
@@ -602,7 +603,9 @@ bash reproduction/7b_base/download_llama2_7b_instruct.sh
 
 This checkpoint is expected to improve action-format compliance, but it is an
 instruction-tuned backbone experiment rather than a reproduction of the
-Qwen2.5-7B base-model paper result.
+Qwen2.5-7B base-model paper result. Batch 512 produces 2,560 trajectories per
+update, so run a three-step feasibility test with validation temporarily
+disabled before starting the formal configuration.
 
 The training entrypoint defaults the E5 query encoder and FAISS index to CPU
 for two-GPU training, leaving GPU 0 and GPU 1 to FSDP and vLLM:
