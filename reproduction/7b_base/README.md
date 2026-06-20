@@ -541,6 +541,22 @@ Run three measured steps before committing to the full epoch. Loading the
 complete data split does not guarantee that 2,651 updates will fit a fixed
 wall-clock budget.
 
+### Qwen2.5-7B two-H20 profile
+
+`two_gpu_qwen_hnsw_full_epoch` restores the `main` v0.2 backbone,
+`Qwen/Qwen2.5-7B`, and the paper's 4,096/500 prompt-response limits. It keeps
+both H20 GPUs for training and uses CPU E5 + HNSW64 retrieval. Download the
+model with:
+
+```bash
+BASE_MODEL_NAME=qwen2.5-7b \
+LOCAL_BASE_MODEL=/workspace/filesdir/models/7b_base/qwen2.5-7b \
+bash reproduction/7b_base/download_qwen25_7b.sh
+```
+
+The two-GPU batch remains 64 instead of the paper's 512. The default 2,651
+step limit executes 2,650 updates, approximately one pass over the full split.
+
 The training entrypoint defaults the E5 query encoder and FAISS index to CPU
 for two-GPU training, leaving GPU 0 and GPU 1 to FSDP and vLLM:
 

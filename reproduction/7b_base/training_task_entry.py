@@ -149,7 +149,16 @@ def main() -> int:
         persistent_root = root.parents[1]
     else:
         persistent_root = root
-    local_base_model = args.local_base_model or str(persistent_root / "models" / "7b_base" / "llama-7b")
+    if args.run_mode == "two_gpu_qwen_hnsw_full_epoch":
+        base_model_name = "qwen2.5-7b"
+        local_base_model = args.local_base_model or str(
+            persistent_root / "models" / "7b_base" / "qwen2.5-7b"
+        )
+    else:
+        base_model_name = args.base_model_name
+        local_base_model = args.local_base_model or str(
+            persistent_root / "models" / "7b_base" / "llama-7b"
+        )
     if args.train_out:
         platform_out_root = Path(args.train_out)
     elif Path("/workspace/model_out").exists() or Path("/workspace").exists():
@@ -180,7 +189,7 @@ def main() -> int:
     # argparse defaults already read from the environment, so assigning here
     # preserves env-based configuration while allowing explicit CLI flags to
     # override platform-injected values.
-    env["BASE_MODEL_NAME"] = args.base_model_name
+    env["BASE_MODEL_NAME"] = base_model_name
     env["LOCAL_BASE_MODEL"] = local_base_model
     env["ALGO"] = args.algo
     env["RUN_MODE"] = args.run_mode
@@ -192,7 +201,7 @@ def main() -> int:
     env["RETRIEVER_TOPK"] = args.retriever_topk
     env["RETRIEVER_DEVICE"] = args.retriever_device
     env["RETRIEVER_MAX_RETURN_TOKENS"] = args.retriever_max_return_tokens
-    if args.run_mode == "two_gpu_hnsw_full_epoch":
+    if args.run_mode in {"two_gpu_hnsw_full_epoch", "two_gpu_qwen_hnsw_full_epoch"}:
         env.setdefault("INDEX_FILE", str(persistent_root / "data" / "wiki-18" / "e5_HNSW64.index"))
         env.setdefault("CORPUS_FILE", str(persistent_root / "data" / "wiki-18" / "wiki-18.jsonl"))
         env["RETRIEVER_FAISS_GPU"] = "0"
