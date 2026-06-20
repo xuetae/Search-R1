@@ -26,23 +26,25 @@ esac
 
 case "${RUN_MODE}" in
   two_gpu_qwen_hnsw_full_epoch)
-    # Qwen2.5-7B version of the main v0.2 experiment for two H20 GPUs.
-    # Keep the paper's model, sequence lengths, GRPO/search semantics and use
-    # the CPU HNSW64 path recommended by main when retrieval GPUs are scarce.
+    # Qwen2.5-7B time-budget profile for two H20 GPUs. Keep the complete
+    # training split available and preserve the paper's model, sequence
+    # lengths, GRPO/search semantics and 1,005-step schedule. Smaller
+    # train/optimizer batches make the workload practical enough to benchmark
+    # on two GPUs; this does not constitute a complete pass over the split.
     export CUDA_VISIBLE_DEVICES="${TWO_GPU_CUDA_VISIBLE_DEVICES:-0,1}"
     export N_GPUS_PER_NODE="${TWO_GPU_N_GPUS_PER_NODE:-2}"
     export NNODES="${PAPER_NNODES:-1}"
     export TRAIN_DATA_NUM="${TRAIN_DATA_NUM:-null}"
     export VAL_DATA_NUM="${VAL_DATA_NUM:-512}"
-    export TRAIN_BATCH_SIZE="${TRAIN_BATCH_SIZE:-64}"
+    export TRAIN_BATCH_SIZE="${TRAIN_BATCH_SIZE:-32}"
     export VAL_BATCH_SIZE="${VAL_BATCH_SIZE:-16}"
     export MAX_PROMPT_LENGTH="${MAX_PROMPT_LENGTH:-4096}"
     export MAX_RESPONSE_LENGTH="${MAX_RESPONSE_LENGTH:-500}"
     export MAX_START_LENGTH="${MAX_START_LENGTH:-2048}"
     export MAX_OBS_LENGTH="${MAX_OBS_LENGTH:-500}"
-    export PPO_MINI_BATCH_SIZE="${PPO_MINI_BATCH_SIZE:-64}"
-    export PPO_MICRO_BATCH_SIZE="${PPO_MICRO_BATCH_SIZE:-16}"
-    export LOG_PROB_MICRO_BATCH_SIZE="${LOG_PROB_MICRO_BATCH_SIZE:-32}"
+    export PPO_MINI_BATCH_SIZE="${PPO_MINI_BATCH_SIZE:-32}"
+    export PPO_MICRO_BATCH_SIZE="${PPO_MICRO_BATCH_SIZE:-8}"
+    export LOG_PROB_MICRO_BATCH_SIZE="${LOG_PROB_MICRO_BATCH_SIZE:-16}"
     export CRITIC_PPO_MICRO_BATCH_SIZE="${CRITIC_PPO_MICRO_BATCH_SIZE:-4}"
     export TENSOR_MODEL_PARALLEL_SIZE="${TENSOR_MODEL_PARALLEL_SIZE:-1}"
     export ROLLOUT_NAME="${ROLLOUT_NAME:-vllm}"
@@ -50,7 +52,7 @@ case "${RUN_MODE}" in
     # Qwen uses a 4,096-token prompt plus a 500-token response. Keep the
     # scheduler token budget above the resulting 4,596-token model length.
     export MAX_NUM_BATCHED_TOKENS="${MAX_NUM_BATCHED_TOKENS:-4608}"
-    export MAX_NUM_SEQS="${MAX_NUM_SEQS:-48}"
+    export MAX_NUM_SEQS="${MAX_NUM_SEQS:-32}"
     export ROLLOUT_DO_SAMPLE="${ROLLOUT_DO_SAMPLE:-true}"
     export ROLLOUT_TEMPERATURE="${ROLLOUT_TEMPERATURE:-1}"
     export ROLLOUT_ENFORCE_EAGER="${ROLLOUT_ENFORCE_EAGER:-true}"
@@ -58,11 +60,9 @@ case "${RUN_MODE}" in
     export N_AGENT="${N_AGENT:-5}"
     export MAX_TURNS="${MAX_TURNS:-4}"
     export RETRIEVER_TOPK="${RETRIEVER_TOPK:-3}"
-    export TOTAL_EPOCHS="${TOTAL_EPOCHS:-1}"
-    # DataLoader size is 2,650. global_steps starts at 1, so 2,651 stops after
-    # exactly 2,650 updates, covering 169,600 of 169,615 examples.
-    export TOTAL_TRAINING_STEPS="${TOTAL_TRAINING_STEPS:-2651}"
-    export SAVE_FREQ="${SAVE_FREQ:-250}"
+    export TOTAL_EPOCHS="${TOTAL_EPOCHS:-15}"
+    export TOTAL_TRAINING_STEPS="${TOTAL_TRAINING_STEPS:-1005}"
+    export SAVE_FREQ="${SAVE_FREQ:-100}"
     export TEST_FREQ="${TEST_FREQ:--1}"
     export VAL_BEFORE_TRAIN="${VAL_BEFORE_TRAIN:-false}"
     export TRAIN_LOGGER="${TRAIN_LOGGER:-['wandb']}"

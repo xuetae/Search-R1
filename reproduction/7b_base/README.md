@@ -554,8 +554,12 @@ LOCAL_BASE_MODEL=/workspace/filesdir/models/7b_base/qwen2.5-7b \
 bash reproduction/7b_base/download_qwen25_7b.sh
 ```
 
-The two-GPU batch remains 64 instead of the paper's 512. The default 2,651
-step limit executes 2,650 updates, approximately one pass over the full split.
+The time-budget defaults retain the complete training split as the shuffled
+data pool, but use train/mini/micro batches 32/32/8 and the paper's 1,005-step
+schedule. This processes about 32,160 sampled questions (approximately 19% of
+one pass), rather than pretending that a complete epoch can fit the same
+wall-clock budget on two GPUs. Set larger steps only after a measured three-step
+run establishes acceptable throughput.
 
 The training entrypoint defaults the E5 query encoder and FAISS index to CPU
 for two-GPU training, leaving GPU 0 and GPU 1 to FSDP and vLLM:
