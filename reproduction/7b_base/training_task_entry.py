@@ -149,7 +149,7 @@ def main() -> int:
         persistent_root = root.parents[1]
     else:
         persistent_root = root
-    if args.run_mode == "two_gpu_qwen_hnsw_full_epoch":
+    if args.run_mode in {"two_gpu_qwen_hnsw_full_epoch", "two_gpu_qwen_main_v02"}:
         base_model_name = "qwen2.5-7b"
         local_base_model = args.local_base_model or str(
             persistent_root / "models" / "7b_base" / "qwen2.5-7b"
@@ -201,7 +201,11 @@ def main() -> int:
     env["RETRIEVER_TOPK"] = args.retriever_topk
     env["RETRIEVER_DEVICE"] = args.retriever_device
     env["RETRIEVER_MAX_RETURN_TOKENS"] = args.retriever_max_return_tokens
-    if args.run_mode in {"two_gpu_hnsw_full_epoch", "two_gpu_qwen_hnsw_full_epoch"}:
+    if args.run_mode in {
+        "two_gpu_hnsw_full_epoch",
+        "two_gpu_qwen_hnsw_full_epoch",
+        "two_gpu_qwen_main_v02",
+    }:
         env.setdefault("INDEX_FILE", str(persistent_root / "data" / "wiki-18" / "e5_HNSW64.index"))
         env.setdefault("CORPUS_FILE", str(persistent_root / "data" / "wiki-18" / "wiki-18.jsonl"))
         env["RETRIEVER_FAISS_GPU"] = "0"

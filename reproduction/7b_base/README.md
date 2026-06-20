@@ -561,6 +561,14 @@ one pass), rather than pretending that a complete epoch can fit the same
 wall-clock budget on two GPUs. Set larger steps only after a measured three-step
 run establishes acceptable throughput.
 
+For a direct feasibility test of the original `main` v0.2 parameters, use
+`two_gpu_qwen_main_v02`. It changes only `trainer.n_gpus_per_node` from 8 to
+2 and preserves batch 512, validation batch 256, full pre-training validation,
+4,096/500 lengths, 5 agents, 4 turns, and 1,005 steps. The local Retriever
+still uses CPU HNSW64 because both GPUs are assigned to training. This profile
+is expected to exert severe KV-cache and memory pressure and should be tested
+before a full run.
+
 The training entrypoint defaults the E5 query encoder and FAISS index to CPU
 for two-GPU training, leaving GPU 0 and GPU 1 to FSDP and vLLM:
 
