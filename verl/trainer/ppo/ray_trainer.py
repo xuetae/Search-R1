@@ -697,6 +697,7 @@ class RayPPOTrainer(object):
                 print(f'epoch {epoch}, step {self.global_steps}')
                 metrics = {}
                 timing_raw = {}
+                validated_this_step = False
 
                 batch: DataProto = DataProto.from_single_dict(batch_dict)
                 batch = batch.repeat(repeat_times=self.config.actor_rollout_ref.rollout.n_agent, interleave=True)
@@ -828,6 +829,7 @@ class RayPPOTrainer(object):
                         with _timer('testing', timing_raw):
                             val_metrics: dict = self._validate()
                         metrics.update(val_metrics)
+                        validated_this_step = True
 
                     if self.config.trainer.save_freq > 0 and \
                             self.global_steps % self.config.trainer.save_freq == 0:
@@ -849,8 +851,11 @@ class RayPPOTrainer(object):
 
                 if self.global_steps >= self.total_training_steps:
 
-                    # perform validation after training
-                    if self.val_reward_fn is not None:
+                    # Run final validation only when the last training step was
+                    # not already validated by the periodic schedule.
+                    if self.val_reward_fn is not None and \
+                            self.config.trainer.get('final_validation', True) and \
+                            not validated_this_step:
                         val_metrics = self._validate()
                         pprint(f'Final validation metrics: {val_metrics}')
                         logger.log(data=val_metrics, step=self.global_steps)

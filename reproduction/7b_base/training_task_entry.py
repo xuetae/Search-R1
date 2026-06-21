@@ -123,6 +123,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--save-freq", default=os.environ.get("SAVE_FREQ"))
     parser.add_argument("--test-freq", default=os.environ.get("TEST_FREQ"))
     parser.add_argument("--val-before-train", default=os.environ.get("VAL_BEFORE_TRAIN"))
+    parser.add_argument("--final-validation", default=os.environ.get("FINAL_VALIDATION"))
     parser.add_argument("--data_url", default=os.environ.get("DATA_URL"), help="xFusion injected dataset path.")
     parser.add_argument("--train_out", default=os.environ.get("TRAIN_OUT"), help="xFusion injected persistent output path.")
     parser.add_argument("--train_log", default=os.environ.get("TRAIN_LOG"), help="xFusion injected log output path.")
@@ -272,6 +273,7 @@ def main() -> int:
         "SAVE_FREQ": args.save_freq,
         "TEST_FREQ": args.test_freq,
         "VAL_BEFORE_TRAIN": args.val_before_train,
+        "FINAL_VALIDATION": args.final_validation,
     }
     for key, value in cli_env.items():
         if value is not None:
@@ -305,6 +307,7 @@ def main() -> int:
     print(f"[entry] max_num_seqs={env.get('MAX_NUM_SEQS', '')}", flush=True)
     print(f"[entry] rollout_gpu_memory_utilization={env.get('ROLLOUT_GPU_MEMORY_UTILIZATION', '')}", flush=True)
     print(f"[entry] val_before_train={env.get('VAL_BEFORE_TRAIN', '')}", flush=True)
+    print(f"[entry] final_validation={env.get('FINAL_VALIDATION', '')}", flush=True)
     print(f"[entry] test_freq={env.get('TEST_FREQ', '')}", flush=True)
     print(f"[entry] n_agent={env.get('N_AGENT', '')}", flush=True)
     print(f"[entry] max_turns={env.get('MAX_TURNS', '')}", flush=True)

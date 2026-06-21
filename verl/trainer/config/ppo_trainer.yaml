@@ -163,6 +163,7 @@ algorithm:
     end_state_marker: "</information>"
 
 trainer:
+  final_validation: true
   total_epochs: 30
   total_training_steps: null
   project_name: verl_examples
