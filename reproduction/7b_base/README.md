@@ -633,7 +633,7 @@ The default training settings are:
 train batch size = 128
 n_agent = 5
 max_turns = 4
-prompt/response/start/observation = 4096/500/2048/500
+prompt/response/start/observation = 3596/500/2048/500
 PPO mini/micro batch = 128/8
 log-prob micro batch = 16
 vLLM max_num_seqs/max_num_batched_tokens = 32/4096
@@ -663,13 +663,27 @@ implementation generated up to the full response limit and discarded
 everything after the first closing action tag; native stop strings avoid that
 wasted generation without changing the retained action text.
 
-Because Llama-2-7B has a native context length of 4,096 but the paper profile
-uses `4096 + 500` prompt/response tokens, `full` applies linear RoPE scaling
-with factor 2 and sets `max_position_embeddings=8192`. This is a
-backbone-compatibility adjustment; the paper's prompt and response limits stay
-unchanged. It also sets `VLLM_ALLOW_LONG_MAX_MODEL_LEN=1` because vLLM 0.6.3
-validates against the checkpoint's original 4,096-token `config.json` before
-constructing the hybrid rollout engine.
+The exact-GPU Llama default keeps `MAX_PROMPT_LENGTH + MAX_RESPONSE_LENGTH`
+within the native 4,096-token context. This avoids relying on runtime RoPE
+scaling for Llama-2-7B and prevents vLLM from warning that the requested model
+length exceeds the checkpoint's configured context window.
+
+`two_gpu_llama_instruct_exact_gpu_time_budget` keeps exact GPU Flat retrieval,
+GRPO, KL loss, search, 5-agent sampling, and 4-turn rollout. It mainly uses a
+bounded prompt-sample budget and a larger train batch to reduce the number of
+optimizer updates:
+
+```text
+train batch size = 256
+n_agent = 5
+max_turns = 4
+prompt/response/start/observation = 3596/500/2048/500
+PAPER_PROMPT_SAMPLES = 514048 by default; set 65536 or 131072 for 1-2 day budget tests
+```
+
+This mode is intended for time-constrained comparison runs, not strict paper
+reproduction. It preserves the full training data pool unless
+`PAPER_PROMPT_SAMPLES` is reduced.
 
 `two_gpu_balanced` remains available as a faster fallback if `two_gpu_paper`
 is too slow: it uses `N_AGENT=3`, `MAX_RESPONSE_LENGTH=192`, and
