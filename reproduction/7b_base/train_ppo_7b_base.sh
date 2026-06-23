@@ -46,6 +46,7 @@ export TOTAL_TRAINING_STEPS="${TOTAL_TRAINING_STEPS:-1005}"
 export CKPT_DIR="${CKPT_DIR:-${OUTPUT_ROOT}/checkpoints/${EXPERIMENT_NAME}}"
 export MAX_TURNS="${MAX_TURNS:-4}"
 export TRAIN_LOG_FILE="${TRAIN_LOG_FILE:-${EXPERIMENT_NAME}.log}"
+export TRAIN_PYTHON_BIN="${TRAIN_PYTHON_BIN:-python3}"
 
 cd "${WORK_DIR}"
 
@@ -61,7 +62,7 @@ if [[ -n "${MODEL_ROPE_SCALING_FACTOR:-}" && "${MODEL_ROPE_SCALING_FACTOR}" != "
   )
 fi
 
-PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
+PYTHONUNBUFFERED=1 "${TRAIN_PYTHON_BIN}" -m verl.trainer.main_ppo \
   data.train_files="${DATA_DIR}/train.parquet" \
   data.val_files="${DATA_DIR}/test.parquet" \
   data.train_data_num="${TRAIN_DATA_NUM}" \

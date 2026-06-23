@@ -17,6 +17,7 @@ TOTAL_TRAINING_STEPS="${TOTAL_TRAINING_STEPS:-$((ACTUAL_UPDATES + 1))}"
 FINAL_UPDATE=$((TOTAL_TRAINING_STEPS - 1))
 EVAL_BATCH_SIZE="${EVAL_BATCH_SIZE:-64}"
 RETRIEVER_PYTHON="${RETRIEVER_PYTHON:-/workspace/filesdir/miniforge3/envs/retriever-gpu/bin/python}"
+TRAIN_PYTHON_BIN="${TRAIN_PYTHON_BIN:-/usr/bin/python3}"
 EVAL_LOG="${EVAL_LOG:-${OUTPUT_ROOT}/eval-${EXPERIMENT_NAME}-full.log}"
 
 cd "${WORK_DIR}"
@@ -48,7 +49,8 @@ FINAL_SAVE=true \
 TEST_FREQ=-1 \
 SAVE_FREQ="${SAVE_FREQ:-400}" \
 PYTHON_BIN="${RETRIEVER_PYTHON}" \
-python3 "${SCRIPT_DIR}/training_task_entry.py" \
+TRAIN_PYTHON_BIN="${TRAIN_PYTHON_BIN}" \
+"${TRAIN_PYTHON_BIN}" "${SCRIPT_DIR}/training_task_entry.py" \
   --algo grpo \
   --run-mode two_gpu_llama_instruct_exact_gpu_paper_data \
   --cuda-visible-devices 0,1 \
@@ -92,6 +94,7 @@ done
 curl -fsS http://127.0.0.1:8000/docs >/dev/null
 
 CUDA_VISIBLE_DEVICES=0,1 \
+TRAIN_PYTHON_BIN="${TRAIN_PYTHON_BIN}" \
 EVAL_MODEL="${EVAL_MODEL}" \
 EVAL_DATA_NUM=null \
 EVAL_BATCH_SIZE="${EVAL_BATCH_SIZE}" \

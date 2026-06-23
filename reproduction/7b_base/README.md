@@ -654,6 +654,7 @@ Run exact retrieval training followed by full validation:
 
 ```bash
 EXPERIMENT_NAME=llama7b-grpo-exact-gpu-paper-data \
+TRAIN_PYTHON_BIN=/usr/bin/python3 \
 bash reproduction/7b_base/run_exact_gpu_paper_data_and_eval.sh
 ```
 

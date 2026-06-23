@@ -19,10 +19,11 @@ ROLLOUT_GPU_MEMORY_UTILIZATION="${ROLLOUT_GPU_MEMORY_UTILIZATION:-0.65}"
 LOG_PROB_MICRO_BATCH_SIZE="${LOG_PROB_MICRO_BATCH_SIZE:-16}"
 ROLLOUT_STOP_STRINGS="${ROLLOUT_STOP_STRINGS:-[\"</search>\",\"</answer>\"]}"
 EVAL_MAX_TURNS="${EVAL_MAX_TURNS:-${MAX_TURNS}}"
+TRAIN_PYTHON_BIN="${TRAIN_PYTHON_BIN:-python3}"
 
 cd "${WORK_DIR}"
 
-PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
+PYTHONUNBUFFERED=1 "${TRAIN_PYTHON_BIN}" -m verl.trainer.main_ppo \
   data.train_files="${DATA_DIR}/train.parquet" \
   data.val_files="${DATA_DIR}/test.parquet" \
   data.train_data_num=null \

@@ -866,6 +866,8 @@ esac
 
 echo "[profile] run_mode=${RUN_MODE} train_batch_size=${TRAIN_BATCH_SIZE} val_batch_size=${VAL_BATCH_SIZE}" >&2
 echo "[profile] max_num_seqs=${MAX_NUM_SEQS:-} max_num_batched_tokens=${MAX_NUM_BATCHED_TOKENS:-} rollout_gpu_memory_utilization=${ROLLOUT_GPU_MEMORY_UTILIZATION:-}" >&2
+export TRAIN_PYTHON_BIN="${TRAIN_PYTHON_BIN:-python3}"
+echo "[profile] train_python=${TRAIN_PYTHON_BIN}" >&2
 
 export EXPERIMENT_NAME="${EXPERIMENT_NAME:-${DATA_NAME}-search-r1-${ALGO}-${BASE_MODEL_NAME}-${RUN_MODE}-${RUN_ID}}"
 RUN_DIR="${RUN_ROOT}/${EXPERIMENT_NAME}"
@@ -912,6 +914,7 @@ write_env_snapshot() {
     echo "CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES}"
     echo "TRAIN_CUDA_VISIBLE_DEVICES=${TRAIN_CUDA_VISIBLE_DEVICES:-}"
     echo "RETRIEVER_CUDA_VISIBLE_DEVICES=${RETRIEVER_CUDA_VISIBLE_DEVICES:-}"
+    echo "TRAIN_PYTHON_BIN=${TRAIN_PYTHON_BIN}"
     echo "N_GPUS_PER_NODE=${N_GPUS_PER_NODE}"
     echo "NNODES=${NNODES}"
     echo "TRAIN_DATA_NUM=${TRAIN_DATA_NUM}"
@@ -1060,7 +1063,7 @@ if ! check_required_inputs; then
   START_EPOCH="$(date +%s)"
   END_EPOCH="${START_EPOCH}"
   summarize_run 2 "${START_EPOCH}" "${END_EPOCH}"
-  if python3 "${SCRIPT_DIR}/render_training_report.py" "${RUN_DIR}" --output "${REPORT_IMAGE}" >/dev/null 2>&1; then
+  if "${TRAIN_PYTHON_BIN}" "${SCRIPT_DIR}/render_training_report.py" "${RUN_DIR}" --output "${REPORT_IMAGE}" >/dev/null 2>&1; then
     echo "Training report: ${REPORT_IMAGE}"
   fi
   echo "Run summary: ${SUMMARY_FILE}"
@@ -1086,11 +1089,11 @@ trap - EXIT
 
 summarize_run "${EXIT_CODE}" "${START_EPOCH}" "${END_EPOCH}"
 
-if ! python3 "${SCRIPT_DIR}/extract_training_metrics.py" "${TRAIN_LOG_FILE}" "${METRICS_FILE}" >/dev/null 2>&1; then
+if ! "${TRAIN_PYTHON_BIN}" "${SCRIPT_DIR}/extract_training_metrics.py" "${TRAIN_LOG_FILE}" "${METRICS_FILE}" >/dev/null 2>&1; then
   echo "Training metric extraction failed; report will contain GPU telemetry only." >&2
 fi
 
-if python3 "${SCRIPT_DIR}/render_training_report.py" "${RUN_DIR}" --output "${REPORT_IMAGE}" >/dev/null 2>&1; then
+if "${TRAIN_PYTHON_BIN}" "${SCRIPT_DIR}/render_training_report.py" "${RUN_DIR}" --output "${REPORT_IMAGE}" >/dev/null 2>&1; then
   echo "Training report: ${REPORT_IMAGE}"
 else
   echo "Training report generation failed. Install matplotlib in the active environment to enable report.png." >&2
