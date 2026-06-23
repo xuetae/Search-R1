@@ -47,6 +47,11 @@ if [[ "${EXPECTED_RETRIEVER_INDEX:-}" == "hnsw" && "$(basename "${INDEX_FILE}")"
   echo "Use e5_HNSW64.index; CPU Flat search is not practical for online RL." >&2
   exit 2
 fi
+if [[ "${EXPECTED_RETRIEVER_INDEX:-}" == "flat" && "$(basename "${INDEX_FILE}")" != *Flat* ]]; then
+  echo "Expected an exact Flat index for this run mode, got: ${INDEX_FILE}" >&2
+  echo "Use e5_Flat.index for paper-compatible exact retrieval." >&2
+  exit 2
+fi
 
 if [[ ! -f "${CORPUS_FILE}" ]]; then
   echo "Missing corpus file: ${CORPUS_FILE}" >&2

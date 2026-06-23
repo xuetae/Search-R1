@@ -620,16 +620,17 @@ class RayPPOTrainer(object):
         self.actor_rollout_wg = all_wg['actor_rollout']
         self.actor_rollout_wg.init_model()
 
-    def _save_checkpoint(self):
+    def _save_checkpoint(self, step=None):
+        checkpoint_step = self.global_steps if step is None else step
         actor_local_path = os.path.join(self.config.trainer.default_local_dir, 'actor',
-                                        f'global_step_{self.global_steps}')
+                                        f'global_step_{checkpoint_step}')
         actor_remote_path = None if self.config.trainer.default_hdfs_dir is None else os.path.join(
             self.config.trainer.default_hdfs_dir, 'actor')
         self.actor_rollout_wg.save_checkpoint(actor_local_path, actor_remote_path)
 
         if self.use_critic:
             critic_local_path = os.path.join(self.config.trainer.default_local_dir, 'critic',
-                                             f'global_step_{self.global_steps}')
+                                             f'global_step_{checkpoint_step}')
             critic_remote_path = None if self.config.trainer.default_hdfs_dir is None else os.path.join(
                 self.config.trainer.default_hdfs_dir, 'critic')
             self.critic_wg.save_checkpoint(critic_local_path, critic_remote_path)
@@ -698,6 +699,7 @@ class RayPPOTrainer(object):
                 metrics = {}
                 timing_raw = {}
                 validated_this_step = False
+                saved_this_step = False
 
                 batch: DataProto = DataProto.from_single_dict(batch_dict)
                 batch = batch.repeat(repeat_times=self.config.actor_rollout_ref.rollout.n_agent, interleave=True)
@@ -835,6 +837,7 @@ class RayPPOTrainer(object):
                             self.global_steps % self.config.trainer.save_freq == 0:
                         with _timer('save_checkpoint', timing_raw):
                             self._save_checkpoint()
+                        saved_this_step = True
 
                 # collect metrics
                 metrics.update(compute_data_metrics(batch=batch, use_critic=self.use_critic))
@@ -850,6 +853,8 @@ class RayPPOTrainer(object):
                 self.global_steps += 1
 
                 if self.global_steps >= self.total_training_steps:
+                    if self.config.trainer.get('final_save', False) and not saved_this_step:
+                        self._save_checkpoint(step=self.global_steps - 1)
 
                     # Run final validation only when the last training step was
                     # not already validated by the periodic schedule.

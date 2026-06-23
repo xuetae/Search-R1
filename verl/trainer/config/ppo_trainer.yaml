@@ -164,6 +164,7 @@ algorithm:
 
 trainer:
   final_validation: true
+  final_save: false
   total_epochs: 30
   total_training_steps: null
   project_name: verl_examples

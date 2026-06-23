@@ -619,6 +619,44 @@ RETRIEVER_MAX_RETURN_TOKENS=400
 Use `--retriever-device cuda` only when retrieval has a dedicated GPU that is
 not shared with the training workers.
 
+### Llama two-H20 exact-GPU paper-data-volume profile
+
+`two_gpu_llama_instruct_exact_gpu_paper_data` restores the upstream exact
+E5 `e5_Flat.index` retrieval path. FAISS shards the Flat index across every
+GPU visible to the retriever, while the E5 query encoder runs on CUDA. The
+same two H20 GPUs remain visible to FSDP and vLLM, so the resident retriever
+memory reduces the rollout KV-cache budget available on each GPU.
+
+The default training settings are:
+
+```text
+train batch size = 128
+n_agent = 5
+max_turns = 4
+prompt/response/start/observation = 4096/500/2048/500
+PPO mini/micro batch = 128/8
+log-prob micro batch = 16
+vLLM max_num_seqs/max_num_batched_tokens = 32/4096
+vLLM gpu_memory_utilization = 0.50
+save frequency = 400 updates (51,200 prompt samples)
+```
+
+The upstream v0.2 run consumes `512 * 1004 = 514,048` prompt samples.
+This profile derives the update count from `PAPER_PROMPT_SAMPLES=514048`
+and `TRAIN_BATCH_SIZE`; with the default batch 128 it executes 4,016 updates
+(`TOTAL_TRAINING_STEPS=4017`). Override the batch only after a short exact-GPU
+smoke run because the Flat index remains resident during vLLM generation and
+actor updates. `FINAL_SAVE=true` saves the last completed update even when it
+does not fall on `SAVE_FREQ`; the default final checkpoint is therefore
+`global_step_4016`.
+
+Run exact retrieval training followed by full validation:
+
+```bash
+EXPERIMENT_NAME=llama7b-grpo-exact-gpu-paper-data \
+bash reproduction/7b_base/run_exact_gpu_paper_data_and_eval.sh
+```
+
 GRPO rollout also stops natively at `</search>` or `</answer>`. The previous
 implementation generated up to the full response limit and discarded
 everything after the first closing action tag; native stop strings avoid that

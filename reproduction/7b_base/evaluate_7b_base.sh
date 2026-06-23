@@ -18,6 +18,7 @@ MAX_NUM_SEQS="${MAX_NUM_SEQS:-64}"
 ROLLOUT_GPU_MEMORY_UTILIZATION="${ROLLOUT_GPU_MEMORY_UTILIZATION:-0.65}"
 LOG_PROB_MICRO_BATCH_SIZE="${LOG_PROB_MICRO_BATCH_SIZE:-16}"
 ROLLOUT_STOP_STRINGS="${ROLLOUT_STOP_STRINGS:-[\"</search>\",\"</answer>\"]}"
+EVAL_MAX_TURNS="${EVAL_MAX_TURNS:-${MAX_TURNS}}"
 
 cd "${WORK_DIR}"
 
@@ -74,6 +75,6 @@ PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
   trainer.default_hdfs_dir=null \
   trainer.n_gpus_per_node="${N_GPUS_PER_NODE}" \
   trainer.nnodes="${NNODES}" \
-  max_turns="${MAX_TURNS}" \
+  max_turns="${EVAL_MAX_TURNS}" \
   retriever.url="${RETRIEVER_URL}" \
   retriever.topk="${RETRIEVER_TOPK}"

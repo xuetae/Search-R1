@@ -124,6 +124,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--test-freq", default=os.environ.get("TEST_FREQ"))
     parser.add_argument("--val-before-train", default=os.environ.get("VAL_BEFORE_TRAIN"))
     parser.add_argument("--final-validation", default=os.environ.get("FINAL_VALIDATION"))
+    parser.add_argument("--final-save", default=os.environ.get("FINAL_SAVE"))
     parser.add_argument("--data_url", default=os.environ.get("DATA_URL"), help="xFusion injected dataset path.")
     parser.add_argument("--train_out", default=os.environ.get("TRAIN_OUT"), help="xFusion injected persistent output path.")
     parser.add_argument("--train_log", default=os.environ.get("TRAIN_LOG"), help="xFusion injected log output path.")
@@ -160,7 +161,10 @@ def main() -> int:
         local_base_model = args.local_base_model or str(
             persistent_root / "models" / "7b_base" / "llama-7b"
         )
-    elif args.run_mode == "two_gpu_llama_instruct_time_budget":
+    elif args.run_mode in {
+        "two_gpu_llama_instruct_time_budget",
+        "two_gpu_llama_instruct_exact_gpu_paper_data",
+    }:
         base_model_name = "llama-7b-instruct"
         local_base_model = args.local_base_model or str(
             persistent_root / "models" / "7b_base" / "llama-7b-instruct"
@@ -227,6 +231,19 @@ def main() -> int:
         # Match main: return complete top-k passages and let MAX_OBS_LENGTH
         # perform the final truncation with the policy tokenizer.
         env["RETRIEVER_MAX_RETURN_TOKENS"] = "0"
+    elif args.run_mode == "two_gpu_llama_instruct_exact_gpu_paper_data":
+        # Match the upstream dense retrieval path: exact E5 Flat search with
+        # the FAISS index sharded across every GPU visible to the retriever.
+        # The training process sees the same two GPUs, so the retriever's
+        # resident index memory must be included in the training memory budget.
+        env.setdefault("INDEX_FILE", str(persistent_root / "data" / "wiki-18" / "e5_Flat.index"))
+        env.setdefault("CORPUS_FILE", str(persistent_root / "data" / "wiki-18" / "wiki-18.jsonl"))
+        env["RETRIEVER_FAISS_GPU"] = "1"
+        env["EXPECTED_RETRIEVER_INDEX"] = "flat"
+        env["RETRIEVER_DEVICE"] = "cuda"
+        env["RETRIEVER_MAX_RETURN_TOKENS"] = "0"
+        env.setdefault("RETRIEVER_CUDA_VISIBLE_DEVICES", args.cuda_visible_devices)
+        env.setdefault("TRAIN_CUDA_VISIBLE_DEVICES", args.cuda_visible_devices)
     if args.rollout_name:
         env["ROLLOUT_NAME"] = args.rollout_name
     if args.tensor_model_parallel_size:
@@ -274,6 +291,7 @@ def main() -> int:
         "TEST_FREQ": args.test_freq,
         "VAL_BEFORE_TRAIN": args.val_before_train,
         "FINAL_VALIDATION": args.final_validation,
+        "FINAL_SAVE": args.final_save,
     }
     for key, value in cli_env.items():
         if value is not None:
@@ -308,6 +326,7 @@ def main() -> int:
     print(f"[entry] rollout_gpu_memory_utilization={env.get('ROLLOUT_GPU_MEMORY_UTILIZATION', '')}", flush=True)
     print(f"[entry] val_before_train={env.get('VAL_BEFORE_TRAIN', '')}", flush=True)
     print(f"[entry] final_validation={env.get('FINAL_VALIDATION', '')}", flush=True)
+    print(f"[entry] final_save={env.get('FINAL_SAVE', '')}", flush=True)
     print(f"[entry] test_freq={env.get('TEST_FREQ', '')}", flush=True)
     print(f"[entry] n_agent={env.get('N_AGENT', '')}", flush=True)
     print(f"[entry] max_turns={env.get('MAX_TURNS', '')}", flush=True)
