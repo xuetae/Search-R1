@@ -685,6 +685,27 @@ This mode is intended for time-constrained comparison runs, not strict paper
 reproduction. It preserves the full training data pool unless
 `PAPER_PROMPT_SAMPLES` is reduced.
 
+`two_gpu_llama_instruct_exact_gpu_step10` targets roughly 10-minute updates on
+the exact-GPU two-H20 setup. It keeps GRPO, KL, online search, exact Flat
+retrieval, and multi-agent comparison, but intentionally reduces the per-step
+rollout work:
+
+```text
+train batch size = 32
+n_agent = 3
+max_turns = 2
+prompt/response/start/observation = 3072/256/1792/384
+vLLM max_num_seqs/gpu_memory_utilization = 64/0.55
+PAPER_PROMPT_SAMPLES = 171520 by default
+```
+
+This profile is not directly comparable with the paper/full main shape because
+it changes agent count, search depth, and response length. Use it when the
+operational constraint is per-step latency rather than strict reproduction.
+The default prompt volume is `171520`, matching the 1/3 paper-volume run; with
+`TRAIN_BATCH_SIZE=32` this executes 5,360 actual updates. `SAVE_FREQ=1600`
+keeps the upstream sample-based checkpoint cadence of roughly 51,200 prompts.
+
 `two_gpu_balanced` remains available as a faster fallback if `two_gpu_paper`
 is too slow: it uses `N_AGENT=3`, `MAX_RESPONSE_LENGTH=192`, and
 `TOTAL_TRAINING_STEPS=200`.

@@ -165,6 +165,7 @@ def main() -> int:
         "two_gpu_llama_instruct_time_budget",
         "two_gpu_llama_instruct_exact_gpu_paper_data",
         "two_gpu_llama_instruct_exact_gpu_time_budget",
+        "two_gpu_llama_instruct_exact_gpu_step10",
     }:
         base_model_name = "llama-7b-instruct"
         local_base_model = args.local_base_model or str(
@@ -235,6 +236,7 @@ def main() -> int:
     elif args.run_mode in {
         "two_gpu_llama_instruct_exact_gpu_paper_data",
         "two_gpu_llama_instruct_exact_gpu_time_budget",
+        "two_gpu_llama_instruct_exact_gpu_step10",
     }:
         # Match the upstream dense retrieval path: exact E5 Flat search with
         # the FAISS index sharded across every GPU visible to the retriever.

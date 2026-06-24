@@ -14,6 +14,7 @@
 
 import re
 import string
+import os
 import random
 
 def normalize_answer(s):
@@ -166,7 +167,8 @@ def compute_score_em(solution_str, ground_truth, method='strict', structure_form
     if is_valid_format:
         retrieval_correct = is_retrieval_correct(solution_str, ground_truth['target'])
     answer = extract_solution(solution_str=solution_str)
-    do_print = random.randint(1, 64) == 1
+    print_prob = float(os.getenv("REWARD_SCORE_PRINT_PROB", "0.015625"))
+    do_print = print_prob > 0 and random.random() < print_prob
     
     if do_print:
         print(f"--------------------------------")
