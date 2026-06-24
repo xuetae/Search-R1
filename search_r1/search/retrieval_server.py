@@ -17,12 +17,18 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 def load_corpus(corpus_path: str):
+    datasets.disable_progress_bars()
+    cache_dir = os.environ.get("RETRIEVER_DATASETS_CACHE") or os.environ.get("HF_DATASETS_CACHE")
+    num_proc = int(os.environ.get("RETRIEVER_CORPUS_NUM_PROC", "1"))
+    print(f"[retriever] loading corpus={corpus_path} cache_dir={cache_dir or '<default>'} num_proc={num_proc}", flush=True)
     corpus = datasets.load_dataset(
-        'json', 
+        'json',
         data_files=corpus_path,
         split="train",
-        num_proc=4
+        num_proc=num_proc,
+        cache_dir=cache_dir,
     )
+    print(f"[retriever] loaded corpus rows={len(corpus)}", flush=True)
     return corpus
 
 def read_jsonl(file_path):
