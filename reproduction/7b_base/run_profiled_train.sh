@@ -219,7 +219,6 @@ case "${RUN_MODE}" in
     export CUDA_VISIBLE_DEVICES="${TWO_GPU_CUDA_VISIBLE_DEVICES:-0,1}"
     export N_GPUS_PER_NODE="${TWO_GPU_N_GPUS_PER_NODE:-2}"
     export NNODES="${PAPER_NNODES:-1}"
-    export TRAIN_DATA_NUM="${TRAIN_DATA_NUM:-null}"
     export VAL_DATA_NUM="${VAL_DATA_NUM:-512}"
     export TRAIN_BATCH_SIZE="${TRAIN_BATCH_SIZE:-32}"
     export VAL_BATCH_SIZE="${VAL_BATCH_SIZE:-64}"
@@ -246,6 +245,10 @@ case "${RUN_MODE}" in
     # Keep the default prompt volume aligned with the 1/3 paper-volume run.
     # With TRAIN_BATCH_SIZE=32 this becomes 5,360 actual updates.
     export PAPER_PROMPT_SAMPLES="${PAPER_PROMPT_SAMPLES:-171520}"
+    # By default, bound the materialized training dataset to the same prompt
+    # budget used for the update count. Set TRAIN_DATA_NUM=null explicitly to
+    # sample from the full pool.
+    export TRAIN_DATA_NUM="${TRAIN_DATA_NUM:-${PAPER_PROMPT_SAMPLES}}"
     if [[ -z "${TOTAL_TRAINING_STEPS:-}" ]]; then
       if (( PAPER_PROMPT_SAMPLES % TRAIN_BATCH_SIZE != 0 )); then
         echo "[profile] PAPER_PROMPT_SAMPLES=${PAPER_PROMPT_SAMPLES} is not divisible by TRAIN_BATCH_SIZE=${TRAIN_BATCH_SIZE}; rounding updates up." >&2
