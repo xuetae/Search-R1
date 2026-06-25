@@ -137,8 +137,8 @@ def render_report(run_dir: Path, output: Path) -> None:
         }
     )
 
-    fig = plt.figure(figsize=(14, 12), constrained_layout=True)
-    gs = fig.add_gridspec(4, 4, height_ratios=[0.9, 2.1, 1.8, 1.6])
+    fig = plt.figure(figsize=(14, 16), constrained_layout=True)
+    gs = fig.add_gridspec(5, 4, height_ratios=[0.9, 2.0, 1.7, 1.7, 1.5])
 
     title_ax = fig.add_subplot(gs[0, :])
     title_ax.axis("off")
@@ -203,7 +203,40 @@ def render_report(run_dir: Path, output: Path) -> None:
         loss_ax.text(0.5, 0.5, "No optimization metrics parsed", ha="center", va="center", color="#667085")
         loss_ax.set_axis_off()
 
-    util_ax = fig.add_subplot(gs[3, :2])
+    grad_ax = fig.add_subplot(gs[3, :2])
+    grad_names = select_metrics(training_metrics, ("grad", "grad_norm", "gradient"), limit=5)
+    if grad_names:
+        for metric in grad_names:
+            points = training_metrics[metric]
+            grad_ax.plot([p[0] for p in points], [p[1] for p in points], label=metric, linewidth=1.3)
+        grad_ax.set_title("Gradient Metrics")
+        grad_ax.set_xlabel("Training step")
+        grad_ax.grid(True)
+        grad_ax.legend(fontsize=7, frameon=False)
+    else:
+        grad_ax.text(0.5, 0.5, "No gradient metrics parsed", ha="center", va="center", color="#667085")
+        grad_ax.set_axis_off()
+
+    time_ax = fig.add_subplot(gs[3, 2:])
+    time_names = select_metrics(
+        training_metrics,
+        ("timing", "time", "duration", "latency", "step_time", "step"),
+        limit=6,
+    )
+    if time_names:
+        for metric in time_names:
+            points = training_metrics[metric]
+            time_ax.plot([p[0] for p in points], [p[1] for p in points], label=metric, linewidth=1.3)
+        time_ax.set_title("Step and Phase Time")
+        time_ax.set_xlabel("Training step")
+        time_ax.set_ylabel("Seconds")
+        time_ax.grid(True)
+        time_ax.legend(fontsize=7, frameon=False)
+    else:
+        time_ax.text(0.5, 0.5, "No timing metrics parsed", ha="center", va="center", color="#667085")
+        time_ax.set_axis_off()
+
+    util_ax = fig.add_subplot(gs[4, :2])
     if gpu_series:
         for gpu_index in sorted(gpu_series, key=lambda x: int(x) if x.isdigit() else x):
             points = gpu_series[gpu_index]
@@ -222,7 +255,7 @@ def render_report(run_dir: Path, output: Path) -> None:
         util_ax.text(0.5, 0.5, "No utilization samples", ha="center", va="center", color="#667085")
         util_ax.set_axis_off()
 
-    details_ax = fig.add_subplot(gs[3, 2:])
+    details_ax = fig.add_subplot(gs[4, 2:])
     details_ax.axis("off")
     details = [
         ("Run mode", summary.get("run_mode", env.get("RUN_MODE", "n/a"))),

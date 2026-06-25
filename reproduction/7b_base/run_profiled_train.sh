@@ -441,35 +441,35 @@ case "${RUN_MODE}" in
     ;;
   two_gpu_qwen_instruct_exact_gpu_step100)
     # Qwen2.5-7B-Instruct exact-GPU retrieval profile for a short 100-update
-    # GRPO run on two H20 GPUs. The requested train batch size is 128; the PPO
-    # mini/micro batches are kept smaller by default to leave room for the
-    # resident exact Flat retrieval index.
+    # GRPO run on two H20 GPUs. Apart from the requested backbone, train batch
+    # size, step budget, and disabled validation, keep the upstream main/paper
+    # training parameters aligned.
     export CUDA_VISIBLE_DEVICES="${TWO_GPU_CUDA_VISIBLE_DEVICES:-0,1}"
     export N_GPUS_PER_NODE="${TWO_GPU_N_GPUS_PER_NODE:-2}"
     export NNODES="${PAPER_NNODES:-1}"
     export TRAIN_BATCH_SIZE="${TRAIN_BATCH_SIZE:-128}"
     export TRAIN_DATA_NUM="${TRAIN_DATA_NUM:-$((TRAIN_BATCH_SIZE * 100))}"
-    export VAL_DATA_NUM="${VAL_DATA_NUM:-512}"
-    export VAL_BATCH_SIZE="${VAL_BATCH_SIZE:-64}"
-    export MAX_PROMPT_LENGTH="${MAX_PROMPT_LENGTH:-3072}"
-    export MAX_RESPONSE_LENGTH="${MAX_RESPONSE_LENGTH:-256}"
-    export MAX_START_LENGTH="${MAX_START_LENGTH:-1792}"
-    export MAX_OBS_LENGTH="${MAX_OBS_LENGTH:-384}"
-    export PPO_MINI_BATCH_SIZE="${PPO_MINI_BATCH_SIZE:-64}"
-    export PPO_MICRO_BATCH_SIZE="${PPO_MICRO_BATCH_SIZE:-8}"
-    export LOG_PROB_MICRO_BATCH_SIZE="${LOG_PROB_MICRO_BATCH_SIZE:-16}"
-    export CRITIC_PPO_MICRO_BATCH_SIZE="${CRITIC_PPO_MICRO_BATCH_SIZE:-4}"
+    export VAL_DATA_NUM="${VAL_DATA_NUM:-null}"
+    export VAL_BATCH_SIZE="${VAL_BATCH_SIZE:-256}"
+    export MAX_PROMPT_LENGTH="${MAX_PROMPT_LENGTH:-4096}"
+    export MAX_RESPONSE_LENGTH="${MAX_RESPONSE_LENGTH:-500}"
+    export MAX_START_LENGTH="${MAX_START_LENGTH:-2048}"
+    export MAX_OBS_LENGTH="${MAX_OBS_LENGTH:-500}"
+    export PPO_MINI_BATCH_SIZE="${PPO_MINI_BATCH_SIZE:-256}"
+    export PPO_MICRO_BATCH_SIZE="${PPO_MICRO_BATCH_SIZE:-64}"
+    export LOG_PROB_MICRO_BATCH_SIZE="${LOG_PROB_MICRO_BATCH_SIZE:-128}"
+    export CRITIC_PPO_MICRO_BATCH_SIZE="${CRITIC_PPO_MICRO_BATCH_SIZE:-8}"
     export TENSOR_MODEL_PARALLEL_SIZE="${TENSOR_MODEL_PARALLEL_SIZE:-1}"
     export ROLLOUT_NAME="${ROLLOUT_NAME:-vllm}"
-    export ROLLOUT_GPU_MEMORY_UTILIZATION="${ROLLOUT_GPU_MEMORY_UTILIZATION:-0.55}"
-    export MAX_NUM_BATCHED_TOKENS="${MAX_NUM_BATCHED_TOKENS:-4096}"
-    export MAX_NUM_SEQS="${MAX_NUM_SEQS:-64}"
+    export ROLLOUT_GPU_MEMORY_UTILIZATION="${ROLLOUT_GPU_MEMORY_UTILIZATION:-0.6}"
+    export MAX_NUM_BATCHED_TOKENS="${MAX_NUM_BATCHED_TOKENS:-8192}"
+    export MAX_NUM_SEQS="${MAX_NUM_SEQS:-512}"
     export ROLLOUT_DO_SAMPLE="${ROLLOUT_DO_SAMPLE:-true}"
     export ROLLOUT_TEMPERATURE="${ROLLOUT_TEMPERATURE:-1}"
     export ROLLOUT_ENFORCE_EAGER="${ROLLOUT_ENFORCE_EAGER:-true}"
     export ROLLOUT_DISABLE_CUSTOM_ALL_REDUCE="${ROLLOUT_DISABLE_CUSTOM_ALL_REDUCE:-false}"
-    export N_AGENT="${N_AGENT:-3}"
-    export MAX_TURNS="${MAX_TURNS:-2}"
+    export N_AGENT="${N_AGENT:-5}"
+    export MAX_TURNS="${MAX_TURNS:-4}"
     export RETRIEVER_TOPK="${RETRIEVER_TOPK:-3}"
     export TOTAL_EPOCHS="${TOTAL_EPOCHS:-15}"
     # Trainer exits when global_steps reaches this value. Since global_steps
@@ -1075,6 +1075,7 @@ export RAY_TMPDIR="${RAY_TMPDIR:-${OUTPUT_ROOT}/ray_tmp}"
 export TMPDIR="${TMPDIR:-${OUTPUT_ROOT}/tmp}"
 export TEMP="${TEMP:-${TMPDIR}}"
 export TMP="${TMP:-${TMPDIR}}"
+export REPORT_REFRESH_INTERVAL="${REPORT_REFRESH_INTERVAL:-300}"
 mkdir -p "${RAY_TMPDIR}" "${TMPDIR}"
 
 GPU_LOG="${RUN_DIR}/gpu_memory.csv"
@@ -1167,6 +1168,7 @@ write_env_snapshot() {
     echo "CKPT_DIR=${CKPT_DIR}"
     echo "TRAIN_LOG_FILE=${TRAIN_LOG_FILE}"
     echo "GPU_SAMPLE_INTERVAL=${GPU_SAMPLE_INTERVAL}"
+    echo "REPORT_REFRESH_INTERVAL=${REPORT_REFRESH_INTERVAL}"
     echo "METRICS_FILE=${METRICS_FILE}"
   } > "${ENV_FILE}"
 }
@@ -1189,6 +1191,21 @@ monitor_gpu() {
       --format=csv,noheader,nounits |
       awk -v wall_time="$(date -u +%Y-%m-%dT%H:%M:%SZ)" -F', ' '{print wall_time "," $0}' >> "${GPU_LOG}" || true
     sleep "${GPU_SAMPLE_INTERVAL}"
+  done
+}
+
+refresh_report_once() {
+  "${TRAIN_PYTHON_BIN}" "${SCRIPT_DIR}/extract_training_metrics.py" "${TRAIN_LOG_FILE}" "${METRICS_FILE}" >/dev/null 2>&1 || true
+  "${TRAIN_PYTHON_BIN}" "${SCRIPT_DIR}/render_training_report.py" "${RUN_DIR}" --output "${REPORT_IMAGE}" >/dev/null 2>&1 || true
+}
+
+refresh_report_loop() {
+  if [[ "${REPORT_REFRESH_INTERVAL}" -le 0 ]]; then
+    return 0
+  fi
+  while true; do
+    refresh_report_once
+    sleep "${REPORT_REFRESH_INTERVAL}"
   done
 }
 
@@ -1274,7 +1291,9 @@ fi
 START_EPOCH="$(date +%s)"
 monitor_gpu &
 MONITOR_PID="$!"
-trap 'kill "${MONITOR_PID}" >/dev/null 2>&1 || true' EXIT
+refresh_report_loop &
+REPORT_PID="$!"
+trap 'kill "${MONITOR_PID}" "${REPORT_PID}" >/dev/null 2>&1 || true' EXIT
 
 set +e
 bash "${TRAIN_SCRIPT}"
@@ -1282,8 +1301,9 @@ EXIT_CODE="$?"
 set -e
 
 END_EPOCH="$(date +%s)"
-kill "${MONITOR_PID}" >/dev/null 2>&1 || true
+kill "${MONITOR_PID}" "${REPORT_PID}" >/dev/null 2>&1 || true
 wait "${MONITOR_PID}" 2>/dev/null || true
+wait "${REPORT_PID}" 2>/dev/null || true
 trap - EXIT
 
 summarize_run "${EXIT_CODE}" "${START_EPOCH}" "${END_EPOCH}"
