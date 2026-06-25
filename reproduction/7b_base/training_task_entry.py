@@ -156,6 +156,11 @@ def main() -> int:
         local_base_model = args.local_base_model or str(
             persistent_root / "models" / "7b_base" / "qwen2.5-7b"
         )
+    elif args.run_mode == "two_gpu_qwen_instruct_exact_gpu_step100":
+        base_model_name = "qwen2.5-7b-instruct"
+        local_base_model = args.local_base_model or str(
+            persistent_root / "models" / "7b_base" / "qwen2.5-7b-instruct"
+        )
     elif args.run_mode == "two_gpu_llama_time_budget":
         base_model_name = "llama-7b"
         local_base_model = args.local_base_model or str(
@@ -237,6 +242,7 @@ def main() -> int:
         "two_gpu_llama_instruct_exact_gpu_paper_data",
         "two_gpu_llama_instruct_exact_gpu_time_budget",
         "two_gpu_llama_instruct_exact_gpu_step10",
+        "two_gpu_qwen_instruct_exact_gpu_step100",
     }:
         # Match the upstream dense retrieval path: exact E5 Flat search with
         # the FAISS index sharded across every GPU visible to the retriever.

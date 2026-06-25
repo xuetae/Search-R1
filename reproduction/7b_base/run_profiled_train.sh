@@ -439,6 +439,63 @@ case "${RUN_MODE}" in
     export RAY_memory_monitor_refresh_ms="${RAY_memory_monitor_refresh_ms:-0}"
     export PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}"
     ;;
+  two_gpu_qwen_instruct_exact_gpu_step100)
+    # Qwen2.5-7B-Instruct exact-GPU retrieval profile for a short 100-update
+    # GRPO run on two H20 GPUs. The requested train batch size is 128; the PPO
+    # mini/micro batches are kept smaller by default to leave room for the
+    # resident exact Flat retrieval index.
+    export CUDA_VISIBLE_DEVICES="${TWO_GPU_CUDA_VISIBLE_DEVICES:-0,1}"
+    export N_GPUS_PER_NODE="${TWO_GPU_N_GPUS_PER_NODE:-2}"
+    export NNODES="${PAPER_NNODES:-1}"
+    export TRAIN_BATCH_SIZE="${TRAIN_BATCH_SIZE:-128}"
+    export TRAIN_DATA_NUM="${TRAIN_DATA_NUM:-$((TRAIN_BATCH_SIZE * 100))}"
+    export VAL_DATA_NUM="${VAL_DATA_NUM:-512}"
+    export VAL_BATCH_SIZE="${VAL_BATCH_SIZE:-64}"
+    export MAX_PROMPT_LENGTH="${MAX_PROMPT_LENGTH:-3072}"
+    export MAX_RESPONSE_LENGTH="${MAX_RESPONSE_LENGTH:-256}"
+    export MAX_START_LENGTH="${MAX_START_LENGTH:-1792}"
+    export MAX_OBS_LENGTH="${MAX_OBS_LENGTH:-384}"
+    export PPO_MINI_BATCH_SIZE="${PPO_MINI_BATCH_SIZE:-64}"
+    export PPO_MICRO_BATCH_SIZE="${PPO_MICRO_BATCH_SIZE:-8}"
+    export LOG_PROB_MICRO_BATCH_SIZE="${LOG_PROB_MICRO_BATCH_SIZE:-16}"
+    export CRITIC_PPO_MICRO_BATCH_SIZE="${CRITIC_PPO_MICRO_BATCH_SIZE:-4}"
+    export TENSOR_MODEL_PARALLEL_SIZE="${TENSOR_MODEL_PARALLEL_SIZE:-1}"
+    export ROLLOUT_NAME="${ROLLOUT_NAME:-vllm}"
+    export ROLLOUT_GPU_MEMORY_UTILIZATION="${ROLLOUT_GPU_MEMORY_UTILIZATION:-0.55}"
+    export MAX_NUM_BATCHED_TOKENS="${MAX_NUM_BATCHED_TOKENS:-4096}"
+    export MAX_NUM_SEQS="${MAX_NUM_SEQS:-64}"
+    export ROLLOUT_DO_SAMPLE="${ROLLOUT_DO_SAMPLE:-true}"
+    export ROLLOUT_TEMPERATURE="${ROLLOUT_TEMPERATURE:-1}"
+    export ROLLOUT_ENFORCE_EAGER="${ROLLOUT_ENFORCE_EAGER:-true}"
+    export ROLLOUT_DISABLE_CUSTOM_ALL_REDUCE="${ROLLOUT_DISABLE_CUSTOM_ALL_REDUCE:-false}"
+    export N_AGENT="${N_AGENT:-3}"
+    export MAX_TURNS="${MAX_TURNS:-2}"
+    export RETRIEVER_TOPK="${RETRIEVER_TOPK:-3}"
+    export TOTAL_EPOCHS="${TOTAL_EPOCHS:-15}"
+    # Trainer exits when global_steps reaches this value. Since global_steps
+    # starts at 1, 101 corresponds to 100 actual updates.
+    export TOTAL_TRAINING_STEPS="${TOTAL_TRAINING_STEPS:-101}"
+    export SAVE_FREQ="${SAVE_FREQ:-50}"
+    export TEST_FREQ="${TEST_FREQ:--1}"
+    export VAL_BEFORE_TRAIN="${VAL_BEFORE_TRAIN:-false}"
+    export FINAL_VALIDATION="${FINAL_VALIDATION:-false}"
+    export FINAL_SAVE="${FINAL_SAVE:-true}"
+    export TRAIN_LOGGER="${TRAIN_LOGGER:-['wandb']}"
+    export WANDB_MODE="${WANDB_MODE:-offline}"
+    export WANDB_SILENT="${WANDB_SILENT:-true}"
+    export USE_KL_LOSS="${USE_KL_LOSS:-true}"
+    export DISABLE_REFERENCE_POLICY="${DISABLE_REFERENCE_POLICY:-false}"
+    export DO_SEARCH="${DO_SEARCH:-true}"
+    export MODEL_MAX_POSITION_EMBEDDINGS="${MODEL_MAX_POSITION_EMBEDDINGS:-null}"
+    export MODEL_ROPE_SCALING_FACTOR="${MODEL_ROPE_SCALING_FACTOR:-null}"
+    export VLLM_ALLOW_LONG_MAX_MODEL_LEN="${VLLM_ALLOW_LONG_MAX_MODEL_LEN:-0}"
+    export MODEL_ATTN_IMPLEMENTATION="${MODEL_ATTN_IMPLEMENTATION:-null}"
+    export USE_REMOVE_PADDING="${USE_REMOVE_PADDING:-true}"
+    export VLLM_ATTENTION_BACKEND="${VLLM_ATTENTION_BACKEND:-XFORMERS}"
+    export RAY_memory_usage_threshold="${RAY_memory_usage_threshold:-0.99}"
+    export RAY_memory_monitor_refresh_ms="${RAY_memory_monitor_refresh_ms:-0}"
+    export PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}"
+    ;;
   two_gpu_hnsw_full_epoch)
     # Resource-constrained full-data profile recommended by main/docs:
     # both H20 GPUs run FSDP + vLLM, while E5 and HNSW64 ANN retrieval run on
@@ -996,7 +1053,7 @@ case "${RUN_MODE}" in
     export VLLM_ATTENTION_BACKEND="${VLLM_ATTENTION_BACKEND:-XFORMERS}"
     ;;
   *)
-    echo "Unsupported RUN_MODE=${RUN_MODE}. Use RUN_MODE=two_gpu_llama_instruct_exact_gpu_paper_data, two_gpu_llama_instruct_exact_gpu_time_budget, two_gpu_llama_instruct_exact_gpu_step10, two_gpu_llama_instruct_time_budget, two_gpu_llama_time_budget, two_gpu_qwen_main_v02, two_gpu_qwen_hnsw_full_epoch, two_gpu_hnsw_full_epoch, one_gpu_exact_flat, two_gpu_balanced, two_gpu_fast, two_gpu_paper, two_gpu_vllm_h20, two_gpu_vllm_h20_flash, h20_smoke, smoke, full_stable_native_4k, full_stable, or full." >&2
+    echo "Unsupported RUN_MODE=${RUN_MODE}. Use RUN_MODE=two_gpu_llama_instruct_exact_gpu_paper_data, two_gpu_llama_instruct_exact_gpu_time_budget, two_gpu_llama_instruct_exact_gpu_step10, two_gpu_llama_instruct_time_budget, two_gpu_llama_time_budget, two_gpu_qwen_main_v02, two_gpu_qwen_hnsw_full_epoch, two_gpu_qwen_instruct_exact_gpu_step100, two_gpu_hnsw_full_epoch, one_gpu_exact_flat, two_gpu_balanced, two_gpu_fast, two_gpu_paper, two_gpu_vllm_h20, two_gpu_vllm_h20_flash, h20_smoke, smoke, full_stable_native_4k, full_stable, or full." >&2
     exit 2
     ;;
 esac

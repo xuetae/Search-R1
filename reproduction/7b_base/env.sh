@@ -41,6 +41,9 @@ case "${BASE_MODEL_NAME}" in
   qwen2.5-7b)
     DEFAULT_BASE_MODEL_ID="Qwen/Qwen2.5-7B"
     ;;
+  qwen2.5-7b-instruct)
+    DEFAULT_BASE_MODEL_ID="Qwen/Qwen2.5-7B-Instruct"
+    ;;
   llama-7b)
     DEFAULT_BASE_MODEL_ID="${HF_BASE_MODEL_ID:-meta-llama/Llama-2-7b-hf}"
     ;;
