@@ -95,6 +95,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--retriever-topk", default=os.environ.get("RETRIEVER_TOPK", "3"))
     parser.add_argument("--retriever-device", default=os.environ.get("RETRIEVER_DEVICE", "cpu"), choices=["cpu", "cuda"])
     parser.add_argument("--retriever-max-return-tokens", default=os.environ.get("RETRIEVER_MAX_RETURN_TOKENS", "400"))
+    parser.add_argument("--retriever-faiss-temp-memory-mb", default=os.environ.get("RETRIEVER_FAISS_TEMP_MEMORY_MB"))
     parser.add_argument("--retriever-timeout", type=int, default=int(os.environ.get("RETRIEVER_TIMEOUT", "900")))
     parser.add_argument("--rollout-name", default=os.environ.get("ROLLOUT_NAME"), choices=["vllm", "hf", None])
     parser.add_argument("--tensor-model-parallel-size", default=os.environ.get("TENSOR_MODEL_PARALLEL_SIZE"))
@@ -256,6 +257,10 @@ def main() -> int:
         env["RETRIEVER_MAX_RETURN_TOKENS"] = "0"
         env.setdefault("RETRIEVER_CUDA_VISIBLE_DEVICES", args.cuda_visible_devices)
         env.setdefault("TRAIN_CUDA_VISIBLE_DEVICES", args.cuda_visible_devices)
+        if args.run_mode == "two_gpu_qwen_instruct_exact_gpu_step100":
+            env.setdefault("RETRIEVER_FAISS_TEMP_MEMORY_MB", "256")
+    if args.retriever_faiss_temp_memory_mb:
+        env["RETRIEVER_FAISS_TEMP_MEMORY_MB"] = args.retriever_faiss_temp_memory_mb
     if args.rollout_name:
         env["ROLLOUT_NAME"] = args.rollout_name
     if args.tensor_model_parallel_size:
@@ -348,6 +353,7 @@ def main() -> int:
     print(f"[entry] retriever_url={env['RETRIEVER_URL']}", flush=True)
     print(f"[entry] retriever_device={env['RETRIEVER_DEVICE']}", flush=True)
     print(f"[entry] retriever_faiss_gpu={env.get('RETRIEVER_FAISS_GPU', '')}", flush=True)
+    print(f"[entry] retriever_faiss_temp_memory_mb={env.get('RETRIEVER_FAISS_TEMP_MEMORY_MB', '')}", flush=True)
     print(f"[entry] expected_retriever_index={env.get('EXPECTED_RETRIEVER_INDEX', '')}", flush=True)
     print(f"[entry] index_file={env.get('INDEX_FILE', '')}", flush=True)
     print(f"[entry] retriever_max_return_tokens={env['RETRIEVER_MAX_RETURN_TOKENS']}", flush=True)

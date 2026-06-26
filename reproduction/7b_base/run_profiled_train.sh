@@ -441,10 +441,9 @@ case "${RUN_MODE}" in
     ;;
   two_gpu_qwen_instruct_exact_gpu_step100)
     # Qwen2.5-7B-Instruct exact-GPU retrieval profile for a short 100-update
-    # GRPO run on two H20 GPUs. Keep the upstream main/paper training
-    # semantics (5 agents, 4 turns, 4096/500 lengths, GRPO, KL, search) while
-    # reducing only execution micro-batches and vLLM cache pressure enough to
-    # fit with the resident exact-GPU Flat retrieval index.
+    # GRPO run on two H20 GPUs. Apart from the requested backbone, train batch
+    # size, step budget, disabled validation, and FAISS retriever scratch
+    # memory cap, keep the upstream main/paper training parameters aligned.
     export CUDA_VISIBLE_DEVICES="${TWO_GPU_CUDA_VISIBLE_DEVICES:-0,1}"
     export N_GPUS_PER_NODE="${TWO_GPU_N_GPUS_PER_NODE:-2}"
     export NNODES="${PAPER_NNODES:-1}"
@@ -457,14 +456,14 @@ case "${RUN_MODE}" in
     export MAX_START_LENGTH="${MAX_START_LENGTH:-2048}"
     export MAX_OBS_LENGTH="${MAX_OBS_LENGTH:-500}"
     export PPO_MINI_BATCH_SIZE="${PPO_MINI_BATCH_SIZE:-256}"
-    export PPO_MICRO_BATCH_SIZE="${PPO_MICRO_BATCH_SIZE:-8}"
-    export LOG_PROB_MICRO_BATCH_SIZE="${LOG_PROB_MICRO_BATCH_SIZE:-16}"
+    export PPO_MICRO_BATCH_SIZE="${PPO_MICRO_BATCH_SIZE:-64}"
+    export LOG_PROB_MICRO_BATCH_SIZE="${LOG_PROB_MICRO_BATCH_SIZE:-128}"
     export CRITIC_PPO_MICRO_BATCH_SIZE="${CRITIC_PPO_MICRO_BATCH_SIZE:-8}"
     export TENSOR_MODEL_PARALLEL_SIZE="${TENSOR_MODEL_PARALLEL_SIZE:-1}"
     export ROLLOUT_NAME="${ROLLOUT_NAME:-vllm}"
-    export ROLLOUT_GPU_MEMORY_UTILIZATION="${ROLLOUT_GPU_MEMORY_UTILIZATION:-0.45}"
+    export ROLLOUT_GPU_MEMORY_UTILIZATION="${ROLLOUT_GPU_MEMORY_UTILIZATION:-0.6}"
     export MAX_NUM_BATCHED_TOKENS="${MAX_NUM_BATCHED_TOKENS:-8192}"
-    export MAX_NUM_SEQS="${MAX_NUM_SEQS:-128}"
+    export MAX_NUM_SEQS="${MAX_NUM_SEQS:-512}"
     export ROLLOUT_DO_SAMPLE="${ROLLOUT_DO_SAMPLE:-true}"
     export ROLLOUT_TEMPERATURE="${ROLLOUT_TEMPERATURE:-1}"
     export ROLLOUT_ENFORCE_EAGER="${ROLLOUT_ENFORCE_EAGER:-true}"
@@ -1105,6 +1104,7 @@ write_env_snapshot() {
     echo "RETRIEVER_TOPK=${RETRIEVER_TOPK}"
     echo "RETRIEVER_DEVICE=${RETRIEVER_DEVICE:-}"
     echo "RETRIEVER_FAISS_GPU=${RETRIEVER_FAISS_GPU:-}"
+    echo "RETRIEVER_FAISS_TEMP_MEMORY_MB=${RETRIEVER_FAISS_TEMP_MEMORY_MB:-}"
     echo "RETRIEVER_MAX_RETURN_TOKENS=${RETRIEVER_MAX_RETURN_TOKENS:-}"
     echo "RETRIEVER_CPU_THREADS=${RETRIEVER_CPU_THREADS:-}"
     echo "CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES}"

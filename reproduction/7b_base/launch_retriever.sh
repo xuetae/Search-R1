@@ -11,11 +11,13 @@ RETRIEVER_NAME="${RETRIEVER_NAME:-e5}"
 RETRIEVER_FAISS_GPU="${RETRIEVER_FAISS_GPU:-0}"
 RETRIEVER_DEVICE="${RETRIEVER_DEVICE:-cpu}"
 RETRIEVER_MAX_RETURN_TOKENS="${RETRIEVER_MAX_RETURN_TOKENS:-400}"
+RETRIEVER_FAISS_TEMP_MEMORY_MB="${RETRIEVER_FAISS_TEMP_MEMORY_MB:-}"
 RETRIEVER_CPU_THREADS="${RETRIEVER_CPU_THREADS:-16}"
 PYTHON_BIN="${PYTHON_BIN:-}"
 
 echo "[retriever-launch] CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-}" >&2
 echo "[retriever-launch] device=${RETRIEVER_DEVICE} faiss_gpu=${RETRIEVER_FAISS_GPU} index=${INDEX_FILE}" >&2
+echo "[retriever-launch] faiss_temp_memory_mb=${RETRIEVER_FAISS_TEMP_MEMORY_MB:-default}" >&2
 
 # CPU FAISS can trigger OpenBLAS "too many memory regions" crashes when the
 # runtime creates one BLAS thread per visible CPU. Keep defaults conservative;
@@ -66,6 +68,9 @@ fi
 FAISS_ARGS=()
 if [[ "${RETRIEVER_FAISS_GPU}" == "1" || "${RETRIEVER_FAISS_GPU}" == "true" ]]; then
   FAISS_ARGS+=(--faiss_gpu)
+fi
+if [[ -n "${RETRIEVER_FAISS_TEMP_MEMORY_MB}" ]]; then
+  FAISS_ARGS+=(--faiss_gpu_temp_memory_mb "${RETRIEVER_FAISS_TEMP_MEMORY_MB}")
 fi
 
 cd "${WORK_DIR}"

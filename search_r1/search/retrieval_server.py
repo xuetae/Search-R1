@@ -223,7 +223,30 @@ class DenseRetriever(BaseRetriever):
             co = faiss.GpuMultipleClonerOptions()
             co.useFloat16 = True
             co.shard = True
-            self.index = faiss.index_cpu_to_all_gpus(self.index, co=co)
+            temp_memory_mb = getattr(config, "faiss_gpu_temp_memory_mb", None)
+            if temp_memory_mb is not None and temp_memory_mb >= 0:
+                try:
+                    resources = []
+                    for _ in range(faiss.get_num_gpus()):
+                        res = faiss.StandardGpuResources()
+                        res.setTempMemory(int(temp_memory_mb) * 1024 * 1024)
+                        resources.append(res)
+                    self.index = faiss.index_cpu_to_gpu_multiple_py(resources, self.index, co=co)
+                    self._faiss_gpu_resources = resources
+                    print(
+                        f"[retriever] faiss_gpu_temp_memory_mb={temp_memory_mb} "
+                        f"gpus={len(resources)} useFloat16={co.useFloat16} shard={co.shard}",
+                        flush=True,
+                    )
+                except Exception as exc:
+                    print(
+                        "[retriever] failed to apply FAISS GPU temp memory limit; "
+                        f"falling back to default resources: {exc}",
+                        flush=True,
+                    )
+                    self.index = faiss.index_cpu_to_all_gpus(self.index, co=co)
+            else:
+                self.index = faiss.index_cpu_to_all_gpus(self.index, co=co)
 
         self.corpus = load_corpus(self.corpus_path)
         self.encoder = Encoder(
@@ -329,6 +352,7 @@ class Config:
         retrieval_batch_size: int = 128,
         retrieval_device: str = "cuda",
         retrieval_max_return_tokens: int = 400,
+        faiss_gpu_temp_memory_mb: int | None = None,
     ):
         self.retrieval_method = retrieval_method
         self.retrieval_topk = retrieval_topk
@@ -344,6 +368,7 @@ class Config:
         self.retrieval_batch_size = retrieval_batch_size
         self.retrieval_device = retrieval_device
         self.retrieval_max_return_tokens = retrieval_max_return_tokens
+        self.faiss_gpu_temp_memory_mb = faiss_gpu_temp_memory_mb
 
 
 class QueryRequest(BaseModel):
@@ -440,6 +465,12 @@ if __name__ == "__main__":
     parser.add_argument("--retriever_model", type=str, default="intfloat/e5-base-v2", help="Path of the retriever model.")
     parser.add_argument("--retriever_device", type=str, default="cuda", choices=["cpu", "cuda"], help="Device for query encoding.")
     parser.add_argument("--max_return_tokens", type=int, default=400, help="Maximum total returned passage tokens per query.")
+    parser.add_argument(
+        "--faiss_gpu_temp_memory_mb",
+        type=int,
+        default=None,
+        help="Per-GPU FAISS scratch memory cap in MB. Keeps exact Flat GPU search but reduces resident temp memory.",
+    )
     parser.add_argument('--faiss_gpu', action='store_true', help='Use GPU for computation')
 
     args = parser.parse_args()
@@ -459,6 +490,7 @@ if __name__ == "__main__":
         retrieval_batch_size=512,
         retrieval_device=args.retriever_device,
         retrieval_max_return_tokens=args.max_return_tokens,
+        faiss_gpu_temp_memory_mb=args.faiss_gpu_temp_memory_mb,
     )
 
     # 2) Instantiate a global retriever so it is loaded once and reused.
