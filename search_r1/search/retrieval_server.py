@@ -463,7 +463,12 @@ if __name__ == "__main__":
     parser.add_argument("--topk", type=int, default=3, help="Number of retrieved passages for one query.")
     parser.add_argument("--retriever_name", type=str, default="e5", help="Name of the retriever model.")
     parser.add_argument("--retriever_model", type=str, default="intfloat/e5-base-v2", help="Path of the retriever model.")
-    parser.add_argument("--retriever_device", type=str, default="cuda", choices=["cpu", "cuda"], help="Device for query encoding.")
+    parser.add_argument(
+        "--retriever_device",
+        type=str,
+        default="cuda",
+        help="Device for query encoding: cpu, cuda, cuda:0, cuda:1, ...",
+    )
     parser.add_argument("--max_return_tokens", type=int, default=400, help="Maximum total returned passage tokens per query.")
     parser.add_argument(
         "--faiss_gpu_temp_memory_mb",

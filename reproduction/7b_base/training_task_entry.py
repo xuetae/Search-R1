@@ -93,7 +93,11 @@ def parse_args() -> argparse.Namespace:
         help="Physical GPUs exposed only to the retriever process.",
     )
     parser.add_argument("--retriever-topk", default=os.environ.get("RETRIEVER_TOPK", "3"))
-    parser.add_argument("--retriever-device", default=os.environ.get("RETRIEVER_DEVICE", "cpu"), choices=["cpu", "cuda"])
+    parser.add_argument(
+        "--retriever-device",
+        default=os.environ.get("RETRIEVER_DEVICE", "cpu"),
+        help="Device for query encoding: cpu, cuda, cuda:0, cuda:1, ...",
+    )
     parser.add_argument("--retriever-max-return-tokens", default=os.environ.get("RETRIEVER_MAX_RETURN_TOKENS", "400"))
     parser.add_argument("--retriever-faiss-temp-memory-mb", default=os.environ.get("RETRIEVER_FAISS_TEMP_MEMORY_MB"))
     parser.add_argument("--retriever-timeout", type=int, default=int(os.environ.get("RETRIEVER_TIMEOUT", "900")))
@@ -254,19 +258,19 @@ def main() -> int:
         env["RETRIEVER_FAISS_GPU"] = "1"
         env["EXPECTED_RETRIEVER_INDEX"] = "flat"
         if args.run_mode == "two_gpu_qwen_instruct_exact_gpu_step100":
-            # Keep exact FAISS Flat search on GPU, but default the E5 query
-            # encoder to CPU for the two-GPU Qwen run. The training process
-            # shares both GPUs with the retriever; moving only the encoder
-            # frees enough resident GPU memory without changing the search
-            # index type or GRPO training parameters.
-            env["RETRIEVER_DEVICE"] = os.environ.get("RETRIEVER_DEVICE", "cpu")
+            # Keep exact FAISS Flat search on GPU and use a GPU E5 query
+            # encoder, but pin it to the second visible GPU by default. Prior
+            # Qwen runs OOMed on GPU0 during actor backward; avoiding extra
+            # encoder memory on GPU0 improves the chance of keeping the main
+            # training parameters unchanged while recovering fast encoding.
+            env["RETRIEVER_DEVICE"] = os.environ.get("RETRIEVER_DEVICE", "cuda:1")
         else:
             env["RETRIEVER_DEVICE"] = os.environ.get("RETRIEVER_DEVICE", "cuda")
         env["RETRIEVER_MAX_RETURN_TOKENS"] = "0"
         env.setdefault("RETRIEVER_CUDA_VISIBLE_DEVICES", args.cuda_visible_devices)
         env.setdefault("TRAIN_CUDA_VISIBLE_DEVICES", args.cuda_visible_devices)
         if args.run_mode == "two_gpu_qwen_instruct_exact_gpu_step100":
-            env.setdefault("RETRIEVER_FAISS_TEMP_MEMORY_MB", "128")
+            env.setdefault("RETRIEVER_FAISS_TEMP_MEMORY_MB", "64")
     if args.retriever_faiss_temp_memory_mb:
         env["RETRIEVER_FAISS_TEMP_MEMORY_MB"] = args.retriever_faiss_temp_memory_mb
     if args.rollout_name:
