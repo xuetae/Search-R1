@@ -253,12 +253,20 @@ def main() -> int:
         env.setdefault("CORPUS_FILE", str(persistent_root / "data" / "wiki-18" / "wiki-18.jsonl"))
         env["RETRIEVER_FAISS_GPU"] = "1"
         env["EXPECTED_RETRIEVER_INDEX"] = "flat"
-        env["RETRIEVER_DEVICE"] = os.environ.get("RETRIEVER_DEVICE", "cuda")
+        if args.run_mode == "two_gpu_qwen_instruct_exact_gpu_step100":
+            # Keep exact FAISS Flat search on GPU, but default the E5 query
+            # encoder to CPU for the two-GPU Qwen run. The training process
+            # shares both GPUs with the retriever; moving only the encoder
+            # frees enough resident GPU memory without changing the search
+            # index type or GRPO training parameters.
+            env["RETRIEVER_DEVICE"] = os.environ.get("RETRIEVER_DEVICE", "cpu")
+        else:
+            env["RETRIEVER_DEVICE"] = os.environ.get("RETRIEVER_DEVICE", "cuda")
         env["RETRIEVER_MAX_RETURN_TOKENS"] = "0"
         env.setdefault("RETRIEVER_CUDA_VISIBLE_DEVICES", args.cuda_visible_devices)
         env.setdefault("TRAIN_CUDA_VISIBLE_DEVICES", args.cuda_visible_devices)
         if args.run_mode == "two_gpu_qwen_instruct_exact_gpu_step100":
-            env.setdefault("RETRIEVER_FAISS_TEMP_MEMORY_MB", "256")
+            env.setdefault("RETRIEVER_FAISS_TEMP_MEMORY_MB", "128")
     if args.retriever_faiss_temp_memory_mb:
         env["RETRIEVER_FAISS_TEMP_MEMORY_MB"] = args.retriever_faiss_temp_memory_mb
     if args.rollout_name:

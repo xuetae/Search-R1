@@ -442,8 +442,8 @@ case "${RUN_MODE}" in
   two_gpu_qwen_instruct_exact_gpu_step100)
     # Qwen2.5-7B-Instruct exact-GPU retrieval profile for a short 200-update
     # GRPO run on two H20 GPUs. Apart from the requested backbone, train batch
-    # size, step budget, disabled validation, and FAISS retriever scratch
-    # memory cap, keep the upstream main/paper training parameters aligned.
+    # size, step budget, disabled validation, and retriever memory placement,
+    # keep the upstream main/paper training parameters aligned.
     export CUDA_VISIBLE_DEVICES="${TWO_GPU_CUDA_VISIBLE_DEVICES:-0,1}"
     export N_GPUS_PER_NODE="${TWO_GPU_N_GPUS_PER_NODE:-2}"
     export NNODES="${PAPER_NNODES:-1}"
