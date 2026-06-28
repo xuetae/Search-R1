@@ -258,12 +258,13 @@ def main() -> int:
         env["RETRIEVER_FAISS_GPU"] = "1"
         env["EXPECTED_RETRIEVER_INDEX"] = "flat"
         if args.run_mode == "two_gpu_qwen_instruct_exact_gpu_step100":
-            # Keep exact FAISS Flat search on GPU and use a GPU E5 query
-            # encoder, but pin it to the second visible GPU by default. Prior
-            # Qwen runs OOMed on GPU0 during actor backward; avoiding extra
-            # encoder memory on GPU0 improves the chance of keeping the main
-            # training parameters unchanged while recovering fast encoding.
-            env["RETRIEVER_DEVICE"] = os.environ.get("RETRIEVER_DEVICE", "cuda:1")
+            # Keep exact FAISS Flat search on GPU, but default the E5 query
+            # encoder to CPU for the two-GPU Qwen run. GPU encoder, even when
+            # pinned to cuda:1, still left GPU0 short during actor backward
+            # because the FAISS Flat index is shared with training on both
+            # GPUs. This preserves the training parameters and exact search
+            # while minimizing retriever-side GPU pressure.
+            env["RETRIEVER_DEVICE"] = os.environ.get("RETRIEVER_DEVICE", "cpu")
         else:
             env["RETRIEVER_DEVICE"] = os.environ.get("RETRIEVER_DEVICE", "cuda")
         env["RETRIEVER_MAX_RETURN_TOKENS"] = "0"
