@@ -258,18 +258,21 @@ def main() -> int:
         env["RETRIEVER_FAISS_GPU"] = "1"
         env["EXPECTED_RETRIEVER_INDEX"] = "flat"
         if args.run_mode == "two_gpu_qwen_instruct_exact_gpu_step100":
-            # Keep exact FAISS Flat search on GPU and use the E5 query encoder
-            # on the second visible GPU. This profile lowers the training
-            # prompt batch to 48 to recover actor-backward headroom while
-            # retaining fast retrieval and the same total prompt budget.
-            env["RETRIEVER_DEVICE"] = os.environ.get("RETRIEVER_DEVICE", "cuda:1")
+            # Keep exact FAISS Flat search on GPU, but keep the retriever off
+            # GPU0 by default. The launcher should expose only physical GPU1
+            # to the retriever, so FAISS uses GPU1 while GPU0 is reserved for
+            # the training backward peak. E5 query encoding stays on CPU to
+            # avoid adding more persistent memory to GPU1.
+            env["RETRIEVER_DEVICE"] = os.environ.get("RETRIEVER_DEVICE", "cpu")
+            if not env.get("RETRIEVER_CUDA_VISIBLE_DEVICES"):
+                env["RETRIEVER_CUDA_VISIBLE_DEVICES"] = args.cuda_visible_devices.split(",")[-1]
         else:
             env["RETRIEVER_DEVICE"] = os.environ.get("RETRIEVER_DEVICE", "cuda")
         env["RETRIEVER_MAX_RETURN_TOKENS"] = "0"
         env.setdefault("RETRIEVER_CUDA_VISIBLE_DEVICES", args.cuda_visible_devices)
         env.setdefault("TRAIN_CUDA_VISIBLE_DEVICES", args.cuda_visible_devices)
         if args.run_mode == "two_gpu_qwen_instruct_exact_gpu_step100":
-            env.setdefault("RETRIEVER_FAISS_TEMP_MEMORY_MB", "64")
+            env.setdefault("RETRIEVER_FAISS_TEMP_MEMORY_MB", "32")
     if args.retriever_faiss_temp_memory_mb:
         env["RETRIEVER_FAISS_TEMP_MEMORY_MB"] = args.retriever_faiss_temp_memory_mb
     if args.rollout_name:

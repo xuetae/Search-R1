@@ -440,15 +440,15 @@ case "${RUN_MODE}" in
     export PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}"
     ;;
   two_gpu_qwen_instruct_exact_gpu_step100)
-    # Qwen2.5-7B-Instruct exact-GPU retrieval profile for a short 267-update
+    # Qwen2.5-7B-Instruct exact-GPU retrieval profile for a short 320-update
     # GRPO run on two H20 GPUs. Apart from the requested backbone, train batch
     # size, step budget, disabled validation, and retriever memory placement,
     # keep the upstream main/paper training parameters aligned.
     export CUDA_VISIBLE_DEVICES="${TWO_GPU_CUDA_VISIBLE_DEVICES:-0,1}"
     export N_GPUS_PER_NODE="${TWO_GPU_N_GPUS_PER_NODE:-2}"
     export NNODES="${PAPER_NNODES:-1}"
-    export TRAIN_BATCH_SIZE="${TRAIN_BATCH_SIZE:-48}"
-    export TRAIN_DATA_NUM="${TRAIN_DATA_NUM:-$((TRAIN_BATCH_SIZE * 267))}"
+    export TRAIN_BATCH_SIZE="${TRAIN_BATCH_SIZE:-40}"
+    export TRAIN_DATA_NUM="${TRAIN_DATA_NUM:-$((TRAIN_BATCH_SIZE * 320))}"
     export VAL_DATA_NUM="${VAL_DATA_NUM:-null}"
     export VAL_BATCH_SIZE="${VAL_BATCH_SIZE:-256}"
     export MAX_PROMPT_LENGTH="${MAX_PROMPT_LENGTH:-4096}"
@@ -473,8 +473,8 @@ case "${RUN_MODE}" in
     export RETRIEVER_TOPK="${RETRIEVER_TOPK:-3}"
     export TOTAL_EPOCHS="${TOTAL_EPOCHS:-15}"
     # Trainer exits when global_steps reaches this value. Since global_steps
-    # starts at 1, 268 corresponds to 267 actual updates.
-    export TOTAL_TRAINING_STEPS="${TOTAL_TRAINING_STEPS:-268}"
+    # starts at 1, 321 corresponds to 320 actual updates.
+    export TOTAL_TRAINING_STEPS="${TOTAL_TRAINING_STEPS:-321}"
     export SAVE_FREQ="${SAVE_FREQ:-50}"
     export TEST_FREQ="${TEST_FREQ:--1}"
     export VAL_BEFORE_TRAIN="${VAL_BEFORE_TRAIN:-false}"
