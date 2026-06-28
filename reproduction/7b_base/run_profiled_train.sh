@@ -441,9 +441,10 @@ case "${RUN_MODE}" in
     ;;
   two_gpu_qwen_instruct_exact_gpu_step100)
     # Qwen2.5-7B-Instruct exact-GPU retrieval profile for a short 320-update
-    # GRPO run on two H20 GPUs. Apart from the requested backbone, train batch
-    # size, step budget, disabled validation, and retriever memory placement,
-    # keep the upstream main/paper training parameters aligned.
+    # GRPO run on two H20 GPUs. Keep the upstream main/paper rollout semantics
+    # aligned (GRPO, search, 5 agents, 4 turns, long context), but lower the
+    # actor/log-prob micro batches for two shared GPUs. The paper micro batches
+    # OOM during actor backward once exact FAISS and GPU E5 are resident.
     export CUDA_VISIBLE_DEVICES="${TWO_GPU_CUDA_VISIBLE_DEVICES:-0,1}"
     export N_GPUS_PER_NODE="${TWO_GPU_N_GPUS_PER_NODE:-2}"
     export NNODES="${PAPER_NNODES:-1}"
@@ -455,9 +456,9 @@ case "${RUN_MODE}" in
     export MAX_RESPONSE_LENGTH="${MAX_RESPONSE_LENGTH:-500}"
     export MAX_START_LENGTH="${MAX_START_LENGTH:-2048}"
     export MAX_OBS_LENGTH="${MAX_OBS_LENGTH:-500}"
-    export PPO_MINI_BATCH_SIZE="${PPO_MINI_BATCH_SIZE:-256}"
-    export PPO_MICRO_BATCH_SIZE="${PPO_MICRO_BATCH_SIZE:-64}"
-    export LOG_PROB_MICRO_BATCH_SIZE="${LOG_PROB_MICRO_BATCH_SIZE:-128}"
+    export PPO_MINI_BATCH_SIZE="${PPO_MINI_BATCH_SIZE:-40}"
+    export PPO_MICRO_BATCH_SIZE="${PPO_MICRO_BATCH_SIZE:-16}"
+    export LOG_PROB_MICRO_BATCH_SIZE="${LOG_PROB_MICRO_BATCH_SIZE:-32}"
     export CRITIC_PPO_MICRO_BATCH_SIZE="${CRITIC_PPO_MICRO_BATCH_SIZE:-8}"
     export TENSOR_MODEL_PARALLEL_SIZE="${TENSOR_MODEL_PARALLEL_SIZE:-1}"
     export ROLLOUT_NAME="${ROLLOUT_NAME:-vllm}"
