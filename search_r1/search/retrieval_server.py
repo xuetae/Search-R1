@@ -4,6 +4,7 @@ import time
 import warnings
 from typing import List, Dict, Optional
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 
 import faiss
 import torch
@@ -84,21 +85,27 @@ class Encoder:
         )
         self.model.eval()
 
+    def _format_queries(self, query_list: List[str], is_query: bool) -> List[str]:
+        if "e5" in self.model_name.lower():
+            if is_query:
+                return [f"query: {query}" for query in query_list]
+            return [f"passage: {query}" for query in query_list]
+
+        if "bge" in self.model_name.lower() and is_query:
+            return [
+                f"Represent this sentence for searching relevant passages: {query}"
+                for query in query_list
+            ]
+
+        return query_list
+
     @torch.no_grad()
     def encode(self, query_list: List[str], is_query=True) -> np.ndarray:
         # processing query for different encoders
         if isinstance(query_list, str):
             query_list = [query_list]
 
-        if "e5" in self.model_name.lower():
-            if is_query:
-                query_list = [f"query: {query}" for query in query_list]
-            else:
-                query_list = [f"passage: {query}" for query in query_list]
-
-        if "bge" in self.model_name.lower():
-            if is_query:
-                query_list = [f"Represent this sentence for searching relevant passages: {query}" for query in query_list]
+        query_list = self._format_queries(query_list, is_query)
 
         inputs = self.tokenizer(query_list,
                                 max_length=self.max_length,
@@ -132,6 +139,77 @@ class Encoder:
         del inputs, output
 
         return query_emb
+
+
+class BalancedCudaEncoder:
+    """Replicate the query encoder across visible CUDA devices and split batches.
+
+    FAISS exact Flat search is already sharded by `index_cpu_to_all_gpus`. This
+    wrapper applies the same resource-sharing idea to E5 query encoding: each
+    visible GPU hosts one encoder replica and receives an approximately equal
+    slice of each request batch. The output order is preserved.
+    """
+
+    def __init__(self, model_name, model_path, pooling_method, max_length, use_fp16):
+        if not torch.cuda.is_available() or torch.cuda.device_count() < 2:
+            fallback = "cuda:0" if torch.cuda.is_available() else "cpu"
+            print(
+                f"[retriever] cuda:balanced requested but only "
+                f"{torch.cuda.device_count()} CUDA device(s) are visible; "
+                f"falling back to {fallback}",
+                flush=True,
+            )
+            self.encoders = [
+                Encoder(
+                    model_name=model_name,
+                    model_path=model_path,
+                    pooling_method=pooling_method,
+                    max_length=max_length,
+                    use_fp16=use_fp16,
+                    device=fallback,
+                )
+            ]
+        else:
+            self.encoders = [
+                Encoder(
+                    model_name=model_name,
+                    model_path=model_path,
+                    pooling_method=pooling_method,
+                    max_length=max_length,
+                    use_fp16=use_fp16,
+                    device=f"cuda:{device_id}",
+                )
+                for device_id in range(torch.cuda.device_count())
+            ]
+        self.tokenizer = self.encoders[0].tokenizer
+        print(
+            "[retriever] balanced_cuda_encoder_devices="
+            f"{[str(encoder.device) for encoder in self.encoders]}",
+            flush=True,
+        )
+
+    def encode(self, query_list: List[str], is_query=True) -> np.ndarray:
+        if isinstance(query_list, str):
+            query_list = [query_list]
+
+        if len(self.encoders) == 1 or len(query_list) <= 1:
+            return self.encoders[0].encode(query_list, is_query=is_query)
+
+        chunks = np.array_split(np.arange(len(query_list)), len(self.encoders))
+        tasks = [
+            (encoder, [query_list[i] for i in chunk.tolist()])
+            for encoder, chunk in zip(self.encoders, chunks)
+            if len(chunk) > 0
+        ]
+
+        def _encode(task):
+            encoder, chunk_queries = task
+            return encoder.encode(chunk_queries, is_query=is_query)
+
+        with ThreadPoolExecutor(max_workers=len(tasks)) as executor:
+            encoded_chunks = list(executor.map(_encode, tasks))
+
+        return np.concatenate(encoded_chunks, axis=0).astype(np.float32, order="C")
 
 class BaseRetriever:
     def __init__(self, config):
@@ -249,14 +327,23 @@ class DenseRetriever(BaseRetriever):
                 self.index = faiss.index_cpu_to_all_gpus(self.index, co=co)
 
         self.corpus = load_corpus(self.corpus_path)
-        self.encoder = Encoder(
-            model_name = self.retrieval_method,
-            model_path = config.retrieval_model_path,
-            pooling_method = config.retrieval_pooling_method,
-            max_length = config.retrieval_query_max_length,
-            use_fp16 = config.retrieval_use_fp16,
-            device = config.retrieval_device,
+        if config.retrieval_device in {"cuda:balanced", "cuda:all"}:
+            self.encoder = BalancedCudaEncoder(
+                model_name=self.retrieval_method,
+                model_path=config.retrieval_model_path,
+                pooling_method=config.retrieval_pooling_method,
+                max_length=config.retrieval_query_max_length,
+                use_fp16=config.retrieval_use_fp16,
             )
+        else:
+            self.encoder = Encoder(
+                model_name = self.retrieval_method,
+                model_path = config.retrieval_model_path,
+                pooling_method = config.retrieval_pooling_method,
+                max_length = config.retrieval_query_max_length,
+                use_fp16 = config.retrieval_use_fp16,
+                device = config.retrieval_device,
+                )
         self.topk = config.retrieval_topk
         self.batch_size = config.retrieval_batch_size
 
@@ -467,7 +554,7 @@ if __name__ == "__main__":
         "--retriever_device",
         type=str,
         default="cuda",
-        help="Device for query encoding: cpu, cuda, cuda:0, cuda:1, ...",
+        help="Device for query encoding: cpu, cuda, cuda:0, cuda:1, cuda:balanced, cuda:all, ...",
     )
     parser.add_argument("--max_return_tokens", type=int, default=400, help="Maximum total returned passage tokens per query.")
     parser.add_argument(
@@ -491,7 +578,7 @@ if __name__ == "__main__":
         retrieval_model_path=args.retriever_model,
         retrieval_pooling_method="mean",
         retrieval_query_max_length=256,
-        retrieval_use_fp16=args.retriever_device == "cuda",
+        retrieval_use_fp16=args.retriever_device.startswith("cuda"),
         retrieval_batch_size=512,
         retrieval_device=args.retriever_device,
         retrieval_max_return_tokens=args.max_return_tokens,
