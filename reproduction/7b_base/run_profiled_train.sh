@@ -440,7 +440,7 @@ case "${RUN_MODE}" in
     export PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}"
     ;;
   two_gpu_qwen_instruct_exact_gpu_step100)
-    # Qwen2.5-7B-Instruct exact-GPU retrieval profile for a short 400-update
+    # Qwen2.5-7B-Instruct exact-GPU retrieval profile for a short 100-update
     # GRPO run on two H20 GPUs. Keep the upstream main/paper rollout semantics
     # aligned (GRPO, search, 5 agents, 4 turns, long context), but lower the
     # actor/log-prob micro batches for two shared GPUs. The paper micro batches
@@ -449,7 +449,7 @@ case "${RUN_MODE}" in
     export N_GPUS_PER_NODE="${TWO_GPU_N_GPUS_PER_NODE:-2}"
     export NNODES="${PAPER_NNODES:-1}"
     export TRAIN_BATCH_SIZE="${TRAIN_BATCH_SIZE:-32}"
-    export TRAIN_DATA_NUM="${TRAIN_DATA_NUM:-$((TRAIN_BATCH_SIZE * 400))}"
+    export TRAIN_DATA_NUM="${TRAIN_DATA_NUM:-$((TRAIN_BATCH_SIZE * 100))}"
     export VAL_DATA_NUM="${VAL_DATA_NUM:-null}"
     export VAL_BATCH_SIZE="${VAL_BATCH_SIZE:-256}"
     export MAX_PROMPT_LENGTH="${MAX_PROMPT_LENGTH:-4096}"
@@ -457,8 +457,8 @@ case "${RUN_MODE}" in
     export MAX_START_LENGTH="${MAX_START_LENGTH:-2048}"
     export MAX_OBS_LENGTH="${MAX_OBS_LENGTH:-500}"
     export PPO_MINI_BATCH_SIZE="${PPO_MINI_BATCH_SIZE:-32}"
-    export PPO_MICRO_BATCH_SIZE="${PPO_MICRO_BATCH_SIZE:-8}"
-    export LOG_PROB_MICRO_BATCH_SIZE="${LOG_PROB_MICRO_BATCH_SIZE:-16}"
+    export PPO_MICRO_BATCH_SIZE="${PPO_MICRO_BATCH_SIZE:-4}"
+    export LOG_PROB_MICRO_BATCH_SIZE="${LOG_PROB_MICRO_BATCH_SIZE:-8}"
     export CRITIC_PPO_MICRO_BATCH_SIZE="${CRITIC_PPO_MICRO_BATCH_SIZE:-8}"
     export TENSOR_MODEL_PARALLEL_SIZE="${TENSOR_MODEL_PARALLEL_SIZE:-1}"
     export ROLLOUT_NAME="${ROLLOUT_NAME:-vllm}"
@@ -474,8 +474,8 @@ case "${RUN_MODE}" in
     export RETRIEVER_TOPK="${RETRIEVER_TOPK:-3}"
     export TOTAL_EPOCHS="${TOTAL_EPOCHS:-15}"
     # Trainer exits when global_steps reaches this value. Since global_steps
-    # starts at 1, 401 corresponds to 400 actual updates.
-    export TOTAL_TRAINING_STEPS="${TOTAL_TRAINING_STEPS:-401}"
+    # starts at 1, 101 corresponds to 100 actual updates.
+    export TOTAL_TRAINING_STEPS="${TOTAL_TRAINING_STEPS:-101}"
     export SAVE_FREQ="${SAVE_FREQ:-100}"
     export TEST_FREQ="${TEST_FREQ:--1}"
     export VAL_BEFORE_TRAIN="${VAL_BEFORE_TRAIN:-false}"
