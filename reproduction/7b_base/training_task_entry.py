@@ -161,7 +161,10 @@ def main() -> int:
         local_base_model = args.local_base_model or str(
             persistent_root / "models" / "7b_base" / "qwen2.5-7b"
         )
-    elif args.run_mode == "two_gpu_qwen_instruct_exact_gpu_step100":
+    elif args.run_mode in {
+        "two_gpu_qwen_instruct_exact_gpu_step100",
+        "three_gpu_qwen_instruct_exact_gpu_step200",
+    }:
         base_model_name = "qwen2.5-7b-instruct"
         local_base_model = args.local_base_model or str(
             persistent_root / "models" / "7b_base" / "qwen2.5-7b-instruct"
@@ -248,29 +251,41 @@ def main() -> int:
         "two_gpu_llama_instruct_exact_gpu_time_budget",
         "two_gpu_llama_instruct_exact_gpu_step10",
         "two_gpu_qwen_instruct_exact_gpu_step100",
+        "three_gpu_qwen_instruct_exact_gpu_step200",
     }:
         # Match the upstream dense retrieval path: exact E5 Flat search with
         # the FAISS index sharded across every GPU visible to the retriever.
-        # The training process sees the same two GPUs, so the retriever's
+        # The training process sees the same GPUs, so the retriever's
         # resident index memory must be included in the training memory budget.
         env.setdefault("INDEX_FILE", str(persistent_root / "data" / "wiki-18" / "e5_Flat.index"))
         env.setdefault("CORPUS_FILE", str(persistent_root / "data" / "wiki-18" / "wiki-18.jsonl"))
         env["RETRIEVER_FAISS_GPU"] = "1"
         env["EXPECTED_RETRIEVER_INDEX"] = "flat"
-        if args.run_mode == "two_gpu_qwen_instruct_exact_gpu_step100":
-            # Exact Flat FAISS is sharded across both retriever-visible GPUs,
-            # but keep the E5 query encoder on logical cuda:1 by default. This
-            # preserves GPU query-encoding speed while avoiding an extra E5
-            # model replica on GPU0, where the actor backward peak is most
-            # likely to OOM. Use RETRIEVER_DEVICE=cuda:balanced only when the
-            # extra encoder replica memory is known to fit.
-            env["RETRIEVER_DEVICE"] = os.environ.get("RETRIEVER_DEVICE", "cuda:1")
+        if args.run_mode in {
+            "two_gpu_qwen_instruct_exact_gpu_step100",
+            "three_gpu_qwen_instruct_exact_gpu_step200",
+        }:
+            # Exact Flat FAISS is sharded across all retriever-visible GPUs,
+            # while E5 query encoding defaults to the last logical retriever
+            # GPU. This preserves GPU query-encoding speed while avoiding an
+            # extra E5 model replica on GPU0, where the actor backward peak is
+            # most likely to OOM. Use RETRIEVER_DEVICE=cuda:balanced only when
+            # the extra encoder replica memory is known to fit.
+            default_retriever_device = (
+                "cuda:2"
+                if args.run_mode == "three_gpu_qwen_instruct_exact_gpu_step200"
+                else "cuda:1"
+            )
+            env["RETRIEVER_DEVICE"] = os.environ.get("RETRIEVER_DEVICE", default_retriever_device)
         else:
             env["RETRIEVER_DEVICE"] = os.environ.get("RETRIEVER_DEVICE", "cuda")
         env["RETRIEVER_MAX_RETURN_TOKENS"] = "0"
         env.setdefault("RETRIEVER_CUDA_VISIBLE_DEVICES", args.cuda_visible_devices)
         env.setdefault("TRAIN_CUDA_VISIBLE_DEVICES", args.cuda_visible_devices)
-        if args.run_mode == "two_gpu_qwen_instruct_exact_gpu_step100":
+        if args.run_mode in {
+            "two_gpu_qwen_instruct_exact_gpu_step100",
+            "three_gpu_qwen_instruct_exact_gpu_step200",
+        }:
             env.setdefault("RETRIEVER_FAISS_TEMP_MEMORY_MB", "32")
     if args.retriever_faiss_temp_memory_mb:
         env["RETRIEVER_FAISS_TEMP_MEMORY_MB"] = args.retriever_faiss_temp_memory_mb
